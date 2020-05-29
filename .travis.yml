@@ -14,7 +14,7 @@ install:
   - ./gradlew assemble
 before_script:
   - echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
-  - testdocker/createimage.sh
+  - cd testdocker && ./createimage.sh
 script:
   - ./buildTravis.sh
 notifications:
