@@ -14,26 +14,16 @@
  * limitations under the License.
  *
  */
+
 package com.intershop.gradle.icm.docker
 
-import com.avast.gradle.dockercompose.DockerComposePlugin
-import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
+import com.intershop.gradle.test.AbstractProjectSpec
 import org.gradle.api.Plugin
-import org.gradle.api.Project
 
-/**
- * Main plugin class of this project.
- */
-open class ICMDockerPlugin: Plugin<Project> {
+class ICMDockerPluginSpec extends AbstractProjectSpec {
 
-    override fun apply(project: Project) {
-        with(project) {
-            logger.info("ICM Docker build plugin will be initialized")
-
-            plugins.apply(DockerComposePlugin::class.java)
-            plugins.apply(DockerRemoteApiPlugin::class.java)
-
-
-        }
+    @Override
+    Plugin getPlugin() {
+        return new ICMDockerPlugin()
     }
 }

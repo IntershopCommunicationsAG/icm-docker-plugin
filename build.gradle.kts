@@ -47,7 +47,7 @@ plugins {
     id("org.jetbrains.dokka") version "0.10.0"
 
     // code analysis for kotlin
-    id("io.gitlab.arturbosch.detekt") version "1.1.1"
+    // id("io.gitlab.arturbosch.detekt") version "1.1.1"
 
     // plugin for publishing to Gradle Portal
     id("com.gradle.plugin-publish") version "0.11.0"
@@ -70,7 +70,13 @@ gradlePlugin {
             id = "com.intershop.gradle.icm.docker"
             implementationClass = "com.intershop.gradle.icm.docker.ICMDockerPlugin"
             displayName = "icm-docker-plugin"
-            description = "This ICM plugin contains Docker project integration."
+            description = "This ICM plugin contains Docker ICM integration."
+        }
+        create("icmDockerProjectPlugin") {
+            id = "com.intershop.gradle.icm.docker.project"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerProjectPlugin"
+            displayName = "icm-docker-project-plugin"
+            description = "This ICM plugin contains Docker the integration for ICM project."
         }
     }
 }
@@ -92,14 +98,16 @@ if (project.version.toString().endsWith("-SNAPSHOT")) {
     status = "snapshot'"
 }
 
+/**
 detekt {
     input = files("src/main/kotlin")
     config = files("detekt.yml")
 }
+**/
 
 tasks {
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "6.4")
+        systemProperty("intershop.gradle.versions", "6.4.1")
 
         dependsOn("jar")
     }
@@ -265,8 +273,9 @@ dependencies {
     implementation(gradleApi())
     implementation(localGroovy())
 
-    implementation("com.avast.gradle:gradle-docker-compose-plugin:0.10.10")
-    implementation("com.bmuschko:gradle-docker-plugin:6.3.0")
+    implementation("com.avast.gradle:gradle-docker-compose-plugin:0.12.1")
+    implementation("com.bmuschko:gradle-docker-plugin:6.4.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:1.6.5")
 
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:3.5.0")
     testImplementation(gradleTestKit())

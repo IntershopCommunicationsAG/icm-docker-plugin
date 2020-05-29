@@ -1,7 +1,9 @@
 language: java
 sudo: false
+services:
+  - docker
 jdk:
-- openjdk8
+  - openjdk8
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
 cache:
@@ -12,6 +14,7 @@ install:
   - ./gradlew assemble
 before_script:
   - echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
+  - testdocker/createimage.sh
 script:
   - ./buildTravis.sh
 notifications:
