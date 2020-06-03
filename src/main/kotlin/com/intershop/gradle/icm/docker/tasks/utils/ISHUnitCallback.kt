@@ -15,30 +15,32 @@
  *
  */
 
-package com.intershop.gradle.icm.docker.tasks
+package com.intershop.gradle.icm.docker.tasks.utils
 
 import com.github.dockerjava.api.async.ResultCallbackTemplate
 import com.github.dockerjava.api.model.Frame
 import com.github.dockerjava.api.model.StreamType
-import com.github.dockerjava.core.command.ExecStartResultCallback
-import java.io.IOException
-import java.io.OutputStream
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.io.OutputStream
 
-class DBPreparerCallback(val stdout: OutputStream, val stderr: OutputStream): ResultCallbackTemplate<DBPreparerCallback, Frame>() {
+class ISHUnitCallback (
+    private val stdout: OutputStream,
+    private val stderr: OutputStream,
+    private val showJson: Boolean = false): ResultCallbackTemplate<DBInitCallback, Frame>() {
 
-    private val LOGGER: Logger = LoggerFactory.getLogger(DBPreparerCallback::class.java)
+    private val LOGGER: Logger = LoggerFactory.getLogger(ISHUnitCallback::class.java)
 
     override fun onNext(frame: Frame?) {
         if (frame != null) {
             try {
                 when (frame.streamType) {
-                    StreamType.STDOUT, StreamType.RAW -> if (stdout != null) {
-                        stdout.write(frame.payload)
+                    StreamType.STDOUT, StreamType.RAW -> {
+                        stderr.write(frame.payload)
                         stdout.flush()
                     }
-                    StreamType.STDERR -> if (stderr != null) {
+                    StreamType.STDERR -> {
                         stderr.write(frame.payload)
                         stderr.flush()
                     }

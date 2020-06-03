@@ -33,7 +33,7 @@ open class RemoveContainerByName @Inject constructor(objectFactory: ObjectFactor
         val containerIDList = mutableListOf<String>()
 
         listContainers.forEach { c ->
-            if(c.names.filter{ it.contains(containerName.get()) }.size > 0)  {
+            if(c.names.any { it.contains(containerName.get()) })  {
                 containerIDList.add(c.id)
             }
         }
@@ -48,5 +48,4 @@ open class RemoveContainerByName @Inject constructor(objectFactory: ObjectFactor
             removeContainerCmd.exec()
         }
     }
-
 }

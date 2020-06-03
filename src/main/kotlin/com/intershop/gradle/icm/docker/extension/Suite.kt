@@ -16,17 +16,4 @@
  */
 package com.intershop.gradle.icm.docker.extension
 
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import javax.inject.Inject
-
-open class Images @Inject constructor(objectFactory: ObjectFactory) {
-
-    val webadapter: Property<String> = objectFactory.property(String::class.java)
-
-    val webadapteragent: Property<String> = objectFactory.property(String::class.java)
-
-    val icmbase: Property<String> = objectFactory.property(String::class.java)
-
-    val mssql_database: Property<String> = objectFactory.property(String::class.java)
-}
+data class Suite(val cartridge: String, val testSuite: String)

@@ -36,4 +36,14 @@ open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFac
         action.execute(images)
     }
 
+    val ishUnitTest: TestExecution = objectFactory.newInstance(TestExecution::class.java)
+
+    @Suppress("unused")
+    fun ishUnitTest(closure: Closure<Any>) {
+        ConfigureUtil.configure(closure, ishUnitTest)
+    }
+
+    fun ishUnitTest(action: Action<in TestExecution>) {
+        action.execute(ishUnitTest)
+    }
 }

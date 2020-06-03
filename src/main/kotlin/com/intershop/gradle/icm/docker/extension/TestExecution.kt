@@ -16,17 +16,30 @@
  */
 package com.intershop.gradle.icm.docker.extension
 
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
-open class Images @Inject constructor(objectFactory: ObjectFactory) {
+open class TestExecution @Inject constructor(objectFactory: ObjectFactory) {
 
-    val webadapter: Property<String> = objectFactory.property(String::class.java)
+    companion object {
+        const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
+    }
 
-    val webadapteragent: Property<String> = objectFactory.property(String::class.java)
+    val testConfigSet: SetProperty<Suite> = objectFactory.setProperty(Suite::class.java)
 
-    val icmbase: Property<String> = objectFactory.property(String::class.java)
+    fun test(suite: Suite) {
+        testConfigSet.add(suite)
+    }
 
-    val mssql_database: Property<String> = objectFactory.property(String::class.java)
+    fun test(cartrige: String, suite: String) {
+        testConfigSet.add(Suite(cartrige, suite))
+    }
+
+    val failFast: Property<Boolean> = objectFactory.property(Boolean::class.java)
+
+    init {
+        failFast.set(false)
+    }
 }

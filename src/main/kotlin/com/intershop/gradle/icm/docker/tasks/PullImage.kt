@@ -83,7 +83,7 @@ open class PullImage @Inject constructor(objectFactory: ObjectFactory) : Abstrac
 
             if(pull) {
                 val pullImageCmd = dockerClient.pullImageCmd(image.get())
-                val authConfig = getRegistryAuthLocator().lookupAuthConfig(image.get(), registryCredentials)
+                val authConfig = registryAuthLocator.lookupAuthConfig(image.get(), registryCredentials)
                 pullImageCmd.withAuthConfig(authConfig)
                 val callback = createCallback(nextHandler)
                 pullImageCmd.exec(callback).awaitCompletion()

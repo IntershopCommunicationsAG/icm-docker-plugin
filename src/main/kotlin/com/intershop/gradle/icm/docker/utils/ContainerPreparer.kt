@@ -32,7 +32,7 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import java.io.File
 
-class ContainerPreparer(val project: Project, val dockerExtension: IntershopDockerExtension) {
+class ContainerPreparer(val project: Project, private val dockerExtension: IntershopDockerExtension) {
 
     companion object {
         const val TASK_PULLBASEIMAGE = "pullImage"
@@ -50,7 +50,7 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
 
     }
 
-    val addDirectories: Map<String, Provider<Directory>> by lazy {
+    private val addDirectories: Map<String, Provider<Directory>> by lazy {
         mapOf(
             SERVERLOGS to project.layout.buildDirectory.dir(SERVERLOGS_PATH),
             ISHUNITOUT to project.layout.buildDirectory.dir(ISHUNITOUT_PATH)
@@ -72,7 +72,7 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
 
             val dirprep = tasks.maybeCreate( "dirPreparer").apply {
                 doLast {
-                    addDirectories.forEach { _, dir ->
+                    addDirectories.forEach { (_, dir) ->
                         val file = dir.get().asFile
                         if(file.exists()) {
                             file.deleteRecursively()
@@ -104,9 +104,9 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
                                 to "/intershop/sites" ,
                         ishExtension.developmentConfig.licenseDirectory
                                 to "/intershop/license",
-                        addDirectories.get(SERVERLOGS)!!.get().asFile.absolutePath
+                        addDirectories.getValue(SERVERLOGS).get().asFile.absolutePath
                                 to "/intershop/logs",
-                        addDirectories.get(ISHUNITOUT)!!.get().asFile.absolutePath
+                        addDirectories.getValue(ISHUNITOUT).get().asFile.absolutePath
                                 to "/intershop/ishunitrunner/output",
                         project.projectDir.absolutePath
                                 to "/intershop/project/cartridges",
@@ -174,11 +174,11 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
     private fun transformVolumes(volumes: Map<String,String>) : Map<String, String> {
         val tv = mutableMapOf<String, String>()
 
-        volumes.forEach { k, v ->
+        volumes.forEach { (k, v) ->
             if(k.contains('\\')) {
-                tv.put("//${k.replace('\\','/')}".replace(":", ""), v)
+                tv["//${k.replace('\\','/')}".replace(":", "")] = v
             } else {
-                tv.put(k, v)
+                tv[k] = v
             }
         }
 

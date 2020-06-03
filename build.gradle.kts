@@ -273,6 +273,8 @@ dependencies {
     implementation(gradleApi())
     implementation(localGroovy())
 
+    implementation(gradleKotlinDsl())
+
     implementation("com.avast.gradle:gradle-docker-compose-plugin:0.12.1")
     implementation("com.bmuschko:gradle-docker-plugin:6.4.0")
     implementation("com.intershop.gradle.icm:icm-gradle-plugin:1.6.5")

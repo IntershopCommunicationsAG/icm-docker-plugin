@@ -14,19 +14,6 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.extension
+package com.intershop.gradle.icm.docker.tasks.utils
 
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import javax.inject.Inject
-
-open class Images @Inject constructor(objectFactory: ObjectFactory) {
-
-    val webadapter: Property<String> = objectFactory.property(String::class.java)
-
-    val webadapteragent: Property<String> = objectFactory.property(String::class.java)
-
-    val icmbase: Property<String> = objectFactory.property(String::class.java)
-
-    val mssql_database: Property<String> = objectFactory.property(String::class.java)
-}
+data class DBInitResult(val cartriges: Int, val success: Int, val failure: Int)
