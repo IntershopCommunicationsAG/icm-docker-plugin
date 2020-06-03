@@ -11,7 +11,8 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 before_install:
-  - sudo addgroup --gid 150 intershop && adduser --uid 150 --ingroup intershop --shell /bin/sh intershop
+  - sudo addgroup --gid 150 intershop
+  - sudo adduser --uid 150 --ingroup intershop --shell /bin/sh intershop
 install:
   - sudo su - intershop -c ./gradlew assemble
 before_script:
