@@ -1,5 +1,5 @@
 language: java
-sudo: false
+sudo: true
 services:
   - docker
 jdk:
@@ -11,14 +11,14 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 before_install:
-  - addgroup --gid 150 intershop && adduser -u 150 -G intershop -D intershop -s /bin/sh
+  - sudo addgroup --gid 150 intershop && adduser -u 150 -G intershop -D intershop -s /bin/sh
 install:
-  - su - ./gradlew assemble
+  - sudo su - intershop -c ./gradlew assemble
 before_script:
-  - su - echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
-  - su - cd testdocker && ./createimage.sh && cd ..
+  - sudo su - intershop -c echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
+  - sudo su - intershop -c d testdocker && ./createimage.sh && cd ..
 script:
-  - su - ./buildTravis.sh
+  - sudo su - intershop -c ./buildTravis.sh
 notifications:
   webhooks:
     urls:
