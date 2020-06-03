@@ -26,7 +26,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    id("nebula.kotlin") version "1.3.50"
+    id("nebula.kotlin") version "1.3.72"
 
     // test coverage
     jacoco
@@ -38,22 +38,22 @@ plugins {
     `maven-publish`
 
     // intershop version plugin
-    id("com.intershop.gradle.scmversion") version "6.0.0"
+    id("com.intershop.gradle.scmversion") version "6.1.0"
 
     // plugin for documentation
-    id("org.asciidoctor.jvm.convert") version "2.3.0"
+    id("org.asciidoctor.jvm.convert") version "3.2.0"
 
     // documentation
-    id("org.jetbrains.dokka") version "0.10.0"
+    id("org.jetbrains.dokka") version "0.10.1"
 
     // code analysis for kotlin
-    id("io.gitlab.arturbosch.detekt") version "1.1.1"
+    id("io.gitlab.arturbosch.detekt") version "1.9.1"
 
     // plugin for publishing to Gradle Portal
-    id("com.gradle.plugin-publish") version "0.11.0"
+    id("com.gradle.plugin-publish") version "0.12.0"
 
     // plugin for publishing to jcenter
-    id("com.jfrog.bintray") version "1.8.4"
+    id("com.jfrog.bintray") version "1.8.5"
 }
 
 scm {
@@ -106,6 +106,10 @@ detekt {
 tasks {
     withType<Test>().configureEach {
         systemProperty("intershop.gradle.versions", "6.4.1")
+
+        testLogging {
+            showStandardStreams = true
+        }
 
         dependsOn("jar")
     }
