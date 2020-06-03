@@ -28,5 +28,5 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val icmbase: Property<String> = objectFactory.property(String::class.java)
 
-    val mssql_database: Property<String> = objectFactory.property(String::class.java)
+    val mssqldb: Property<String> = objectFactory.property(String::class.java)
 }

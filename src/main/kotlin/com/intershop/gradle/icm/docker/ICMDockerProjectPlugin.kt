@@ -29,10 +29,6 @@ import org.gradle.api.artifacts.DependencySet
  */
 open class ICMDockerProjectPlugin : Plugin<Project> {
 
-    companion object {
-        const val TASK_REMOVECONTAINER = "rmContainer"
-    }
-
     override fun apply(project: Project) {
         with(project) {
             if(project.rootProject == this) {

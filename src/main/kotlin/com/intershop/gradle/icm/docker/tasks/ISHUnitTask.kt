@@ -19,15 +19,11 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
-import com.github.dockerjava.api.command.ExecCreateCmd
 import com.github.dockerjava.api.command.InspectExecResponse
 import com.intershop.gradle.icm.docker.extension.Suite
-import com.intershop.gradle.icm.docker.tasks.utils.DBInitCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import org.gradle.api.GradleException
-import org.gradle.api.invocation.Gradle
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
@@ -85,8 +81,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         progressLogger.completed()
 
         val failures = testResults.filter { it.returnValue > 0L }
-        if(failures.size > 0) {
-            var message: StringBuffer = StringBuffer("ISHUnitRun fails with following exceptions:").append("\n")
+        if(failures.isNotEmpty()) {
+            val message: StringBuffer = StringBuffer("ISHUnitRun fails with following exceptions:").append("\n")
             for (failure in failures) {
                 message.append(failure.message).append("\n")
             }
@@ -100,8 +96,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         execCmd.withAttachStderr(true)
         execCmd.withAttachStdout(true)
 
-        var cartridgeProject = project.rootProject.project(suite.cartridge)
-        var buildDirName = cartridgeProject.buildDir.name
+        val cartridgeProject = project.rootProject.project(suite.cartridge)
+        val buildDirName = cartridgeProject.buildDir.name
 
         execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh", buildDirName, suite.cartridge, "-s=${suite.testSuite}").toTypedArray())
 
@@ -148,18 +144,18 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
 
         val result = dockerClient.inspectExecCmd(localExecId).exec()
 
-        val exitMsg = when {
-            result.exitCodeLong == 0L -> ISHUnitTestResult(0L,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} finished successfully")
-            result.exitCodeLong == 1L -> ISHUnitTestResult(1L,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with failures." +
-                            "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner"))
-            result.exitCodeLong == 2L -> ISHUnitTestResult(2L,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed. " +
-                            "Please check your test configuration")
+        val exitMsg = when (result.exitCodeLong) {
+            0L -> ISHUnitTestResult(0L,
+                "ISHUnit ${suite.cartridge} with ${suite.testSuite} finished successfully")
+            1L -> ISHUnitTestResult(1L,
+                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with failures." +
+                        "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner"))
+            2L -> ISHUnitTestResult(2L,
+                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed. " +
+                        "Please check your test configuration")
             else -> ISHUnitTestResult(result.exitCodeLong,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with ${result.exitCodeLong}." +
-                            "Please check your test configuration")
+                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with ${result.exitCodeLong}." +
+                        "Please check your test configuration")
         }
         if(failFast.get()) {
             progressLogger.completed()
