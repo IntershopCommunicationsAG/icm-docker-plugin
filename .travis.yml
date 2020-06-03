@@ -10,16 +10,14 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
-before_install:
-  - sudo addgroup --gid 150 intershop
-  - sudo adduser --uid 150 --ingroup intershop --shell /bin/sh intershop
 install:
-  - sudo su - intershop -c ./gradlew assemble
+  - ./gradlew assemble
 before_script:
-  - sudo su - intershop -c echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
-  - sudo su - intershop -c d testdocker && ./createimage.sh && cd ..
+  - echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
+  - id
+  - cd testdocker && ./createimage.sh && cd ..
 script:
-  - sudo su - intershop -c ./buildTravis.sh
+  - ./buildTravis.sh
 notifications:
   webhooks:
     urls:
