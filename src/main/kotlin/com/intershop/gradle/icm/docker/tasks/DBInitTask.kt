@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package com.intershop.gradle.icm.docker.tasks
 
 import com.bmuschko.gradle.docker.domain.ExecProbe
@@ -28,6 +27,9 @@ import org.gradle.api.tasks.Input
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 
+/**
+ * Task to run dbinit on a running container.
+ */
 open class DBInitTask: AbstractDockerRemoteApiTask() {
 
     /**
@@ -37,6 +39,9 @@ open class DBInitTask: AbstractDockerRemoteApiTask() {
     @get:Input
     val containerId: Property<String> = project.objects.property(String::class.java)
 
+    /**
+     * Executes the remote Docker command.
+     */
     override fun runRemoteCommand() {
         val execCallback = createCallback()
 

@@ -32,6 +32,9 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.internal.logging.progress.ProgressLogger
 import java.util.concurrent.TimeUnit
 
+/**
+ * Task to run ishunit tests on a running container.
+ */
 open class ISHUnitTask : AbstractDockerRemoteApiTask() {
 
     /**
@@ -62,6 +65,9 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         failFast.set(false)
     }
 
+    /**
+     * Executes the remote Docker command.
+     */
     override fun runRemoteCommand() {
         val execCallback = createCallback()
 
@@ -90,7 +96,9 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         }
     }
 
-    private fun execTest(callback: ISHUnitCallback, progressLogger: ProgressLogger, suite: Suite): ISHUnitTestResult {
+    private fun execTest(callback: ISHUnitCallback,
+                         progressLogger: ProgressLogger,
+                         suite: Suite): ISHUnitTestResult {
         val execCmd = dockerClient.execCreateCmd(containerId.get())
 
         execCmd.withAttachStderr(true)
@@ -99,7 +107,10 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         val cartridgeProject = project.rootProject.project(suite.cartridge)
         val buildDirName = cartridgeProject.buildDir.name
 
-        execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh", buildDirName, suite.cartridge, "-s=${suite.testSuite}").toTypedArray())
+        execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh",
+                                buildDirName,
+                                suite.cartridge,
+                                "-s=${suite.testSuite}").toTypedArray())
 
         val localExecId = execCmd.exec().id
         dockerClient.execStartCmd(localExecId).withDetach(false).exec(callback).awaitCompletion()
@@ -123,7 +134,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                 val totalMillis = pollTimes * localProbe.pollInterval
                 val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
 
-                progressLogger.progress("Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
+                progressLogger.progress(
+                    "Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
 
                 try {
                     localPollTime -= localProbe.pollInterval
@@ -139,7 +151,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         // if still running then throw an exception otherwise check the exitCode
         if (isRunning) {
             progressLogger.completed()
-            throw GradleException("ISHUnit ${suite.cartridge} with ${suite.testSuite} did not finish in a timely fashion: $localProbe")
+            throw GradleException(
+                "ISHUnit ${suite.cartridge} with ${suite.testSuite} did not finish in a timely fashion: $localProbe")
         }
 
         val result = dockerClient.inspectExecCmd(localExecId).exec()

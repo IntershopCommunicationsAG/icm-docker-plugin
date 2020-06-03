@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package com.intershop.gradle.icm.docker.tasks
 
 import com.intershop.gradle.icm.docker.extension.TestExecution.Companion.HTML_ANT_TESTREPORT_CONFIG
@@ -30,6 +29,9 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.withGroovyBuilder
 import javax.inject.Inject
 
+/**
+ * Generates a HTML report from JUnit xml report files.
+ */
 open class ISHUnitHTMLTestReportTask @Inject constructor(projectLayout: ProjectLayout,
                                                     objectFactory: ObjectFactory) : DefaultTask() {
 
@@ -52,6 +54,9 @@ open class ISHUnitHTMLTestReportTask @Inject constructor(projectLayout: ProjectL
         testResultDirectory.set(projectLayout.buildDirectory.dir("ishunitrunner/output"))
     }
 
+    /**
+     * Executes the generation of the test report.
+     */
     @TaskAction
     fun createReport() {
         ant.withGroovyBuilder {

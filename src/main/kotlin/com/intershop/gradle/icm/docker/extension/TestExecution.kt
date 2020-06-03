@@ -21,6 +21,9 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
+/**
+ * Extension to configure ISHUnit test execution.
+ */
 open class TestExecution @Inject constructor(objectFactory: ObjectFactory) {
 
     companion object {
@@ -29,10 +32,21 @@ open class TestExecution @Inject constructor(objectFactory: ObjectFactory) {
 
     val testConfigSet: SetProperty<Suite> = objectFactory.setProperty(Suite::class.java)
 
+    /**
+     * Add test configuration.
+     *
+     * @param suite Test suite configuration.
+     */
     fun test(suite: Suite) {
         testConfigSet.add(suite)
     }
 
+    /**
+     * Add test configuration.
+     *
+     * @param cartrige cartridge name
+     * @param suite test suite class
+     */
     fun test(cartrige: String, suite: String) {
         testConfigSet.add(Suite(cartrige, suite))
     }

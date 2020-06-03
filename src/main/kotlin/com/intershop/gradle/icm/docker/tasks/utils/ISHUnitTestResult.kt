@@ -16,4 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.tasks.utils
 
+/**
+ * Result of a single ISHUnit test.
+ */
 data class ISHUnitTestResult(val returnValue: Long, val message: String)

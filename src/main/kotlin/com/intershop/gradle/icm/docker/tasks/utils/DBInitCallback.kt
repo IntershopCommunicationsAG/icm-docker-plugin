@@ -24,15 +24,20 @@ import java.io.OutputStream
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class DBInitCallback(
+/**
+ * Callback for dbinit execution.
+ */
+class DBInitCallback (
     private val stdout: OutputStream,
     private val stderr: OutputStream,
     private val showJson: Boolean = false): ResultCallbackTemplate<DBInitCallback, Frame>() {
 
-    private val LOGGER: Logger = LoggerFactory.getLogger(DBInitCallback::class.java)
-
+    private val logger: Logger = LoggerFactory.getLogger(DBInitCallback::class.java)
     private var dbinfo: DBInitResult? = null
 
+    /**
+     * Main method of callback class.
+     */
     override fun onNext(frame: Frame?) {
         if (frame != null) {
             try {
@@ -62,15 +67,18 @@ class DBInitCallback(
                         stderr.write(frame.payload)
                         stderr.flush()
                     }
-                    else -> LOGGER.error("unknown stream type:" + frame.streamType)
+                    else -> logger.error("unknown stream type:" + frame.streamType)
                 }
             } catch (e: IOException) {
                 onError(e)
             }
-            LOGGER.debug(frame.toString())
+            logger.debug(frame.toString())
         }
     }
 
+    /**
+     * Returns a container with dbinit result.
+     */
     fun getDBInfo(): DBInitResult? {
         return dbinfo
     }

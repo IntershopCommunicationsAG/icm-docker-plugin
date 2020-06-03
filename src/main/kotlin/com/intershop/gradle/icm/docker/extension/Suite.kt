@@ -16,4 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.extension
 
+/**
+ * Extension data for ISHUnit test configuration.
+ */
 data class Suite(val cartridge: String, val testSuite: String)

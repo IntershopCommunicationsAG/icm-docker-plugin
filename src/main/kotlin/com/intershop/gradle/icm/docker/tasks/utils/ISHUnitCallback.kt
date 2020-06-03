@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package com.intershop.gradle.icm.docker.tasks.utils
 
 import com.github.dockerjava.api.async.ResultCallbackTemplate
@@ -25,13 +24,18 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.OutputStream
 
+/**
+ * Callback for ishunit execution.
+ */
 class ISHUnitCallback (
     private val stdout: OutputStream,
-    private val stderr: OutputStream,
-    private val showJson: Boolean = false): ResultCallbackTemplate<DBInitCallback, Frame>() {
+    private val stderr: OutputStream): ResultCallbackTemplate<DBInitCallback, Frame>() {
 
-    private val LOGGER: Logger = LoggerFactory.getLogger(ISHUnitCallback::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(ISHUnitCallback::class.java)
 
+    /**
+     * Main method of callback class.
+     */
     override fun onNext(frame: Frame?) {
         if (frame != null) {
             try {
@@ -44,12 +48,12 @@ class ISHUnitCallback (
                         stderr.write(frame.payload)
                         stderr.flush()
                     }
-                    else -> LOGGER.error("unknown stream type:" + frame.streamType)
+                    else -> logger.error("unknown stream type:" + frame.streamType)
                 }
             } catch (e: IOException) {
                 onError(e)
             }
-            LOGGER.debug(frame.toString())
+            logger.debug(frame.toString())
         }
     }
 }

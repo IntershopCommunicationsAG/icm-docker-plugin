@@ -25,10 +25,15 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.DependencySet
 
 /**
- * Main plugin class of this project.
+ * Main plugin class of the project plugin.
  */
 open class ICMDockerProjectPlugin : Plugin<Project> {
 
+    /**
+     * Main method of a plugin.
+     *
+     * @param project target project
+     */
     override fun apply(project: Project) {
         with(project) {
             if(project.rootProject == this) {

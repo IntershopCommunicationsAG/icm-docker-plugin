@@ -47,7 +47,7 @@ plugins {
     id("org.jetbrains.dokka") version "0.10.0"
 
     // code analysis for kotlin
-    // id("io.gitlab.arturbosch.detekt") version "1.1.1"
+    id("io.gitlab.arturbosch.detekt") version "1.1.1"
 
     // plugin for publishing to Gradle Portal
     id("com.gradle.plugin-publish") version "0.11.0"
@@ -98,12 +98,10 @@ if (project.version.toString().endsWith("-SNAPSHOT")) {
     status = "snapshot'"
 }
 
-/**
 detekt {
     input = files("src/main/kotlin")
     config = files("detekt.yml")
 }
-**/
 
 tasks {
     withType<Test>().configureEach {

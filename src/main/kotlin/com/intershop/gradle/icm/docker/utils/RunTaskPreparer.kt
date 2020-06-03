@@ -23,6 +23,9 @@ import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
 import org.gradle.api.Project
 
+/**
+ * Provides methods to configure run tasks.
+ */
 open class RunTaskPreparer(val project: Project, val dockerExtension: IntershopDockerExtension) {
 
     companion object {
@@ -31,6 +34,11 @@ open class RunTaskPreparer(val project: Project, val dockerExtension: IntershopD
         const val TASK_ISHUNIT_REPORT = "ishunitReport"
     }
 
+    /**
+     * Return a configured dbinit task.
+     *
+     * @param containertask task that creates the container.
+     */
     fun getDBInitTask(containertask: DockerCreateContainer): DBInitTask {
         return with(project) {
             tasks.maybeCreate(TASK_DBINIT, DBInitTask::class.java).apply {
@@ -39,6 +47,11 @@ open class RunTaskPreparer(val project: Project, val dockerExtension: IntershopD
         }
     }
 
+    /**
+     * Return a configured ishunit test task.
+     *
+     * @param containertask task that creates the container.
+     */
     fun getISHUnitTask(containertask: DockerCreateContainer): ISHUnitTask {
         return with(project) {
             tasks.maybeCreate(TASK_ISHUNIT, ISHUnitTask::class.java).apply {
@@ -48,6 +61,9 @@ open class RunTaskPreparer(val project: Project, val dockerExtension: IntershopD
         }
     }
 
+    /**
+     * Returns a task to create a HTML report from tes results.
+     */
     fun getISHUnitHTMLTestReportTask(): ISHUnitHTMLTestReportTask {
         return with(project) {
             tasks.maybeCreate(TASK_ISHUNIT_REPORT, ISHUnitHTMLTestReportTask::class.java)

@@ -32,6 +32,9 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import java.io.File
 
+/**
+ * Provides methods to configure container related tasks.
+ */
 class ContainerPreparer(val project: Project, private val dockerExtension: IntershopDockerExtension) {
 
     companion object {
@@ -57,6 +60,9 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
         )
     }
 
+    /**
+     * Get pull image task.
+     */
     fun getPullImage(): PullImage {
         return with(project) {
             tasks.maybeCreate(
@@ -67,6 +73,11 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
         }
     }
 
+    /**
+     * Creates base container.
+     *
+     * @param pullImage pull image task.
+     */
     fun getBaseContainer(pullImage: PullImage): DockerCreateContainer {
         return with(project) {
 
@@ -128,6 +139,11 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
         }
     }
 
+    /**
+     * Starts base container.
+     *
+     * @param pullImage pull image task.
+     */
     fun getStartContainer(container: DockerCreateContainer): DockerStartContainer {
         return with(project) {
             tasks.maybeCreate(TASK_STARTCONTAINER, DockerStartContainer::class.java).apply {
@@ -137,6 +153,9 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
         }
     }
 
+    /**
+     * Remove base container.
+     */
     fun getRemoveContainerByName(): RemoveContainerByName {
         return with(project) {
             tasks.maybeCreate(TASK_REMOVECONTAINER, RemoveContainerByName::class.java).apply {
@@ -145,6 +164,11 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
         }
     }
 
+    /**
+     * Configures remove container.
+     *
+     * @param startContainer Task, that starts the base container.
+     */
     fun getFinalizeContainer(startContainer: DockerStartContainer): DockerRemoveContainer {
         return with(project) {
             tasks.maybeCreate(TASK_FINALIZECONTAINER, DockerRemoveContainer::class.java)
@@ -158,7 +182,8 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
 
     private fun getOutputDirFor(taskName: String): File {
         val task = project.tasks.findByName(taskName)
-            ?: throw GradleException("Task name '${taskName}' not found in project. Please check version of plugin 'com.intershop.gradle.icm.project'.")
+            ?: throw GradleException("Task name '${taskName}' not found in project. " +
+                    "Please check version of plugin 'com.intershop.gradle.icm.project'.")
 
         return task.outputs.files.first()
     }

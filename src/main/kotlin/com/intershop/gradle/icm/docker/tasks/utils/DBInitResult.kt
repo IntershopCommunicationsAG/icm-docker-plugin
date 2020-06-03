@@ -16,4 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.tasks.utils
 
+/**
+ * Result container of dbinit.
+ */
 data class DBInitResult(val cartriges: Int, val success: Int, val failure: Int)

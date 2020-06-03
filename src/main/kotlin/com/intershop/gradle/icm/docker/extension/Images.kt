@@ -20,6 +20,9 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
+/**
+ * Extension to configure images for ICM projects.
+ */
 open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val webadapter: Property<String> = objectFactory.property(String::class.java)

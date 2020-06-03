@@ -22,18 +22,21 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * Main plugin class of this project.
+ * Main plugin class of the project plugin.
  */
 open class ICMDockerPlugin: Plugin<Project> {
 
+    /**
+     * Main method of a plugin.
+     *
+     * @param project target project
+     */
     override fun apply(project: Project) {
         with(project) {
             logger.info("ICM Docker build plugin will be initialized")
 
             plugins.apply(DockerComposePlugin::class.java)
             plugins.apply(DockerRemoteApiPlugin::class.java)
-
-
         }
     }
 }
