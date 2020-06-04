@@ -97,8 +97,8 @@ class DBInitCallback (
         val e1 = input.indexOf(MESSAGELOG_END)
         logger.info("Input: {} with message start {} and end {}.", input, s1, e1)
         if(s1 > -1) {
-            return if( e1 > -1) {
-                input.substring(s1 + MESSAGELOG_START.length + 3, e1 -2)
+            return if( e1 > s1 ) {
+                input.substring(s1 + MESSAGELOG_START.length + 3, e1 - 3)
             } else {
                 input.substring(s1 + MESSAGELOG_START.length + 3)
             }
