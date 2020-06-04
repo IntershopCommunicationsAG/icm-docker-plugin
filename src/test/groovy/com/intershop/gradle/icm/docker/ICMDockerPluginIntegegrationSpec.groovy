@@ -167,6 +167,10 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 images {
                     icmbase = 'intershopmock/icm-as-mock:latest'
                 }
+
+                ishUnitTest {
+                    test('ac_solr_cloud_test', 'tests.embedded.com.intershop.adapter.search_solr.internal.SuiteSolrCloud')
+                }
             }
 
             ${repoConf}
@@ -194,11 +198,13 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         }
         """.stripIndent())
 
-        def prj2dir = createSubProject('prjCartridge_test', """
+        def prj2dir = createSubProject('ac_solr_cloud_test', """
         plugins {
             id 'java-library'
             id 'com.intershop.icm.cartridge.test'
         }
+        
+        buildDir = "target"
         
         dependencies {
             implementation 'org.codehaus.janino:janino:2.5.16'
@@ -301,16 +307,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
     def 'run start container'() {
 
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-/**
-        when:
-        def result = getPreparedGradleRunner()
-                .withArguments("tasks", "-s", "--all")
-                .withGradleVersion(gradleVersion)
-                .build()
 
-        then:
-        result.task(":tasks").outcome == SUCCESS
-**/
         when:
         def result2 = getPreparedGradleRunner()
                 .withArguments("startContainer", "-s")
@@ -328,6 +325,38 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result3.task(":removeContainer").outcome == SUCCESS
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'run dbinit'() {
+        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result2 = getPreparedGradleRunner()
+                .withArguments("dbinit", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":dbinit").outcome == SUCCESS
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'run ishunit'() {
+        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result2 = getPreparedGradleRunner()
+                .withArguments("ishunit", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":ishunit").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions

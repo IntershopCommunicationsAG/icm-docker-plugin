@@ -14,40 +14,46 @@
  * limitations under the License.
  *
  */
-
-package com.intershop.gradle.icm.docker.tasks
+package com.intershop.gradle.icm.docker.tasks.utils
 
 import com.github.dockerjava.api.async.ResultCallbackTemplate
 import com.github.dockerjava.api.model.Frame
 import com.github.dockerjava.api.model.StreamType
-import com.github.dockerjava.core.command.ExecStartResultCallback
-import java.io.IOException
-import java.io.OutputStream
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.io.OutputStream
 
-class DBPreparerCallback(val stdout: OutputStream, val stderr: OutputStream): ResultCallbackTemplate<DBPreparerCallback, Frame>() {
+/**
+ * Callback for ishunit execution.
+ */
+class ISHUnitCallback (
+    private val stdout: OutputStream,
+    private val stderr: OutputStream): ResultCallbackTemplate<DBInitCallback, Frame>() {
 
-    private val LOGGER: Logger = LoggerFactory.getLogger(DBPreparerCallback::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(ISHUnitCallback::class.java)
 
+    /**
+     * Main method of callback class.
+     */
     override fun onNext(frame: Frame?) {
         if (frame != null) {
             try {
                 when (frame.streamType) {
-                    StreamType.STDOUT, StreamType.RAW -> if (stdout != null) {
-                        stdout.write(frame.payload)
+                    StreamType.STDOUT, StreamType.RAW -> {
+                        stderr.write(frame.payload)
                         stdout.flush()
                     }
-                    StreamType.STDERR -> if (stderr != null) {
+                    StreamType.STDERR -> {
                         stderr.write(frame.payload)
                         stderr.flush()
                     }
-                    else -> LOGGER.error("unknown stream type:" + frame.streamType)
+                    else -> logger.error("unknown stream type:" + frame.streamType)
                 }
             } catch (e: IOException) {
                 onError(e)
             }
-            LOGGER.debug(frame.toString())
+            logger.debug(frame.toString())
         }
     }
 }

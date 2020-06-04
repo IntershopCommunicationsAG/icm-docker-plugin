@@ -1,5 +1,5 @@
 language: java
-sudo: false
+sudo: true
 services:
   - docker
 jdk:
@@ -14,7 +14,6 @@ install:
   - ./gradlew assemble
 before_script:
   - echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
-  - cd testdocker && ./createimage.sh && cd ..
 script:
   - ./buildTravis.sh
 notifications:

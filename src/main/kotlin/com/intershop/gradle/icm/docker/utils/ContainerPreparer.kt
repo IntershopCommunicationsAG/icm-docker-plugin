@@ -32,7 +32,10 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import java.io.File
 
-class ContainerPreparer(val project: Project, val dockerExtension: IntershopDockerExtension) {
+/**
+ * Provides methods to configure container related tasks.
+ */
+class ContainerPreparer(val project: Project, private val dockerExtension: IntershopDockerExtension) {
 
     companion object {
         const val TASK_PULLBASEIMAGE = "pullImage"
@@ -50,13 +53,16 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
 
     }
 
-    val addDirectories: Map<String, Provider<Directory>> by lazy {
+    private val addDirectories: Map<String, Provider<Directory>> by lazy {
         mapOf(
             SERVERLOGS to project.layout.buildDirectory.dir(SERVERLOGS_PATH),
             ISHUNITOUT to project.layout.buildDirectory.dir(ISHUNITOUT_PATH)
         )
     }
 
+    /**
+     * Get pull image task.
+     */
     fun getPullImage(): PullImage {
         return with(project) {
             tasks.maybeCreate(
@@ -67,12 +73,17 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
         }
     }
 
+    /**
+     * Creates base container.
+     *
+     * @param pullImage pull image task.
+     */
     fun getBaseContainer(pullImage: PullImage): DockerCreateContainer {
         return with(project) {
 
             val dirprep = tasks.maybeCreate( "dirPreparer").apply {
                 doLast {
-                    addDirectories.forEach { _, dir ->
+                    addDirectories.forEach { (_, dir) ->
                         val file = dir.get().asFile
                         if(file.exists()) {
                             file.deleteRecursively()
@@ -104,9 +115,9 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
                                 to "/intershop/sites" ,
                         ishExtension.developmentConfig.licenseDirectory
                                 to "/intershop/license",
-                        addDirectories.get(SERVERLOGS)!!.get().asFile.absolutePath
+                        addDirectories.getValue(SERVERLOGS).get().asFile.absolutePath
                                 to "/intershop/logs",
-                        addDirectories.get(ISHUNITOUT)!!.get().asFile.absolutePath
+                        addDirectories.getValue(ISHUNITOUT).get().asFile.absolutePath
                                 to "/intershop/ishunitrunner/output",
                         project.projectDir.absolutePath
                                 to "/intershop/project/cartridges",
@@ -128,6 +139,11 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
         }
     }
 
+    /**
+     * Starts base container.
+     *
+     * @param pullImage pull image task.
+     */
     fun getStartContainer(container: DockerCreateContainer): DockerStartContainer {
         return with(project) {
             tasks.maybeCreate(TASK_STARTCONTAINER, DockerStartContainer::class.java).apply {
@@ -137,6 +153,9 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
         }
     }
 
+    /**
+     * Remove base container.
+     */
     fun getRemoveContainerByName(): RemoveContainerByName {
         return with(project) {
             tasks.maybeCreate(TASK_REMOVECONTAINER, RemoveContainerByName::class.java).apply {
@@ -145,6 +164,11 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
         }
     }
 
+    /**
+     * Configures remove container.
+     *
+     * @param startContainer Task, that starts the base container.
+     */
     fun getFinalizeContainer(startContainer: DockerStartContainer): DockerRemoveContainer {
         return with(project) {
             tasks.maybeCreate(TASK_FINALIZECONTAINER, DockerRemoveContainer::class.java)
@@ -158,7 +182,8 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
 
     private fun getOutputDirFor(taskName: String): File {
         val task = project.tasks.findByName(taskName)
-            ?: throw GradleException("Task name '${taskName}' not found in project. Please check version of plugin 'com.intershop.gradle.icm.project'.")
+            ?: throw GradleException("Task name '${taskName}' not found in project. " +
+                    "Please check version of plugin 'com.intershop.gradle.icm.project'.")
 
         return task.outputs.files.first()
     }
@@ -174,11 +199,11 @@ class ContainerPreparer(val project: Project, val dockerExtension: IntershopDock
     private fun transformVolumes(volumes: Map<String,String>) : Map<String, String> {
         val tv = mutableMapOf<String, String>()
 
-        volumes.forEach { k, v ->
+        volumes.forEach { (k, v) ->
             if(k.contains('\\')) {
-                tv.put("//${k.replace('\\','/')}".replace(":", ""), v)
+                tv["//${k.replace('\\','/')}".replace(":", "")] = v
             } else {
-                tv.put(k, v)
+                tv[k] = v
             }
         }
 

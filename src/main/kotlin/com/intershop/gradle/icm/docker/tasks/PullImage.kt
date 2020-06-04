@@ -30,9 +30,14 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
 
-open class PullImage @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
+/**
+ * Task to pull an image.
+ */
+open class PullImage
+    @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
 
-    private val registryCredentials: DockerRegistryCredentials = objectFactory.newInstance(DockerRegistryCredentials::class.java)
+    private val registryCredentials: DockerRegistryCredentials =
+        objectFactory.newInstance(DockerRegistryCredentials::class.java)
 
 
     @get:Option(option= "altImage", description = "Use an other image independent from the build configuration")
@@ -60,6 +65,11 @@ open class PullImage @Inject constructor(objectFactory: ObjectFactory) : Abstrac
         action!!.execute(registryCredentials)
     }
 
+    /**
+     * Set the credentials for the task.
+     *
+     * @param c closure with Docker registry credentials.
+     */
     fun registryCredentials(c: Closure<DockerRegistryCredentials>) {
         ConfigureUtil.configure(c, registryCredentials)
     }
@@ -68,6 +78,9 @@ open class PullImage @Inject constructor(objectFactory: ObjectFactory) : Abstrac
         force.set(false)
     }
 
+    /**
+     * Executes the remote Docker command.
+     */
     override fun runRemoteCommand() {
         with(project) {
             logger.quiet("Pulling image '${image.get()}'.")
@@ -83,7 +96,7 @@ open class PullImage @Inject constructor(objectFactory: ObjectFactory) : Abstrac
 
             if(pull) {
                 val pullImageCmd = dockerClient.pullImageCmd(image.get())
-                val authConfig = getRegistryAuthLocator().lookupAuthConfig(image.get(), registryCredentials)
+                val authConfig = registryAuthLocator.lookupAuthConfig(image.get(), registryCredentials)
                 pullImageCmd.withAuthConfig(authConfig)
                 val callback = createCallback(nextHandler)
                 pullImageCmd.exec(callback).awaitCompletion()

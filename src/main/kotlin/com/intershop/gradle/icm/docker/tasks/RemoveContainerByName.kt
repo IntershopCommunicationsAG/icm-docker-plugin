@@ -22,18 +22,24 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
+/**
+ * Task to remove a container by name.
+ */
 open class RemoveContainerByName @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask() {
 
     @get:Input
     val containerName: Property<String> = objectFactory.property(String::class.java)
 
+    /**
+     * Executes the remote Docker command.
+     */
     override fun runRemoteCommand() {
         val listContainerCmd = dockerClient.listContainersCmd().withNameFilter(listOf(containerName.get()))
         val listContainers = listContainerCmd.exec()
         val containerIDList = mutableListOf<String>()
 
         listContainers.forEach { c ->
-            if(c.names.filter{ it.contains(containerName.get()) }.size > 0)  {
+            if(c.names.any { it.contains(containerName.get()) })  {
                 containerIDList.add(c.id)
             }
         }
@@ -48,5 +54,4 @@ open class RemoveContainerByName @Inject constructor(objectFactory: ObjectFactor
             removeContainerCmd.exec()
         }
     }
-
 }

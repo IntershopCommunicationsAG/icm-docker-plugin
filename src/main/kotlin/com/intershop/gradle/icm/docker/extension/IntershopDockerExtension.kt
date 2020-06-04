@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package com.intershop.gradle.icm.docker.extension
 
 import groovy.lang.Closure
@@ -23,17 +22,50 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
 
+/**
+ * Main extension to configure Docker related tasks.
+ */
 open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFactory) {
 
     val images: Images = objectFactory.newInstance(Images::class.java)
 
+    /**
+     * Configures images configuration from a closure.
+     *
+     * @param closure   closure with an image configuration.
+     */
     @Suppress("unused")
-    fun images(closure: Closure<Any>) {
+    fun images(closure: Closure<Images>) {
         ConfigureUtil.configure(closure, images)
     }
 
+    /**
+     * Configures images configuration from an action.
+     *
+     * @param action   action with an image configuration.
+     */
     fun images(action: Action<in Images>) {
         action.execute(images)
     }
 
+    val ishUnitTest: TestExecution = objectFactory.newInstance(TestExecution::class.java)
+
+    /**
+     * Configures ishunit test execution from a closure.
+     *
+     * @param closure   closure with an ishunit test execution.
+     */
+    @Suppress("unused")
+    fun ishUnitTest(closure: Closure<Any>) {
+        ConfigureUtil.configure(closure, ishUnitTest)
+    }
+
+    /**
+     * Configures ishunit test execution from an action.
+     *
+     * @param action   action with an ishunit test execution.
+     */
+    fun ishUnitTest(action: Action<in TestExecution>) {
+        action.execute(ishUnitTest)
+    }
 }

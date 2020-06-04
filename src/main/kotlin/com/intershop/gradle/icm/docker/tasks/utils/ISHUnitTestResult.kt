@@ -14,22 +14,9 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.extension
-
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import javax.inject.Inject
+package com.intershop.gradle.icm.docker.tasks.utils
 
 /**
- * Extension to configure images for ICM projects.
+ * Result of a single ISHUnit test.
  */
-open class Images @Inject constructor(objectFactory: ObjectFactory) {
-
-    val webadapter: Property<String> = objectFactory.property(String::class.java)
-
-    val webadapteragent: Property<String> = objectFactory.property(String::class.java)
-
-    val icmbase: Property<String> = objectFactory.property(String::class.java)
-
-    val mssqldb: Property<String> = objectFactory.property(String::class.java)
-}
+data class ISHUnitTestResult(val returnValue: Long, val message: String)

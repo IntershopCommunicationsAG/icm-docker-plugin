@@ -30,5 +30,5 @@ echo
 # Execute TESTRUNNER
 #
 
-sh -c "$CMD_LINE"
+cp -pR /intershop/bin/output/* /intershop/ishunitrunner/output/
 

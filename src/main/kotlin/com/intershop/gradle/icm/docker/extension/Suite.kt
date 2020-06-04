@@ -16,20 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.extension
 
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import javax.inject.Inject
-
 /**
- * Extension to configure images for ICM projects.
+ * Extension data for ISHUnit test configuration.
  */
-open class Images @Inject constructor(objectFactory: ObjectFactory) {
-
-    val webadapter: Property<String> = objectFactory.property(String::class.java)
-
-    val webadapteragent: Property<String> = objectFactory.property(String::class.java)
-
-    val icmbase: Property<String> = objectFactory.property(String::class.java)
-
-    val mssqldb: Property<String> = objectFactory.property(String::class.java)
-}
+data class Suite(val cartridge: String, val testSuite: String)
