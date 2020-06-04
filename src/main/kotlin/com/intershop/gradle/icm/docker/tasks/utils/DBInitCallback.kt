@@ -101,9 +101,9 @@ class DBInitCallback (
         logger.info("Input: {} with message start {} and end {}.", input, s1, e1)
         if(s1 > -1) {
             return if( e1 > -1) {
-                input.substring(s1 + MESSAGELOG_START.length, e1)
+                input.substring(s1 + MESSAGELOG_START.length + 1, e1 -1)
             } else {
-                input.substring(s1 + MESSAGELOG_START.length)
+                input.substring(s1 + MESSAGELOG_START.length + 1)
             }
         }
         return null
