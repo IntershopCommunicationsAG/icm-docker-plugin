@@ -1,6 +1,8 @@
 FROM busybox:latest as BUILD
+ARG USERNAME=intershop
+ARG USERID=150
 
-RUN addgroup --gid 1000 travis && adduser -u 1000 -G travis -D travis -s /bin/sh
+RUN addgroup --gid 150 intershop && adduser -u ${USERID} -G intershop -D ${USERNAME} -s /bin/sh
 RUN mkdir -p /intershop-prj
 
 COPY bin /intershop-prj/bin
@@ -23,15 +25,17 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     mkdir -p /intershop-prj/testrunner/output && \
     mkdir -p /intershop-prj/ishunitrunner/output && \
     chmod ug+x -R /intershop-prj/bin && \
-    chown -R travis:travis /intershop-prj
+    chown -R ${USERNAME}:intershop /intershop-prj
 
 FROM busybox:latest
+ARG USERNAME=intershop
+ARG USERID=150
 
-RUN addgroup --gid 1000 travis && adduser -u 1000 -G travis -D travis -s /bin/sh
+RUN addgroup --gid 150 intershop && adduser -u ${USERID} -G intershop -D ${USERNAME} -s /bin/sh
 
-COPY --from=BUILD --chown=travis:travis /intershop-prj/ /intershop/
+COPY --from=BUILD --chown=${USERNAME}:intershop /intershop-prj/ /intershop/
 
-USER travis
+USER ${USERNAME}
 
 VOLUME /intershop/jgroups-share
 VOLUME /intershop/temp-share

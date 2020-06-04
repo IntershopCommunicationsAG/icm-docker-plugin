@@ -4,11 +4,7 @@
 export JAVA_OPTS="-Xmx1024M -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512M"
 export GRADLE_OPTS="-Dorg.gradle.daemon=true"
 
-USER=`whoami`
-USERID=`id -u $USER`
-GROUPID=`id -G $USER`
-
-echo UserID is $USERID and groupID is $GROUPID
+cd testdocker && ./createimage.sh && cd ..
 
 if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
     if [ "$TRAVIS_TAG" == "" ]; then
