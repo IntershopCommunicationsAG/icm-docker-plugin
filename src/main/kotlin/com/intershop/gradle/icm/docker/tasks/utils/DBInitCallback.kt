@@ -50,8 +50,6 @@ class DBInitCallback (
                     StreamType.STDOUT, StreamType.RAW -> {
                         val out = frame.payload.toString(Charsets.US_ASCII)
                         out.split("\n").forEach {
-
-                            logger.info("Output line: {}", it)
                             val message = getMessageString(it)
                             logger.info("Message is: {}.", message )
 
@@ -69,7 +67,6 @@ class DBInitCallback (
                                 }
                             }
                         }
-                        logger.info("Show Json is {}", showJson)
                         if (showJson) {
                             stdout.write((out + "\n").toByteArray(Charsets.US_ASCII))
                         }
@@ -101,19 +98,19 @@ class DBInitCallback (
         logger.info("Input: {} with message start {} and end {}.", input, s1, e1)
         if(s1 > -1) {
             return if( e1 > -1) {
-                input.substring(s1 + MESSAGELOG_START.length + 1, e1 -1)
+                input.substring(s1 + MESSAGELOG_START.length + 3, e1 -2)
             } else {
-                input.substring(s1 + MESSAGELOG_START.length + 1)
+                input.substring(s1 + MESSAGELOG_START.length + 3)
             }
         }
         return null
     }
 
     private fun getCartrigeInfo(input: String?): DBInitResult? {
-        if(input != null && input.startsWith("DBInit with")) {
-            val s1 = "DBInit with".length
+        if(input != null && input.contains("DBInit with")) {
+            val s1 = input.indexOf("DBInit with")
             val e1 = input.indexOf("initialization steps")
-            val c = input.substring(s1, e1).trim().toInt()
+            val c = if (s1 > -1 && e1 > -1) input.substring(s1 + "DBInit with".length, e1).trim().toInt() else 0
 
             val regexS = Regex("success: [\\d]+")
             val matchS = regexS.find(input, 0)
