@@ -14,26 +14,26 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker
 
-import com.avast.gradle.dockercompose.DockerComposePlugin
-import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
-import org.gradle.api.Plugin
-import org.gradle.api.Project
+package com.intershop.gradle.icm.docker.extension
 
-/**
- * Main plugin class of this project.
- */
-open class ICMDockerPlugin: Plugin<Project> {
+import groovy.lang.Closure
+import org.gradle.api.Action
+import org.gradle.api.model.ObjectFactory
+import org.gradle.util.ConfigureUtil
+import javax.inject.Inject
 
-    override fun apply(project: Project) {
-        with(project) {
-            logger.info("ICM Docker build plugin will be initialized")
+open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFactory) {
 
-            plugins.apply(DockerComposePlugin::class.java)
-            plugins.apply(DockerRemoteApiPlugin::class.java)
+    val images: Images = objectFactory.newInstance(Images::class.java)
 
-
-        }
+    @Suppress("unused")
+    fun images(closure: Closure<Any>) {
+        ConfigureUtil.configure(closure, images)
     }
+
+    fun images(action: Action<in Images>) {
+        action.execute(images)
+    }
+
 }
