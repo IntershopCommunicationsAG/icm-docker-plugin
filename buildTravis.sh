@@ -4,6 +4,9 @@
 export JAVA_OPTS="-Xmx1024M -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512M"
 export GRADLE_OPTS="-Dorg.gradle.daemon=true"
 
+id -u travis
+id -G intershop
+
 if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
     if [ "$TRAVIS_TAG" == "" ]; then
         echo -e 'Build Branch for Release => Branch ['$TRAVIS_BRANCH'] and without Tag'
