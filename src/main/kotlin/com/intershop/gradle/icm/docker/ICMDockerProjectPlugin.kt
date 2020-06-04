@@ -23,6 +23,8 @@ import com.intershop.gradle.icm.docker.utils.RunTaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.DependencySet
+import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.plugins.JavaPlugin
 
 /**
  * Main plugin class of the project plugin.
@@ -70,6 +72,11 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
                 baseContainer.dependsOn(removeContainerByName)
                 startContainer.finalizedBy(removeContainer)
+
+                plugins.withType(JavaPlugin::class.java) {
+                    val checkTask = tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME)
+                    checkTask.dependsOn(ishunit)
+                }
             }
         }
     }
