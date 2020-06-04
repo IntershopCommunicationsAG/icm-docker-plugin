@@ -32,6 +32,11 @@ class DBInitCallback (
     private val stderr: OutputStream,
     private val showJson: Boolean = false): ResultCallbackTemplate<DBInitCallback, Frame>() {
 
+    companion object {
+        const val MESSAGELOG_START = "\"message\":\""
+        const val MESSAGELOG_END = "\",\"logger_name\""
+    }
+
     private val logger: Logger = LoggerFactory.getLogger(DBInitCallback::class.java)
     private var dbinfo: DBInitResult? = null
 
@@ -91,14 +96,14 @@ class DBInitCallback (
     }
 
     private fun getMessageString(input: String): String? {
-        val s1 = input.indexOf("message:")
-        val e1 = input.indexOf("logger_name:")
+        val s1 = input.indexOf(MESSAGELOG_START) + MESSAGELOG_START.length
+        val e1 = input.indexOf(MESSAGELOG_END)
         logger.info("Input: {} with message start {} and end {}.", input, s1, e1)
-        if(s1 > 0) {
-            return if( e1 > 0) {
-                input.substring(s1 + "message:".length, e1 - 1)
+        if(s1 > -1) {
+            return if( e1 > -1) {
+                input.substring(s1, e1)
             } else {
-                input.substring(s1 + "message:".length)
+                input.substring(s1)
             }
         }
         return null
