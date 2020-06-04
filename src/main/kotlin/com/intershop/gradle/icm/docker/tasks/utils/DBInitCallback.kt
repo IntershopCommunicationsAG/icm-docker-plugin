@@ -45,19 +45,26 @@ class DBInitCallback (
                     StreamType.STDOUT, StreamType.RAW -> {
                         val out = frame.payload.toString(Charsets.US_ASCII)
                         out.split("\n").forEach {
+
+                            logger.info("Output line: {}", it)
                             val message = getMessageString(it)
+                            logger.info("Message is: {}.", message )
+
                             val info = getCartrigeInfo(message)
                             if (info != null) {
                                 dbinfo = info
                             }
 
                             if (!showJson) {
+
                                 val outline = message ?: it
+                                logger.info("Output is {}", outline)
                                 if (outline.isNotEmpty()) {
                                     stdout.write((outline + "\n").toByteArray(Charsets.US_ASCII))
                                 }
                             }
                         }
+                        logger.info("Show Json is {}", showJson)
                         if (showJson) {
                             stdout.write((out + "\n").toByteArray(Charsets.US_ASCII))
                         }
@@ -86,6 +93,7 @@ class DBInitCallback (
     private fun getMessageString(input: String): String? {
         val s1 = input.indexOf("message:")
         val e1 = input.indexOf("logger_name:")
+        logger.info("Input: {} with message start {} and end {}.", input, s1, e1)
         if(s1 > 0) {
             return if( e1 > 0) {
                 input.substring(s1 + "message:".length, e1 - 1)
