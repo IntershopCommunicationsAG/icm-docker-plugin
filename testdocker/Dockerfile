@@ -1,3 +1,6 @@
+ARG USERNAME=intershop
+ARG USERID=150
+
 FROM busybox:latest as BUILD
 ARG USERNAME=intershop
 ARG USERID=150
