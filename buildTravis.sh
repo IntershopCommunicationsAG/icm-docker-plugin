@@ -4,8 +4,11 @@
 export JAVA_OPTS="-Xmx1024M -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512M"
 export GRADLE_OPTS="-Dorg.gradle.daemon=true"
 
-id -u travis
-id -G intershop
+USER=`whoami`
+USERID=`id -u $USER`
+GROUPID=`id -G $USER`
+
+echo UserID is $USERID and groupID is $GROUPID
 
 if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
     if [ "$TRAVIS_TAG" == "" ]; then
