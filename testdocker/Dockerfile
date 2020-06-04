@@ -36,7 +36,9 @@ ARG USERID=150
 
 RUN addgroup --gid 150 intershop && adduser -u ${USERID} -G intershop -D ${USERNAME} -s /bin/sh
 
-COPY --from=BUILD --chown=${USERNAME}:intershop /intershop-prj/ /intershop/
+COPY --from=BUILD /intershop-prj/ /intershop/
+
+RUN chown -R ${USERNAME}:intershop /intershop
 
 USER ${USERNAME}
 
