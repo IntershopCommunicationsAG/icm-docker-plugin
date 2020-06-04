@@ -72,11 +72,6 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
                 baseContainer.dependsOn(removeContainerByName)
                 startContainer.finalizedBy(removeContainer)
-
-                plugins.withType(JavaPlugin::class.java) {
-                    val checkTask = tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME)
-                    checkTask.dependsOn(ishunit)
-                }
             }
         }
     }
