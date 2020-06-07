@@ -107,6 +107,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         val cartridgeProject = project.rootProject.project(suite.cartridge)
         val buildDirName = cartridgeProject.buildDir.name
 
+        logger.quiet("Start test {} for {}!", suite.testSuite, suite.cartridge)
+
         execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh",
                                 buildDirName,
                                 suite.cartridge,
@@ -166,8 +168,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             2L -> ISHUnitTestResult(2L,
                 "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed. " +
                         "Please check your test configuration")
-            else -> ISHUnitTestResult(result.exitCodeLong,
-                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with ${result.exitCodeLong}." +
+            else -> ISHUnitTestResult(100L,
+                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with unknown result code." +
                         "Please check your test configuration")
         }
         if(failFast.get()) {

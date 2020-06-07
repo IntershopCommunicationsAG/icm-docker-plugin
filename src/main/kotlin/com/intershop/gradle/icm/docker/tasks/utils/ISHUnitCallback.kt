@@ -41,7 +41,7 @@ class ISHUnitCallback (
             try {
                 when (frame.streamType) {
                     StreamType.STDOUT, StreamType.RAW -> {
-                        stderr.write(frame.payload)
+                        stdout.write(frame.payload)
                         stdout.flush()
                     }
                     StreamType.STDERR -> {
