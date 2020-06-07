@@ -19,7 +19,10 @@ package com.intershop.gradle.icm.docker
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.TestExecution
 import com.intershop.gradle.icm.docker.utils.ContainerPreparer
+import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
 import com.intershop.gradle.icm.docker.utils.RunTaskPreparer
+import com.intershop.gradle.icm.extension.IntershopExtension
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.DependencySet
@@ -45,6 +48,9 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 val extension = extensions.findByType(
                         IntershopDockerExtension::class.java
                 ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
+
+                val icmExtension = extensions.findByType(IntershopExtension::class.java)
+                    ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
                 addTestReportConfiguration(this)
 
@@ -72,6 +78,16 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
                 baseContainer.dependsOn(removeContainerByName)
                 startContainer.finalizedBy(removeContainer)
+
+                val dbTaskPreparer = DatabaseTaskPreparer(this, extension, icmExtension)
+                val pullMSSQL = dbTaskPreparer.getMSSQLPullTask()
+
+                val startMSSQL = dbTaskPreparer.getMSSQLStartTask(pullMSSQL)
+                startMSSQL.dependsOn(pullMSSQL)
+
+                dbinit.mustRunAfter(startMSSQL)
+                dbTaskPreparer.getMSSQLStopTask()
+                dbTaskPreparer.getMSSQLRemoveTask()
             }
         }
     }
