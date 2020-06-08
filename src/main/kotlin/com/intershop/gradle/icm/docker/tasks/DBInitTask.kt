@@ -52,29 +52,29 @@ open class DBInitTask: AbstractDockerRemoteApiTask() {
         execCmd.withCmd(*listOf("/intershop/bin/intershop.sh", "dbinit", "-classic", "--clean-db=yes").toTypedArray())
         val localExecId = execCmd.exec().id
 
-        dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback).awaitCompletion()
+        dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback)
 
         // create progressLogger for pretty printing of terminal log progression.
         val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
         progressLogger.started()
 
         // if no livenessProbe defined then create a default
-        val localProbe = ExecProbe(60000, 5000)
+        val localProbe = ExecProbe(6000000, 50000)
 
         var localPollTime = localProbe.pollTime
-        val pollTimes = 0
+        var pollTimes = 0
         var isRunning = true
 
         // 3.) poll for some amount of time until container is in a non-running state.
-        var lastExecResponse: InspectExecResponse
+        var lastExecResponse: InspectExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
 
-        while (isRunning ) {
+        while (isRunning && localPollTime > 0) {
+            pollTimes += 1
 
             lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
             isRunning = lastExecResponse.isRunning
 
             if (isRunning) {
-
                 val totalMillis = pollTimes * localProbe.pollInterval
                 val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
 
@@ -96,9 +96,7 @@ open class DBInitTask: AbstractDockerRemoteApiTask() {
             throw GradleException("DBInit command did not finish in a timely fashion: $localProbe")
         }
 
-        val result = dockerClient.inspectExecCmd(localExecId).exec()
-
-        if(result.exitCodeLong > 0) {
+        if(lastExecResponse.exitCodeLong > 0) {
             throw GradleException("DBInit failed! Please check your log files")
         }
 

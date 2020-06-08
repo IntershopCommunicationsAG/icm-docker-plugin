@@ -71,24 +71,17 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
     override fun runRemoteCommand() {
         val execCallback = createCallback()
 
-        val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
-        progressLogger.started()
-
         val testResults = mutableListOf<ISHUnitTestResult>()
 
         if(testCartridge.isPresent && testSuite.isPresent) {
-            testResults.add(execTest(execCallback, progressLogger, Suite(testCartridge.get(), testSuite.get())))
+            logger.quiet("Start from command line: test {} for {}", testSuite.get(), testCartridge.get())
+            testResults.add(execTest(execCallback, Suite(testCartridge.get(), testSuite.get())))
         } else {
             testConfigSet.get().forEach {
-                logger.quiet("Start test for {} / {}", it.cartridge, it.testSuite)
-                testResults.add(execTest(execCallback, progressLogger, it))
-                logger.quiet("End test of {} / {}", it.cartridge, it.testSuite)
+                logger.quiet("Start test {} for {}", it.testSuite, it.cartridge)
+                testResults.add(execTest(execCallback, it))
             }
-            logger.quiet("Start tests finished .... ")
         }
-
-        logger.quiet("Main method: ProgressLogger completed will be called now ...... ")
-        progressLogger.completed()
 
         val failures = testResults.filter { it.returnValue > 0L }
         if(failures.isNotEmpty()) {
@@ -101,51 +94,48 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
     }
 
     private fun execTest(callback: ISHUnitCallback,
-                         progressLogger: ProgressLogger,
                          suite: Suite): ISHUnitTestResult {
-        val execCmd = dockerClient.execCreateCmd(containerId.get())
 
-        execCmd.withAttachStderr(true)
-        execCmd.withAttachStdout(true)
+        val execCmd = dockerClient.execCreateCmd(containerId.get())
 
         val cartridgeProject = project.rootProject.project(suite.cartridge)
         val buildDirName = cartridgeProject.buildDir.name
 
-        logger.quiet("Start test {} for {}!", suite.testSuite, suite.cartridge)
-
+        execCmd.withAttachStderr(true)
+        execCmd.withAttachStdout(true)
         execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh",
-                                buildDirName,
-                                suite.cartridge,
-                                "-s=${suite.testSuite}").toTypedArray())
+                buildDirName,
+                suite.cartridge,
+                "-s=${suite.testSuite}").toTypedArray())
 
         val localExecId = execCmd.exec().id
-        dockerClient.execStartCmd(localExecId).withDetach(false).exec(callback).awaitCompletion()
+        dockerClient.execStartCmd(localExecId).withDetach(false).exec(callback)
 
-        logger.quiet("Test {} for {} running with {}!", suite.testSuite, suite.cartridge, localExecId)
+        val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
+        progressLogger.started()
 
         // if no livenessProbe defined then create a default
-        val localProbe = ExecProbe(60000, 5000)
+        val localProbe = ExecProbe(6000000, 50000)
 
         var localPollTime = localProbe.pollTime
-        val pollTimes = 0
+        var pollTimes = 0
         var isRunning = true
 
         // 3.) poll for some amount of time until container is in a non-running state.
-        var lastExecResponse: InspectExecResponse
+        var lastExecResponse: InspectExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
 
-        while (isRunning ) {
+        while (isRunning && localPollTime > 0) {
+            pollTimes += 1
 
             lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
             isRunning = lastExecResponse.isRunning
-            logger.quiet("Test {} for {} running with {} - is running: !", suite.testSuite, suite.cartridge, localExecId, isRunning)
 
             if (isRunning) {
                 val totalMillis = pollTimes * localProbe.pollInterval
                 val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
-                logger.quiet("Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
-                progressLogger.progress("Run ishunit test")
-                //progressLogger.progress(
-                //    "Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
+
+                progressLogger.progress(
+                        "Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
 
                 try {
                     localPollTime -= localProbe.pollInterval
@@ -159,33 +149,33 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             }
         }
 
+        progressLogger.completed()
+
         // if still running then throw an exception otherwise check the exitCode
         if (isRunning) {
-            progressLogger.completed()
             throw GradleException(
-                "ISHUnit ${suite.cartridge} with ${suite.testSuite} did not finish in a timely fashion: $localProbe")
+                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} " +
+                            "did not finish in a timely fashion: $localProbe")
         }
 
-        val result = dockerClient.inspectExecCmd(localExecId).exec()
-
-        val exitMsg = when (result.exitCodeLong) {
+        val exitMsg = when (lastExecResponse.exitCodeLong) {
             0L -> ISHUnitTestResult(0L,
-                "ISHUnit ${suite.cartridge} with ${suite.testSuite} finished successfully")
+                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} finished successfully")
             1L -> ISHUnitTestResult(1L,
-                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with failures." +
-                        "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner"))
+                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with failures." +
+                            "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner"))
             2L -> ISHUnitTestResult(2L,
-                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed. " +
-                        "Please check your test configuration")
+                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed. " +
+                            "Please check your test configuration")
             else -> ISHUnitTestResult(100L,
-                "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with unknown result code." +
-                        "Please check your test configuration")
+                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with unknown result code." +
+                            "Please check your test configuration")
         }
+
         if(failFast.get()) {
             progressLogger.completed()
             throw GradleException(exitMsg.message)
         } else {
-            logger.quiet("Return to main method ... ")
             return exitMsg
         }
     }

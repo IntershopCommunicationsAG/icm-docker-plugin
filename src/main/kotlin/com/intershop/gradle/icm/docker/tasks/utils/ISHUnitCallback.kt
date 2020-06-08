@@ -29,7 +29,7 @@ import java.io.OutputStream
  */
 class ISHUnitCallback (
     private val stdout: OutputStream,
-    private val stderr: OutputStream): ResultCallbackTemplate<DBInitCallback, Frame>() {
+    private val stderr: OutputStream): ResultCallbackTemplate<ISHUnitCallback, Frame>() {
 
     private val logger: Logger = LoggerFactory.getLogger(ISHUnitCallback::class.java)
 
