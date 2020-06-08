@@ -82,7 +82,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             testConfigSet.get().forEach {
                 logger.quiet("Start test for {} / {}", it.cartridge, it.testSuite)
                 testResults.add(execTest(execCallback, progressLogger, it))
-
+                logger.quiet("End test of {} / {}", it.cartridge, it.testSuite)
             }
             logger.quiet("Start tests finished .... ")
         }
@@ -121,6 +121,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         val localExecId = execCmd.exec().id
         dockerClient.execStartCmd(localExecId).withDetach(false).exec(callback).awaitCompletion()
 
+        logger.quiet("Test {} for {} running with {}!", suite.testSuite, suite.cartridge, localExecId)
+
         // if no livenessProbe defined then create a default
         val localProbe = ExecProbe(60000, 5000)
 
@@ -135,6 +137,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
 
             lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
             isRunning = lastExecResponse.isRunning
+            logger.quiet("Test {} for {} running with {} - is running: !", suite.testSuite, suite.cartridge, localExecId, isRunning)
 
             if (isRunning) {
                 val totalMillis = pollTimes * localProbe.pollInterval
