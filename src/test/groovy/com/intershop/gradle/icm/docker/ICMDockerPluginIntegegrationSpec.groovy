@@ -171,6 +171,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
                 ishUnitTest {
                     test('ac_solr_cloud_test', 'tests.embedded.com.intershop.adapter.search_solr.internal.SuiteSolrCloud')
+                    test( "app_sf_responsive_b2b_test" , "tests.suite.SFResponsivB2bAllSuite" )
                 }
             }
 
@@ -199,7 +200,28 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         }
         """.stripIndent())
 
-        def prj2dir = createSubProject('ac_solr_cloud_test', """
+        def prj21dir = createSubProject('ac_solr_cloud_test', """
+        plugins {
+            id 'java-library'
+            id 'com.intershop.icm.cartridge.test'
+        }
+        
+        buildDir = "target"
+        
+        dependencies {
+            implementation 'org.codehaus.janino:janino:2.5.16'
+            implementation 'org.codehaus.janino:commons-compiler:3.0.6'
+            implementation 'ch.qos.logback:logback-core:1.2.3'
+            implementation 'ch.qos.logback:logback-classic:1.2.3'
+            implementation 'commons-collections:commons-collections:3.2.2'
+        } 
+        
+        repositories {
+            jcenter()
+        }        
+        """.stripIndent())
+
+        def prj22dir = createSubProject('app_sf_responsive_b2b_test', """
         plugins {
             id 'java-library'
             id 'com.intershop.icm.cartridge.test'
@@ -248,7 +270,8 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         """.stripIndent())
 
         writeJavaTestClass("com.intershop.prod", prj1dir)
-        writeJavaTestClass("com.intershop.test", prj2dir)
+        writeJavaTestClass("com.intershop.test", prj21dir)
+        writeJavaTestClass("com.intershop.test", prj22dir)
         writeJavaTestClass("com.intershop.dev", prj3dir)
         writeJavaTestClass("com.intershop.adapter", prj4dir)
 

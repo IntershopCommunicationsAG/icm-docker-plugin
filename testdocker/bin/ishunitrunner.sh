@@ -30,5 +30,14 @@ echo
 # Execute TESTRUNNER
 #
 
-cp -pR /intershop/bin/output/* /intershop/ishunitrunner/output/
-
+if [ "$2" == "ac_solr_cloud_test" ]; then
+  echo "run test 1"
+  sleep 60
+  echo "run test 1 finished"
+  cp -pR /intershop/bin/output/tests.embedded.com.intershop.adapter.search_solr.internal.SuiteSolrCloud /intershop/ishunitrunner/output/
+else
+  echo "run test 2"
+  sleep 60
+  echo "run test 2 finished"
+  cp -pR /intershop/bin/output/tests.suite.SFResponsivB2bAllSuite /intershop/ishunitrunner/output/
+fi
