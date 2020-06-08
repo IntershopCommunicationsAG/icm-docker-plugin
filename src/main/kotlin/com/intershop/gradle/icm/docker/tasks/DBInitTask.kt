@@ -52,7 +52,7 @@ open class DBInitTask: AbstractDockerRemoteApiTask() {
         execCmd.withCmd(*listOf("/intershop/bin/intershop.sh", "dbinit", "-classic", "--clean-db=yes").toTypedArray())
         val localExecId = execCmd.exec().id
 
-        dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback)
+        dockerClient.execStartCmd(localExecId).withDetach(true).exec(execCallback)
 
         // create progressLogger for pretty printing of terminal log progression.
         val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
