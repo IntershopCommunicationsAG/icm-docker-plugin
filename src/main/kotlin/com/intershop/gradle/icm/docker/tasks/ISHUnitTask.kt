@@ -132,7 +132,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
             isRunning = lastExecResponse.isRunning
 
-            if (isRunning) {
+            if (isRunning || pollTimes == 1) {
                 val totalMillis = pollTimes * localProbe.pollInterval
                 val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
 
