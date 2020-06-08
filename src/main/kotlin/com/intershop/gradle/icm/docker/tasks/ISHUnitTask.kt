@@ -84,6 +84,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             }
         }
 
+        logger.quiet("Main method: ProgressLogger completed will be called now ...... ")
         progressLogger.completed()
 
         val failures = testResults.filter { it.returnValue > 0L }
@@ -152,6 +153,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
 
         // if still running then throw an exception otherwise check the exitCode
         if (isRunning) {
+            logger.quiet("IsRunning: ProgressLogger completed will be called now ...... ")
             progressLogger.completed()
             throw GradleException(
                 "ISHUnit ${suite.cartridge} with ${suite.testSuite} did not finish in a timely fashion: $localProbe")
@@ -173,9 +175,11 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                         "Please check your test configuration")
         }
         if(failFast.get()) {
+            logger.quiet("FailFast: ProgressLogger completed will be called now ...... ")
             progressLogger.completed()
             throw GradleException(exitMsg.message)
         } else {
+            logger.quiet("Return to main method ... ")
             return exitMsg
         }
     }
