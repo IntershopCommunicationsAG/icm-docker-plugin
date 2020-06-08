@@ -111,7 +111,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                 "-s=${suite.testSuite}").toTypedArray())
 
         val localExecId = execCmd.exec().id
-        dockerClient.execStartCmd(localExecId).withDetach(true).exec(callback)
+        dockerClient.execStartCmd(localExecId).withDetach(false).exec(callback)
 
         val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
         progressLogger.started()
@@ -135,6 +135,8 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             if (isRunning) {
                 val totalMillis = pollTimes * localProbe.pollInterval
                 val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
+
+                logger.quiet("Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
 
                 progressLogger.progress(
                         "Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
