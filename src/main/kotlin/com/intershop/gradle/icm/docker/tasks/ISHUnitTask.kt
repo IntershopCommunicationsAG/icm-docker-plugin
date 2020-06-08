@@ -79,7 +79,9 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         } else {
             testConfigSet.get().forEach {
                 logger.quiet("Start test {} for {}", it.testSuite, it.cartridge)
-                testResults.add(execTest(execCallback, it))
+                val result = execTest(execCallback, it)
+                logger.quiet("Test {} for {} finished with {}",  it.testSuite, it.cartridge, result.message)
+                testResults.add(result)
             }
         }
 
@@ -144,7 +146,6 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                     throw e
                 }
             } else {
-                logger.quiet("Executing ${suite.cartridge} with ${suite.testSuite} finished ...")
                 break
             }
         }
@@ -173,7 +174,6 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         }
 
         if(failFast.get()) {
-            progressLogger.completed()
             throw GradleException(exitMsg.message)
         } else {
             return exitMsg
