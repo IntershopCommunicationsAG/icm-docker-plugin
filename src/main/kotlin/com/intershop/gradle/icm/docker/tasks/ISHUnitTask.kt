@@ -80,8 +80,11 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             testResults.add(execTest(execCallback, progressLogger, Suite(testCartridge.get(), testSuite.get())))
         } else {
             testConfigSet.get().forEach {
+                logger.quiet("Start test for {} / {}", it.cartridge, it.testSuite)
                 testResults.add(execTest(execCallback, progressLogger, it))
+
             }
+            logger.quiet("Start tests finished .... ")
         }
 
         logger.quiet("Main method: ProgressLogger completed will be called now ...... ")
@@ -136,9 +139,10 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             if (isRunning) {
                 val totalMillis = pollTimes * localProbe.pollInterval
                 val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
-
-                progressLogger.progress(
-                    "Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
+                logger.quiet("Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
+                progressLogger.progress("Run ishunit test")
+                //progressLogger.progress(
+                //    "Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
 
                 try {
                     localPollTime -= localProbe.pollInterval
@@ -147,13 +151,13 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                     throw e
                 }
             } else {
+                logger.quiet("Executing ${suite.cartridge} with ${suite.testSuite} finished ...")
                 break
             }
         }
 
         // if still running then throw an exception otherwise check the exitCode
         if (isRunning) {
-            logger.quiet("IsRunning: ProgressLogger completed will be called now ...... ")
             progressLogger.completed()
             throw GradleException(
                 "ISHUnit ${suite.cartridge} with ${suite.testSuite} did not finish in a timely fashion: $localProbe")
@@ -175,7 +179,6 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                         "Please check your test configuration")
         }
         if(failFast.get()) {
-            logger.quiet("FailFast: ProgressLogger completed will be called now ...... ")
             progressLogger.completed()
             throw GradleException(exitMsg.message)
         } else {
