@@ -126,7 +126,13 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         // 3.) poll for some amount of time until container is in a non-running state.
         var lastExecResponse: InspectExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
 
-        while (isRunning && localPollTime > 0) {
+        try {
+            Thread.sleep(localProbe.pollInterval)
+        } catch (e: Exception) {
+            throw e
+        }
+
+        while (isRunning) {
             pollTimes += 1
 
             lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
@@ -152,14 +158,20 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
             }
         }
 
-        progressLogger.completed()
-
         // if still running then throw an exception otherwise check the exitCode
         if (isRunning) {
             throw GradleException(
                     "ISHUnit ${suite.cartridge} with ${suite.testSuite} " +
                             "did not finish in a timely fashion: $localProbe")
         }
+
+        try {
+            Thread.sleep(localProbe.pollInterval)
+        } catch (e: Exception) {
+            throw e
+        }
+
+        progressLogger.completed()
 
         val exitMsg = when (lastExecResponse.exitCodeLong) {
             0L -> ISHUnitTestResult(0L,
