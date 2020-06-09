@@ -17,20 +17,17 @@
 package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.DBInitTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
-import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
 import org.gradle.api.Project
 
 /**
  * Provides methods to configure run tasks.
  */
-open class RunTaskPreparer(val project: Project, val dockerExtension: IntershopDockerExtension) {
+open class RunTaskPreparer(val project: Project) {
 
     companion object {
         const val TASK_DBINIT = "dbinit"
-        const val TASK_ISHUNIT = "ishunit"
         const val TASK_ISHUNIT_REPORT = "ishunitReport"
     }
 
@@ -43,20 +40,6 @@ open class RunTaskPreparer(val project: Project, val dockerExtension: IntershopD
         return with(project) {
             tasks.maybeCreate(TASK_DBINIT, DBInitTask::class.java).apply {
                 containerId.set(containertask.containerId)
-            }
-        }
-    }
-
-    /**
-     * Return a configured ishunit test task.
-     *
-     * @param containertask task that creates the container.
-     */
-    fun getISHUnitTask(containertask: DockerCreateContainer): ISHUnitTask {
-        return with(project) {
-            tasks.maybeCreate(TASK_ISHUNIT, ISHUnitTask::class.java).apply {
-                containerId.set(containertask.containerId)
-                testConfigSet.set(dockerExtension.ishUnitTest.testConfigSet)
             }
         }
     }

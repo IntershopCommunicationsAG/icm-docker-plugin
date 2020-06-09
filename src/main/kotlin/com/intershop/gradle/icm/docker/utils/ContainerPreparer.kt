@@ -142,7 +142,7 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
     /**
      * Starts base container.
      *
-     * @param pullImage pull image task.
+     * @param container create container task.
      */
     fun getStartContainer(container: DockerCreateContainer): DockerStartContainer {
         return with(project) {

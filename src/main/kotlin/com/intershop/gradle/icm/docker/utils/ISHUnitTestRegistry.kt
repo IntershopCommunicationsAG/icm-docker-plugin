@@ -14,20 +14,10 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.extension
 
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Internal
-import javax.inject.Inject
+package com.intershop.gradle.icm.docker.utils
 
-/**
- * Extension data for ISHUnit test configuration.
- */
-open class Suite @Inject constructor(objectFactory: ObjectFactory, @Internal val name: String) {
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 
-    val cartridge: Property<String> = objectFactory.property(String::class.java)
-
-    val testSuite: Property<String> = objectFactory.property(String::class.java)
-
-}
+abstract class ISHUnitTestRegistry: BuildService<BuildServiceParameters.None>

@@ -169,9 +169,15 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                 }
 
-                ishUnitTest {
-                    test('ac_solr_cloud_test', 'tests.embedded.com.intershop.adapter.search_solr.internal.SuiteSolrCloud')
-                    test( "app_sf_responsive_b2b_test" , "tests.suite.SFResponsivB2bAllSuite" )
+                ishUnitTests {
+                    test1 {
+                        cartridge = 'ac_solr_cloud_test'
+                        testSuite = 'tests.embedded.com.intershop.adapter.search_solr.internal.SuiteSolrCloud'
+                    }
+                    test2 {
+                        cartridge = 'app_sf_responsive_b2b_test'
+                        testSuite = "tests.suite.SFResponsivB2bAllSuite"
+                    }
                 }
             }
 
@@ -422,8 +428,16 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     icmbase = 'intershopmock/icm-as-mock:latest'
                 }
 
-                ishUnitTest {
-                    test('ac_solr_cloud_test', 'tests.embedded.com.intershop.adapter.search_solr.internal.SuiteSolrCloud')
+                ishUnitTests {
+                    test1 {
+                        cartridge = 'ac_solr_cloud_test'
+                        testSuite = 'tests.embedded.com.intershop.adapter.search_solr.internal.SuiteSolrCloud'
+                    }
+
+                    test2 {
+                        cartridge = 'app_sf_responsive_b2b_test'
+                        testSuite = "tests.suite.SFResponsivB2bAllSuite"
+                    }
                 }
             }
 
@@ -605,12 +619,12 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         when:
         def result2 = getPreparedGradleRunner()
-                .withArguments("ishunit", "-s")
+                .withArguments("ishunitReport", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
         then:
-        result2.task(":ishunit").outcome == SUCCESS
+        result2.task(":ishunitReport").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions

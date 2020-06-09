@@ -16,7 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.intershop.gradle.icm.docker.extension.TestExecution.Companion.HTML_ANT_TESTREPORT_CONFIG
+import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.HTML_ANT_TESTREPORT_CONFIG
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection

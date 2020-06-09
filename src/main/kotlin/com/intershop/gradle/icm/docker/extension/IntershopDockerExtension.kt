@@ -18,6 +18,7 @@ package com.intershop.gradle.icm.docker.extension
 
 import groovy.lang.Closure
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.model.ObjectFactory
 import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
@@ -48,24 +49,6 @@ open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFac
         action.execute(images)
     }
 
-    val ishUnitTest: TestExecution = objectFactory.newInstance(TestExecution::class.java)
-
-    /**
-     * Configures ishunit test execution from a closure.
-     *
-     * @param closure   closure with an ishunit test execution.
-     */
-    @Suppress("unused")
-    fun ishUnitTest(closure: Closure<Any>) {
-        ConfigureUtil.configure(closure, ishUnitTest)
-    }
-
-    /**
-     * Configures ishunit test execution from an action.
-     *
-     * @param action   action with an ishunit test execution.
-     */
-    fun ishUnitTest(action: Action<in TestExecution>) {
-        action.execute(ishUnitTest)
-    }
+    val ishUnitTests: NamedDomainObjectContainer<Suite> =
+            objectFactory.domainObjectContainer(Suite::class.java)
 }

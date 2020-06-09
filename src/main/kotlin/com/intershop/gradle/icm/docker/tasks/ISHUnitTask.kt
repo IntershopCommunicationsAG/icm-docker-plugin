@@ -20,17 +20,22 @@ import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.github.dockerjava.api.command.InspectExecResponse
-import com.intershop.gradle.icm.docker.extension.Suite
+import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
+import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.SetProperty
+import org.gradle.api.provider.Provider
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceRegistry
+import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.options.Option
-import org.gradle.internal.logging.progress.ProgressLogger
+import org.gradle.api.tasks.Internal
+import org.gradle.internal.resources.ResourceLock
+import java.util.*
 import java.util.concurrent.TimeUnit
+
 
 /**
  * Task to run ishunit tests on a running container.
@@ -44,25 +49,28 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
     @get:Input
     val containerId: Property<String> = project.objects.property(String::class.java)
 
-    @get:Option(option= "testCartridge", description = "Cartridge with test suite for ISHUnit Tests")
-    @get:Optional
     @get:Input
     val testCartridge: Property<String> = project.objects.property(String::class.java)
 
-    @get:Option(option= "testSuite", description = "Test suite in cartridge for ISHUnit Tests")
-    @get:Optional
     @get:Input
     val testSuite: Property<String> = project.objects.property(String::class.java)
 
-    @get:Input
-    val testConfigSet: SetProperty<Suite> = project.objects.setProperty(Suite::class.java)
+    @Internal
+    override fun getSharedResources(): List<ResourceLock> {
+        val locks = ArrayList(super.getSharedResources())
+        val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
+        val testResourceProvider: Provider<ISHUnitTestRegistry> = getBuildService(serviceRegistry, ISHUNIT_REGISTRY)
+        val resource = serviceRegistry.forService(testResourceProvider)
+        locks.add(resource.getResourceLock(1))
 
-    @get:Option(option = "failFast", description = "Test should fail testafter first failure.")
-    @get:Input
-    val failFast: Property<Boolean> = project.objects.property(Boolean::class.java)
+        return Collections.unmodifiableList(locks)
+    }
 
-    init {
-        failFast.set(false)
+    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+        val registration = registry.registrations.findByName(name)
+                ?: throw GradleException ("Unable to find build service with name '$name'.")
+
+        return registration.getService() as Provider<T>
     }
 
     /**
@@ -71,48 +79,22 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
     override fun runRemoteCommand() {
         val execCallback = createCallback()
 
-        val testResults = mutableListOf<ISHUnitTestResult>()
-
-        if(testCartridge.isPresent && testSuite.isPresent) {
-            logger.quiet("Start from command line: test {} for {}", testSuite.get(), testCartridge.get())
-            testResults.add(execTest(execCallback, Suite(testCartridge.get(), testSuite.get())))
-        } else {
-            testConfigSet.get().forEach {
-                logger.quiet("Start test {} for {}", it.testSuite, it.cartridge)
-                val result = execTest(execCallback, it)
-                logger.quiet("Test {} for {} finished with {}",  it.testSuite, it.cartridge, result.message)
-                testResults.add(result)
-            }
-        }
-
-        val failures = testResults.filter { it.returnValue > 0L }
-        if(failures.isNotEmpty()) {
-            val message: StringBuffer = StringBuffer("ISHUnitRun fails with following exceptions:").append("\n")
-            for (failure in failures) {
-                message.append(failure.message).append("\n")
-            }
-            throw GradleException(message.toString())
-        }
-    }
-
-    private fun execTest(callback: ISHUnitCallback,
-                         suite: Suite): ISHUnitTestResult {
-
-        val execCmd = dockerClient.execCreateCmd(containerId.get())
-
-        val cartridgeProject = project.rootProject.project(suite.cartridge)
+        val cartridgeProject = project.rootProject.project(testCartridge.get())
         val buildDirName = cartridgeProject.buildDir.name
 
+        val execCmd = dockerClient.execCreateCmd(containerId.get())
         execCmd.withAttachStderr(true)
         execCmd.withAttachStdout(true)
+
         execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh",
                 buildDirName,
-                suite.cartridge,
-                "-s=${suite.testSuite}").toTypedArray())
-
+                testCartridge.get(),
+                "-s=${testSuite.get()}").toTypedArray())
         val localExecId = execCmd.exec().id
-        dockerClient.execStartCmd(localExecId).withDetach(false).exec(callback)
 
+        dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback).awaitCompletion()
+
+        // create progressLogger for pretty printing of terminal log progression.
         val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
         progressLogger.started()
 
@@ -126,27 +108,17 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         // 3.) poll for some amount of time until container is in a non-running state.
         var lastExecResponse: InspectExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
 
-        try {
-            Thread.sleep(localProbe.pollInterval)
-        } catch (e: Exception) {
-            throw e
-        }
-
-        while (isRunning) {
+        while (isRunning && localPollTime > 0) {
             pollTimes += 1
 
             lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
             isRunning = lastExecResponse.isRunning
 
-            if (isRunning || pollTimes == 1) {
+            if (isRunning) {
                 val totalMillis = pollTimes * localProbe.pollInterval
                 val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
 
-                logger.quiet("Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
-
-                progressLogger.progress(
-                        "Executing ${suite.cartridge} with ${suite.testSuite} for ${totalMinutes}m...")
-
+                progressLogger.progress("Executing for ${totalMinutes}m...")
                 try {
                     localPollTime -= localProbe.pollInterval
                     Thread.sleep(localProbe.pollInterval)
@@ -157,40 +129,24 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                 break
             }
         }
-
-        // if still running then throw an exception otherwise check the exitCode
-        if (isRunning) {
-            throw GradleException(
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} " +
-                            "did not finish in a timely fashion: $localProbe")
-        }
-
-        try {
-            Thread.sleep(localProbe.pollInterval)
-        } catch (e: Exception) {
-            throw e
-        }
-
         progressLogger.completed()
 
         val exitMsg = when (lastExecResponse.exitCodeLong) {
             0L -> ISHUnitTestResult(0L,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} finished successfully")
+                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} finished successfully")
             1L -> ISHUnitTestResult(1L,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with failures." +
+                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with failures." +
                             "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner"))
             2L -> ISHUnitTestResult(2L,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed. " +
+                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed. " +
                             "Please check your test configuration")
             else -> ISHUnitTestResult(100L,
-                    "ISHUnit ${suite.cartridge} with ${suite.testSuite} run failed with unknown result code." +
+                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with unknown result code." +
                             "Please check your test configuration")
         }
-
-        if(failFast.get()) {
+        project.logger.info(exitMsg.message)
+        if(exitMsg.returnValue > 0L) {
             throw GradleException(exitMsg.message)
-        } else {
-            return exitMsg
         }
     }
 

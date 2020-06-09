@@ -17,22 +17,26 @@
 package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.extension.TestExecution
+import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
 import com.intershop.gradle.icm.docker.utils.ContainerPreparer
 import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
+import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.RunTaskPreparer
 import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.DependencySet
-import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.plugins.JavaPlugin
 
 /**
  * Main plugin class of the project plugin.
  */
 open class ICMDockerProjectPlugin : Plugin<Project> {
+
+    companion object {
+        const val ISHUNIT_REGISTRY = "ishunitTestTegistry"
+        const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
+    }
 
     /**
      * Main method of a plugin.
@@ -62,19 +66,19 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 val startContainer = containerPreparer.getStartContainer(baseContainer)
                 val removeContainer = containerPreparer.getFinalizeContainer(startContainer)
 
-                val runTaskPreparer = RunTaskPreparer(project, extension)
+                val runTaskPreparer = RunTaskPreparer(project)
 
                 val dbinit = runTaskPreparer.getDBInitTask(baseContainer)
-                val ishunit = runTaskPreparer.getISHUnitTask(baseContainer)
-                val ishunitreport = runTaskPreparer.getISHUnitHTMLTestReportTask()
+                //val ishunit = runTaskPreparer.getISHUnitTask(baseContainer)
+
 
                 dbinit.dependsOn(startContainer)
-                ishunit.dependsOn(startContainer)
+                //ishunit.dependsOn(startContainer)
 
-                ishunit.finalizedBy(ishunitreport, removeContainer)
+                //ishunit.finalizedBy(ishunitreport, removeContainer)
                 dbinit.finalizedBy(removeContainer)
 
-                ishunit.mustRunAfter(dbinit)
+                //ishunit.mustRunAfter(dbinit)
 
                 baseContainer.dependsOn(removeContainerByName)
                 startContainer.finalizedBy(removeContainer)
@@ -88,12 +92,31 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 dbinit.mustRunAfter(startMSSQL)
                 dbTaskPreparer.getMSSQLStopTask()
                 dbTaskPreparer.getMSSQLRemoveTask()
+
+                gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY, ISHUnitTestRegistry::class.java, {
+                    it.maxParallelUsages.set(1)
+                })
+
+                val ishunitreport = runTaskPreparer.getISHUnitHTMLTestReportTask()
+
+                extension.ishUnitTests.all {
+                    tasks.maybeCreate(it.name + "ISHUnitTestTask", ISHUnitTask::class.java).apply {
+                        this.containerId.set(startContainer.containerId)
+                        this.testCartridge.set(it.cartridge)
+                        this.testSuite.set(it.testSuite)
+
+                        this.mustRunAfter(dbinit)
+                        this.finalizedBy(removeContainer)
+                        this.dependsOn(startContainer)
+                        ishunitreport.dependsOn(this)
+                    }
+                }
             }
         }
     }
 
     private fun addTestReportConfiguration(project: Project) {
-        val configuration = project.configurations.maybeCreate(TestExecution.HTML_ANT_TESTREPORT_CONFIG)
+        val configuration = project.configurations.maybeCreate(HTML_ANT_TESTREPORT_CONFIG)
         configuration
             .setVisible(false)
             .setTransitive(false)
@@ -104,6 +127,6 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 dependencies.add(dependencyHandler.create("org.apache.ant:ant-junit:1.9.7"))
             }
 
-        project.configurations.maybeCreate(TestExecution.HTML_ANT_TESTREPORT_CONFIG)
+        project.configurations.maybeCreate(HTML_ANT_TESTREPORT_CONFIG)
     }
 }
