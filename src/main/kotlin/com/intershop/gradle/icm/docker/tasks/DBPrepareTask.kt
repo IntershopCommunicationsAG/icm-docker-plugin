@@ -41,26 +41,26 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
     @get:Input
     val containerId: Property<String> = project.objects.property(String::class.java)
 
-    @set:Option(option = "mode", description = "Mode in which dbprepare runs: 'init', 'migrate' or 'auto'. " +
+    @get:Option(option = "mode", description = "Mode in which dbprepare runs: 'init', 'migrate' or 'auto'. " +
             "The default is 'auto'.")
     @get:Input
-    var mode: Property<String> = project.objects.property(String::class.java)
+    val mode: Property<String> = project.objects.property(String::class.java)
 
-    @set:Option(option = "clean-db", description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only'," +
+    @get:Option(option = "clean-db", description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only'," +
             " only the database is cleaned up. If 'yes' is shown, the database is cleaned up before preparing other " +
             " steps. If 'no' is displayed, no database cleanup is done.")
     @get:Input
-    var cleanDB: Property<String> = project.objects.property(String::class.java)
+    val cleanDB: Property<String> = project.objects.property(String::class.java)
 
-    @set:Option(option = "cartridges", description = "A comma-separated cartridge list. Executes the cartridges in " +
+    @get:Option(option = "cartridges", description = "A comma-separated cartridge list. Executes the cartridges in " +
             "that list. This is an optional parameter.")
     @get:Input
-    var cartridges: Property<String> = project.objects.property(String::class.java)
+    val cartridges: Property<String> = project.objects.property(String::class.java)
 
-    @set:Option(option = "property-keys", description = "Comma-separated list of preparer property keys to execute. " +
+    @get:Option(option = "property-keys", description = "Comma-separated list of preparer property keys to execute. " +
             "This is an optional parameter.")
     @get:Input
-    var propertyKeys: Property<String> = project.objects.property(String::class.java)
+    val propertyKeys: Property<String> = project.objects.property(String::class.java)
 
     init {
         mode.set("auto")
@@ -81,13 +81,13 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
 
         val command = mutableListOf<String>()
         command.addAll(listOf("/intershop/bin/intershop.sh", "dbprepare", "-classic"))
-        command.add(mode.get())
-        command.add(cleanDB.get())
+        command.add("--mode=${mode.get()}")
+        command.add("--clean-db=${cleanDB.get()}")
         if(cartridges.get().trim().isNotEmpty()) {
-            command.add(cartridges.get().replace(" ", ""))
+            command.add("--cartridges=${cartridges.get().replace(" ", "")}")
         }
         if(propertyKeys.get().isNotEmpty()) {
-            command.add(propertyKeys.get().replace(" ", ""))
+            command.add("--property-keys=${propertyKeys.get().replace(" ", "")}")
         }
 
         execCmd.withCmd(*command.toTypedArray())

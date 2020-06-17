@@ -9,7 +9,13 @@ fi
 # ... if dbinit will start
 if [ "$1" == "dbprepare" ]; then
     SERVER_NAME=dbprepare
-    echo "run mock for dbprepare .... "
+    shift
+    if [ -z "$2" ]; then
+      MAINPARAMETER=-classic
+    else
+      MAINPARAMETER=$@
+    fi
+    echo "run mock for dbinit .... with $MAINPARAMETER"
 fi
 
 echo "run command for $SERVER_NAME!"
