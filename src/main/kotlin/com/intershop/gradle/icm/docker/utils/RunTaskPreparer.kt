@@ -17,7 +17,7 @@
 package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.intershop.gradle.icm.docker.tasks.DBInitTask
+import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
 import org.gradle.api.Project
 
@@ -27,8 +27,8 @@ import org.gradle.api.Project
 open class RunTaskPreparer(val project: Project) {
 
     companion object {
-        const val TASK_DBINIT = "dbinit"
-        const val TASK_ISHUNIT_REPORT = "ishunitReport"
+        const val TASK_DBPREPARE = "dbPrepare"
+        const val TASK_ISHUNIT_REPORT = "ishUnitTestReport"
     }
 
     /**
@@ -36,9 +36,9 @@ open class RunTaskPreparer(val project: Project) {
      *
      * @param containertask task that creates the container.
      */
-    fun getDBInitTask(containertask: DockerCreateContainer): DBInitTask {
+    fun getDBInitTask(containertask: DockerCreateContainer): DBPrepareTask {
         return with(project) {
-            tasks.maybeCreate(TASK_DBINIT, DBInitTask::class.java).apply {
+            tasks.maybeCreate(TASK_DBPREPARE, DBPrepareTask::class.java).apply {
                 containerId.set(containertask.containerId)
             }
         }

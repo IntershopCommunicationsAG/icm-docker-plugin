@@ -20,17 +20,19 @@ import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.github.dockerjava.api.command.InspectExecResponse
-import com.intershop.gradle.icm.docker.tasks.utils.DBInitCallback
+import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareCallback
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.options.Option
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 
 /**
  * Task to run dbinit on a running container.
  */
-open class DBInitTask: AbstractDockerRemoteApiTask() {
+open class DBPrepareTask: AbstractDockerRemoteApiTask() {
 
     /**
      * The ID or name of container used to perform operation.
@@ -38,6 +40,34 @@ open class DBInitTask: AbstractDockerRemoteApiTask() {
      */
     @get:Input
     val containerId: Property<String> = project.objects.property(String::class.java)
+
+    @set:Option(option = "mode", description = "Mode in which dbprepare runs: 'init', 'migrate' or 'auto'. " +
+            "The default is 'auto'.")
+    @get:Input
+    var mode: Property<String> = project.objects.property(String::class.java)
+
+    @set:Option(option = "clean-db", description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only'," +
+            " only the database is cleaned up. If 'yes' is shown, the database is cleaned up before preparing other " +
+            " steps. If 'no' is displayed, no database cleanup is done.")
+    @get:Input
+    var cleanDB: Property<String> = project.objects.property(String::class.java)
+
+    @set:Option(option = "cartridges", description = "A comma-separated cartridge list. Executes the cartridges in " +
+            "that list. This is an optional parameter.")
+    @get:Input
+    var cartridges: Property<String> = project.objects.property(String::class.java)
+
+    @set:Option(option = "property-keys", description = "Comma-separated list of preparer property keys to execute. " +
+            "This is an optional parameter.")
+    @get:Input
+    var propertyKeys: Property<String> = project.objects.property(String::class.java)
+
+    init {
+        mode.set("auto")
+        cleanDB.set("no")
+        cartridges.set("")
+        propertyKeys.set("")
+    }
 
     /**
      * Executes the remote Docker command.
@@ -49,7 +79,18 @@ open class DBInitTask: AbstractDockerRemoteApiTask() {
         execCmd.withAttachStderr(true)
         execCmd.withAttachStdout(true)
 
-        execCmd.withCmd(*listOf("/intershop/bin/intershop.sh", "dbinit", "-classic", "--clean-db=yes").toTypedArray())
+        val command = mutableListOf<String>()
+        command.addAll(listOf("/intershop/bin/intershop.sh", "dbprepare", "-classic"))
+        command.add(mode.get())
+        command.add(cleanDB.get())
+        if(cartridges.get().trim().isNotEmpty()) {
+            command.add(cartridges.get().replace(" ", ""))
+        }
+        if(propertyKeys.get().isNotEmpty()) {
+            command.add(propertyKeys.get().replace(" ", ""))
+        }
+
+        execCmd.withCmd(*command.toTypedArray())
         val localExecId = execCmd.exec().id
 
         dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback).awaitCompletion()
@@ -93,25 +134,26 @@ open class DBInitTask: AbstractDockerRemoteApiTask() {
 
         // if still running then throw an exception otherwise check the exitCode
         if (isRunning) {
-            throw GradleException("DBInit command did not finish in a timely fashion: $localProbe")
+            throw GradleException("DBPrepare command did not finish in a timely fashion: $localProbe")
         }
 
         if(lastExecResponse.exitCodeLong > 0) {
-            throw GradleException("DBInit failed! Please check your log files")
+            throw GradleException("DBPrepare failed! Please check your log files")
         }
 
         val info = execCallback.getDBInfo()
 
         if(info == null) {
-            throw GradleException("DBInit does not finished correctly! Please check your log files")
+            throw GradleException("DBPrepare does not finished correctly! Please check your log files")
         } else {
             if(info.failure > 0) {
-                throw GradleException("DBInit failed with '" + info.failure + "' failures. Please check your log files")
+                throw GradleException("DBPrepare failed with '" + info.failure + "' failures. " +
+                        "Please check your log files")
             }
         }
     }
 
-    private fun createCallback(): DBInitCallback {
-        return DBInitCallback(System.out, System.err)
+    private fun createCallback(): DBPrepareCallback {
+        return DBPrepareCallback(System.out, System.err)
     }
 }

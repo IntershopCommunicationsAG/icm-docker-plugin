@@ -598,17 +598,17 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
-    def 'run dbinit'() {
+    def 'run dbprepare'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
         when:
         def result2 = getPreparedGradleRunner()
-                .withArguments("dbinit", "-s")
+                .withArguments("dbPrepare", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
         then:
-        result2.task(":dbinit").outcome == SUCCESS
+        result2.task(":dbPrepare").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
@@ -619,12 +619,12 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         when:
         def result2 = getPreparedGradleRunner()
-                .withArguments("ishunitReport", "-s")
+                .withArguments("ishUnitTestReport", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
         then:
-        result2.task(":ishunitReport").outcome == SUCCESS
+        result2.task(":ishUnitTestReport").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
