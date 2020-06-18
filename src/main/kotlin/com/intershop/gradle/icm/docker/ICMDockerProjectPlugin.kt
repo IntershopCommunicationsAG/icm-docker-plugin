@@ -34,8 +34,9 @@ import org.gradle.api.artifacts.DependencySet
 open class ICMDockerProjectPlugin : Plugin<Project> {
 
     companion object {
-        const val ISHUNIT_REGISTRY = "ishunitTestTegistry"
+        const val ISHUNIT_REGISTRY = "ishUnitTestTegistry"
         const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
+        const val ISHUNIT_TEST = "ISHUnitTest"
     }
 
     /**
@@ -100,7 +101,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 val ishunitreport = runTaskPreparer.getISHUnitHTMLTestReportTask()
 
                 extension.ishUnitTests.all {
-                    tasks.maybeCreate(it.name + "ISHUnitTestTask", ISHUnitTask::class.java).apply {
+                    tasks.maybeCreate(it.name + ISHUNIT_TEST, ISHUnitTask::class.java).apply {
                         this.containerId.set(startContainer.containerId)
                         this.testCartridge.set(it.cartridge)
                         this.testSuite.set(it.testSuite)

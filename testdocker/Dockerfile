@@ -1,7 +1,7 @@
 ARG USERNAME=intershop
 ARG USERID=150
 
-FROM busybox:latest as BUILD
+FROM alpine:latest as BUILD
 ARG USERNAME=intershop
 ARG USERID=150
 
@@ -30,7 +30,8 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     chmod ug+x -R /intershop-prj/bin && \
     chown -R ${USERNAME}:intershop /intershop-prj
 
-FROM busybox:latest
+# FROM busybox:latest
+FROM adoptopenjdk/openjdk8:jdk8u242-b08-alpine
 ARG USERNAME=intershop
 ARG USERID=150
 

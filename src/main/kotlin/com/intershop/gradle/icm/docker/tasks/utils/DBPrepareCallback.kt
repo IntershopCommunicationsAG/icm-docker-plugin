@@ -27,18 +27,18 @@ import org.slf4j.LoggerFactory
 /**
  * Callback for dbinit execution.
  */
-class DBInitCallback (
+class DBPrepareCallback (
     private val stdout: OutputStream,
     private val stderr: OutputStream,
-    private val showJson: Boolean = false): ResultCallbackTemplate<DBInitCallback, Frame>() {
+    private val showJson: Boolean = false): ResultCallbackTemplate<DBPrepareCallback, Frame>() {
 
     companion object {
         const val MESSAGELOG_START = "message"
         const val MESSAGELOG_END = "logger_name"
     }
 
-    private val logger: Logger = LoggerFactory.getLogger(DBInitCallback::class.java)
-    private var dbinfo: DBInitResult? = null
+    private val logger: Logger = LoggerFactory.getLogger(DBPrepareCallback::class.java)
+    private var dbinfo: DBPrepareResult? = null
 
     /**
      * Main method of callback class.
@@ -86,7 +86,7 @@ class DBInitCallback (
     /**
      * Returns a container with dbinit result.
      */
-    fun getDBInfo(): DBInitResult? {
+    fun getDBInfo(): DBPrepareResult? {
         return dbinfo
     }
 
@@ -103,7 +103,7 @@ class DBInitCallback (
         return null
     }
 
-    private fun getCartrigeInfo(input: String?): DBInitResult? {
+    private fun getCartrigeInfo(input: String?): DBPrepareResult? {
         if(input != null && input.contains("DBInit with")) {
             val s1 = input.indexOf("DBInit with")
             val e1 = input.indexOf("initialization steps")
@@ -117,7 +117,7 @@ class DBInitCallback (
             val matchF = regexF.find(input, 0)
             val f = matchF?.value?.substring("failure:".length)?.trim()?.toInt() ?: 0
 
-            return DBInitResult(c, s, f)
+            return DBPrepareResult(c, s, f)
         }
         return null
     }

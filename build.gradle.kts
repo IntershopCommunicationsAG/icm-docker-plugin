@@ -105,7 +105,7 @@ detekt {
 
 tasks {
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "6.4.1, 6.5")
+        systemProperty("intershop.gradle.versions", "6.5")
 
         testLogging {
             showStandardStreams = true
@@ -279,7 +279,7 @@ dependencies {
 
     implementation("com.avast.gradle:gradle-docker-compose-plugin:0.12.1")
     implementation("com.bmuschko:gradle-docker-plugin:6.4.0")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:1.6.8")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:2.1.0")
 
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:3.5.0")
     testImplementation(gradleTestKit())

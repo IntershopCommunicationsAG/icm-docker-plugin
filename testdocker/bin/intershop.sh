@@ -1,15 +1,21 @@
 #!/bin/sh
 
 
-if [ "$1" != "dbinit" -a "$#" -eq 1 ]; then
+if [ "$1" != "dbprepare" -a "$#" -eq 1 ]; then
     SERVER_NAME=$1
 fi
 
 # check for other processes
 # ... if dbinit will start
-if [ "$1" == "dbinit" ]; then
-    SERVER_NAME=dbinit
-    echo "run mock for dbinit .... "
+if [ "$1" == "dbprepare" ]; then
+    SERVER_NAME=dbprepare
+    shift
+    if [ -z "$2" ]; then
+      MAINPARAMETER=-classic
+    else
+      MAINPARAMETER=$@
+    fi
+    echo "run mock for dbinit .... with $MAINPARAMETER"
 fi
 
 echo "run command for $SERVER_NAME!"
