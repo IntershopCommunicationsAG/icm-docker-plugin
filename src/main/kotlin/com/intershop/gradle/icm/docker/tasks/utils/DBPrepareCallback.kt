@@ -104,10 +104,10 @@ class DBPrepareCallback (
     }
 
     private fun getCartrigeInfo(input: String?): DBPrepareResult? {
-        if(input != null && input.contains("DBInit with")) {
-            val s1 = input.indexOf("DBInit with")
+        if(input != null && input.contains("DBPrepare")) {
+            val s1 = input.indexOf("DBPrepare")
             val e1 = input.indexOf("initialization steps")
-            val c = if (s1 > -1 && e1 > -1) input.substring(s1 + "DBInit with".length, e1).trim().toInt() else 0
+            val c = if (s1 > -1 && e1 > -1) input.substring(s1 + "DBPrepare".length, e1).trim().toInt() else 0
 
             val regexS = Regex("success: [\\d]+")
             val matchS = regexS.find(input, 0)
