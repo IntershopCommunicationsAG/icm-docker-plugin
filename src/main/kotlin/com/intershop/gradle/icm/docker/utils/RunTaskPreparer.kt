@@ -36,7 +36,7 @@ open class RunTaskPreparer(val project: Project) {
      *
      * @param containertask task that creates the container.
      */
-    fun getDBInitTask(containertask: DockerCreateContainer): DBPrepareTask {
+    fun getDBPrepareTask(containertask: DockerCreateContainer): DBPrepareTask {
         return with(project) {
             tasks.maybeCreate(TASK_DBPREPARE, DBPrepareTask::class.java).apply {
                 containerId.set(containertask.containerId)

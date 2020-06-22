@@ -17,7 +17,6 @@
 
 package com.intershop.gradle.icm.docker
 
-import com.intershop.gradle.icm.ICMBasePlugin
 import com.intershop.gradle.icm.ICMProjectPlugin
 import com.intershop.gradle.test.AbstractProjectSpec
 import org.gradle.api.Plugin

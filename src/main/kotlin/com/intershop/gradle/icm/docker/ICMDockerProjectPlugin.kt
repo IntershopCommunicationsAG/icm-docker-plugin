@@ -22,7 +22,6 @@ import com.intershop.gradle.icm.docker.utils.ContainerPreparer
 import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.RunTaskPreparer
-import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -34,6 +33,7 @@ import org.gradle.api.artifacts.DependencySet
 open class ICMDockerProjectPlugin : Plugin<Project> {
 
     companion object {
+        const val INTERSHOP_EXTENSION_NAME = "intershop"
         const val ISHUNIT_REGISTRY = "ishUnitTestTegistry"
         const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
         const val ISHUNIT_TEST = "ISHUnitTest"
@@ -54,7 +54,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                         IntershopDockerExtension::class.java
                 ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
-                val icmExtension = extensions.findByType(IntershopExtension::class.java)
+                extensions.findByName(INTERSHOP_EXTENSION_NAME)
                     ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
                 addTestReportConfiguration(this)
@@ -69,28 +69,20 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
                 val runTaskPreparer = RunTaskPreparer(project)
 
-                val dbinit = runTaskPreparer.getDBInitTask(baseContainer)
-                //val ishunit = runTaskPreparer.getISHUnitTask(baseContainer)
-
-
-                dbinit.dependsOn(startContainer)
-                //ishunit.dependsOn(startContainer)
-
-                //ishunit.finalizedBy(ishunitreport, removeContainer)
-                dbinit.finalizedBy(removeContainer)
-
-                //ishunit.mustRunAfter(dbinit)
+                val dbprepare = runTaskPreparer.getDBPrepareTask(baseContainer)
+                dbprepare.dependsOn(startContainer)
+                dbprepare.finalizedBy(removeContainer)
 
                 baseContainer.dependsOn(removeContainerByName)
                 startContainer.finalizedBy(removeContainer)
 
-                val dbTaskPreparer = DatabaseTaskPreparer(this, extension, icmExtension)
+                val dbTaskPreparer = DatabaseTaskPreparer(this, extension)
                 val pullMSSQL = dbTaskPreparer.getMSSQLPullTask()
 
                 val startMSSQL = dbTaskPreparer.getMSSQLStartTask(pullMSSQL)
                 startMSSQL.dependsOn(pullMSSQL)
 
-                dbinit.mustRunAfter(startMSSQL)
+                dbprepare.mustRunAfter(startMSSQL)
                 dbTaskPreparer.getMSSQLStopTask()
                 dbTaskPreparer.getMSSQLRemoveTask()
 
@@ -106,7 +98,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                         this.testCartridge.set(it.cartridge)
                         this.testSuite.set(it.testSuite)
 
-                        this.mustRunAfter(dbinit)
+                        this.mustRunAfter(dbprepare)
                         this.finalizedBy(removeContainer)
                         this.dependsOn(startContainer)
                         ishunitreport.dependsOn(this)
