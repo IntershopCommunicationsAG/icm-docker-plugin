@@ -21,12 +21,10 @@ import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainerTask
-import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.Project
 
 class DatabaseTaskPreparer(val project: Project,
-                           private val dockerExtension: IntershopDockerExtension,
-                           private val intershopExtension: IntershopExtension) {
+                           private val dockerExtension: IntershopDockerExtension) {
 
     companion object {
         const val TASK_PULL_MSSQLDB = "pullMSSQL"
@@ -59,7 +57,7 @@ class DatabaseTaskPreparer(val project: Project,
 
                 containerName.set("${project.name.toLowerCase()}-mssql")
 
-                with(intershopExtension.developmentConfig) {
+                with(dockerExtension.developmentConfig) {
                     hostConfig.portBindings.set(
                         listOf("${getConfigProperty( "intershop.db.msql.hostport", "1433")}:1433"))
                     envVars.set( mutableMapOf(

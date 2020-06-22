@@ -16,6 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.extension
 
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
@@ -27,6 +28,27 @@ import javax.inject.Inject
  * Main extension to configure Docker related tasks.
  */
 open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFactory) {
+
+    val developmentConfig: DevelopmentConfiguration = objectFactory.newInstance(DevelopmentConfiguration::class.java)
+
+    /**
+     * Configures the development information configuration.
+     *
+     * @param closure closure with project information configuration
+     */
+    @Suppress("unused")
+    fun developmentConfig(closure: Closure<Any>) {
+        ConfigureUtil.configure(closure, developmentConfig)
+    }
+
+    /**
+     * Configures the project information configuration.
+     *
+     * @param action action with project information configuration
+     */
+    fun developmentConfig(action: Action<in DevelopmentConfiguration>) {
+        action.execute(developmentConfig)
+    }
 
     val images: Images = objectFactory.newInstance(Images::class.java)
 

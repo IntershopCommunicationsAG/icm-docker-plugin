@@ -23,10 +23,6 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import org.gradle.api.Project
-import com.intershop.gradle.icm.extension.IntershopExtension
-import com.intershop.gradle.icm.project.TaskConfCopyLib
-import com.intershop.gradle.icm.project.TaskName
-import com.intershop.gradle.icm.tasks.CreateClusterID
 import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
@@ -50,7 +46,12 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
         const val ISHUNITOUT = "ishunitout"
         const val ISHUNITOUT_PATH = "ishunitrunner/output"
 
-
+        const val TASK_PREPARESERVER = "prepareServer"
+        const val TASK_CREATESITES = "createSites"
+        const val TASK_EXTRACARTRIDGES = "setupCartridges"
+        const val TASK_CREATECONFIG = "createConfig"
+        const val TASK_CREATECLUSTERID = "createClusterID"
+        const val TASK_COPYLIBS = "copyLibs"
     }
 
     private val addDirectories: Map<String, Provider<Directory>> by lazy {
@@ -94,11 +95,8 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
                 dependsOn(pullImage)
             }
 
-            val ishExtension = extensions.findByType(IntershopExtension::class.java)
-                ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
-
-            val prepareServer = tasks.findByName(TaskName.DEVELOPMENT.prepare())
-                ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
+            val prepareServer = tasks.findByName(TASK_PREPARESERVER)
+                ?: throw GradleException("This plugin requires a task ${TASK_PREPARESERVER}' !")
 
             tasks.maybeCreate(TASK_CREATECONTAINER, DockerCreateContainer::class.java).apply {
                 attachStderr.set(true)
@@ -111,9 +109,9 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
                 entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
 
                 hostConfig.binds.set(transformVolumes( mutableMapOf(
-                        getOutputPathFor(TaskName.DEVELOPMENT.sites(), "sites")
+                        getOutputPathFor(TASK_CREATESITES, "sites")
                                 to "/intershop/sites" ,
-                        ishExtension.developmentConfig.licenseDirectory
+                        dockerExtension.developmentConfig.licenseDirectory
                                 to "/intershop/license",
                         addDirectories.getValue(SERVERLOGS).get().asFile.absolutePath
                                 to "/intershop/logs",
@@ -121,15 +119,15 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
                                 to "/intershop/ishunitrunner/output",
                         project.projectDir.absolutePath
                                 to "/intershop/project/cartridges",
-                        getOutputPathFor(TaskName.DEVELOPMENT.cartridges(), "")
+                        getOutputPathFor(TASK_EXTRACARTRIDGES, "")
                                 to "/intershop/project/extraCartridges",
-                        getOutputPathFor(TaskConfCopyLib.DEVELOPMENT.taskname(), "")
+                        getOutputPathFor(TASK_COPYLIBS, "")
                                 to "/intershop/project/libs",
-                        getOutputDirFor(CreateClusterID.DEFAULT_NAME).parent
+                        getOutputDirFor(TASK_CREATECLUSTERID).parent
                                 to "/intershop/clusterid",
-                        ishExtension.developmentConfig.configDirectory
+                        dockerExtension.developmentConfig.configDirectory
                                 to "/intershop/conf",
-                        getOutputPathFor(TaskName.DEVELOPMENT.config(), "system-conf")
+                        getOutputPathFor(TASK_CREATECONFIG, "system-conf")
                                 to "/intershop/system-conf"
                 )))
 
@@ -182,8 +180,7 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
 
     private fun getOutputDirFor(taskName: String): File {
         val task = project.tasks.findByName(taskName)
-            ?: throw GradleException("Task name '${taskName}' not found in project. " +
-                    "Please check version of plugin 'com.intershop.gradle.icm.project'.")
+            ?: throw GradleException("Task name '${taskName}' not found in project.")
 
         return task.outputs.files.first()
     }
