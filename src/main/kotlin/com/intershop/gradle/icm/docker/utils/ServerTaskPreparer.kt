@@ -20,6 +20,9 @@ import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.APullImage
+import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
+import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
 import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import org.gradle.api.Project
@@ -31,13 +34,13 @@ import java.io.File
 /**
  * Provides methods to configure container related tasks.
  */
-class ContainerPreparer(val project: Project, private val dockerExtension: IntershopDockerExtension) {
+class ServerTaskPreparer(val project: Project, private val dockerExtension: IntershopDockerExtension) {
 
     companion object {
-        const val TASK_PULLBASEIMAGE = "pullImage"
+        const val TASK_PULL = "pullImage"
         const val TASK_CREATECONTAINER = "createContainer"
         const val TASK_STARTCONTAINER = "startContainer"
-        const val TASK_REMOVECONTAINER = "removeContainer"
+        const val TASK_REMOVE = "removeContainer"
         const val TASK_FINALIZECONTAINER = "finalizeContainer"
 
         const val SERVERLOGS = "serverlogs"
@@ -52,6 +55,11 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
         const val TASK_CREATECONFIG = "createConfig"
         const val TASK_CREATECLUSTERID = "createClusterID"
         const val TASK_COPYLIBS = "copyLibs"
+
+        const val TASK_DBPREPARE = "dbPrepare"
+        const val TASK_ISHUNIT_REPORT = "ishUnitTestReport"
+
+        const val CONTAINER_EXTENSION = "container"
     }
 
     private val addDirectories: Map<String, Provider<Directory>> by lazy {
@@ -62,24 +70,11 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
     }
 
     /**
-     * Get pull image task.
-     */
-    fun getPullImage(): PullImage {
-        return with(project) {
-            tasks.maybeCreate(
-                    TASK_PULLBASEIMAGE,
-                    PullImage::class.java).apply {
-                this.image.set(dockerExtension.images.icmbase)
-            }
-        }
-    }
-
-    /**
      * Creates base container.
      *
      * @param pullImage pull image task.
      */
-    fun getBaseContainer(pullImage: PullImage): DockerCreateContainer {
+    fun getBaseContainer(pullImage: APullImage): DockerCreateContainer {
         return with(project) {
 
             val dirprep = tasks.maybeCreate( "dirPreparer").apply {
@@ -152,17 +147,6 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
     }
 
     /**
-     * Remove base container.
-     */
-    fun getRemoveContainerByName(): RemoveContainerByName {
-        return with(project) {
-            tasks.maybeCreate(TASK_REMOVECONTAINER, RemoveContainerByName::class.java).apply {
-                containerName.set("${project.name.toLowerCase()}-container")
-            }
-        }
-    }
-
-    /**
      * Configures remove container.
      *
      * @param startContainer Task, that starts the base container.
@@ -175,6 +159,28 @@ class ContainerPreparer(val project: Project, private val dockerExtension: Inter
                         force.set(true)
                         targetContainerId(startContainer.containerId)
                     }
+        }
+    }
+
+    /**
+     * Return a configured dbinit task.
+     *
+     * @param containertask task that creates the container.
+     */
+    fun getDBPrepareTask(containertask: DockerCreateContainer): DBPrepareTask {
+        return with(project) {
+            tasks.maybeCreate(RunTaskPreparer.TASK_DBPREPARE, DBPrepareTask::class.java).apply {
+                containerId.set(containertask.containerId)
+            }
+        }
+    }
+
+    /**
+     * Returns a task to create a HTML report from tes results.
+     */
+    fun getISHUnitHTMLTestReportTask(): ISHUnitHTMLTestReportTask {
+        return with(project) {
+            tasks.maybeCreate(RunTaskPreparer.TASK_ISHUNIT_REPORT, ISHUnitHTMLTestReportTask::class.java)
         }
     }
 

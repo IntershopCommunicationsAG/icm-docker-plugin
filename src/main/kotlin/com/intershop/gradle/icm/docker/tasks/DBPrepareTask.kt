@@ -67,6 +67,8 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
         cleanDB.set("no")
         cartridges.set("")
         propertyKeys.set("")
+
+        group = "icm docker project"
     }
 
     /**

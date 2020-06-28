@@ -17,6 +17,7 @@
 package com.intershop.gradle.icm.docker.utils
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.APullImage
 import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
@@ -27,35 +28,27 @@ class DatabaseTaskPreparer(val project: Project,
                            private val dockerExtension: IntershopDockerExtension) {
 
     companion object {
-        const val TASK_PULL_MSSQLDB = "pullMSSQL"
-        const val TASK_START_MSSQLDB = "startMSSQL"
-        const val TASK_STOP_MSSQLDB = "stopMSSQL"
-        const val TASK_REMOVE_MSSQLDB = "removeMSSQL"
+        const val TASK_PULL = "pullMSSQL"
+        const val TASK_START = "startMSSQL"
+        const val TASK_STOP = "stopMSSQL"
+        const val TASK_REMOVE = "removeMSSQL"
+
+        const val CONTAINER_EXTENSION = "mssql"
     }
 
-    fun getMSSQLPullTask(): PullExtraImage {
+
+    fun getMSSQLStartTask(image: APullImage): StartExtraContainerTask {
         return with(project) {
             tasks.maybeCreate(
-                TASK_PULL_MSSQLDB,
-                PullExtraImage::class.java).apply {
-                this.image.set(dockerExtension.images.mssqldb)
-
-                this.onlyIf { dockerExtension.images.mssqldb.isPresent }
-            }
-        }
-    }
-
-    fun getMSSQLStartTask(image: PullExtraImage): StartExtraContainerTask {
-        return with(project) {
-            tasks.maybeCreate(
-                TASK_START_MSSQLDB,
+                TASK_START,
                 StartExtraContainerTask::class.java).apply {
+                group = "icm docker project"
                 attachStderr.set(true)
                 attachStdout.set(true)
 
                 targetImageId(image.image)
 
-                containerName.set("${project.name.toLowerCase()}-mssql")
+                containerName.set("${project.name.toLowerCase()}-${CONTAINER_EXTENSION}")
 
                 with(dockerExtension.developmentConfig) {
                     hostConfig.portBindings.set(
@@ -80,30 +73,7 @@ class DatabaseTaskPreparer(val project: Project,
                     ))
                 }
 
-                this.onlyIf { dockerExtension.images.mssqldb.isPresent }
-            }
-        }
-    }
-
-    fun getMSSQLStopTask(): StopExtraContainerTask {
-        return with(project) {
-            tasks.maybeCreate(
-                TASK_STOP_MSSQLDB,
-                StopExtraContainerTask::class.java).apply {
-                containerName.set("${project.name.toLowerCase()}-mssql")
-
-                this.onlyIf { dockerExtension.images.mssqldb.isPresent }
-            }
-        }
-    }
-
-    fun getMSSQLRemoveTask(): RemoveContainerByName {
-        return with(project) {
-            tasks.maybeCreate(
-                TASK_REMOVE_MSSQLDB,
-                RemoveContainerByName::class.java).apply {
-                containerName.set("${project.name.toLowerCase()}-mssql")
-
+                dependsOn(image)
                 this.onlyIf { dockerExtension.images.mssqldb.isPresent }
             }
         }
