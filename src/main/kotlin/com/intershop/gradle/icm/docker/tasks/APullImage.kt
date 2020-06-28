@@ -36,6 +36,7 @@ abstract class APullImage
     private val registryCredentials: DockerRegistryCredentials =
             objectFactory.newInstance(DockerRegistryCredentials::class.java)
 
+    @get:Input
     abstract val image: Property<String>
 
     /**
