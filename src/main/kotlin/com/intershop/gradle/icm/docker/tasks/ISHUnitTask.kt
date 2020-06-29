@@ -42,6 +42,10 @@ import java.util.concurrent.TimeUnit
  */
 open class ISHUnitTask : AbstractDockerRemoteApiTask() {
 
+    init {
+        group = "icm docker project"
+    }
+
     /**
      * The ID or name of container used to perform operation.
      * The container for the provided ID has to be created first.

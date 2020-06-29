@@ -18,10 +18,12 @@ package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
-import com.intershop.gradle.icm.docker.utils.ContainerPreparer
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
-import com.intershop.gradle.icm.docker.utils.RunTaskPreparer
+import com.intershop.gradle.icm.docker.utils.SolrCloudPreparer
+import com.intershop.gradle.icm.docker.utils.StandardTaskPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -59,53 +61,115 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
                 addTestReportConfiguration(this)
 
-                val containerPreparer = ContainerPreparer(project, extension)
-
-                val removeContainerByName = containerPreparer.getRemoveContainerByName()
-                val pullImage = containerPreparer.getPullImage()
-                val baseContainer = containerPreparer.getBaseContainer(pullImage)
-                val startContainer = containerPreparer.getStartContainer(baseContainer)
-                val removeContainer = containerPreparer.getFinalizeContainer(startContainer)
-
-                val runTaskPreparer = RunTaskPreparer(project)
-
-                val dbprepare = runTaskPreparer.getDBPrepareTask(baseContainer)
-                dbprepare.dependsOn(startContainer)
-                dbprepare.finalizedBy(removeContainer)
-
-                baseContainer.dependsOn(removeContainerByName)
-                startContainer.finalizedBy(removeContainer)
-
-                val dbTaskPreparer = DatabaseTaskPreparer(this, extension)
-                val pullMSSQL = dbTaskPreparer.getMSSQLPullTask()
-
-                val startMSSQL = dbTaskPreparer.getMSSQLStartTask(pullMSSQL)
-                startMSSQL.dependsOn(pullMSSQL)
-
-                dbprepare.mustRunAfter(startMSSQL)
-                dbTaskPreparer.getMSSQLStopTask()
-                dbTaskPreparer.getMSSQLRemoveTask()
-
                 gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY, ISHUnitTestRegistry::class.java, {
                     it.maxParallelUsages.set(1)
                 })
 
-                val ishunitreport = runTaskPreparer.getISHUnitHTMLTestReportTask()
+                val standardTaksPreparer = StandardTaskPreparer(project)
+                val startMSSQL = prepareDatabaseContainer(project, standardTaksPreparer, extension)
 
-                extension.ishUnitTests.all {
-                    tasks.maybeCreate(it.name + ISHUNIT_TEST, ISHUnitTask::class.java).apply {
-                        this.containerId.set(startContainer.containerId)
-                        this.testCartridge.set(it.cartridge)
-                        this.testSuite.set(it.testSuite)
+                prepareSolrCloudContainer(project, standardTaksPreparer, extension)
+                prepareBaseContainer(this, standardTaksPreparer, extension, startMSSQL)
 
-                        this.mustRunAfter(dbprepare)
-                        this.finalizedBy(removeContainer)
-                        this.dependsOn(startContainer)
-                        ishunitreport.dependsOn(this)
-                    }
-                }
             }
         }
+    }
+
+    private fun prepareBaseContainer(project: Project,
+                                     taskPreparer: StandardTaskPreparer,
+                                     extension: IntershopDockerExtension,
+                                     startDatabase: StartExtraContainerTask) {
+
+        val serverPreparer = ServerTaskPreparer(project, extension)
+
+        val removeContainerByName = taskPreparer.getRemoveTask(
+                ServerTaskPreparer.TASK_REMOVE,
+                ServerTaskPreparer.CONTAINER_EXTENSION)
+        val pullImage = taskPreparer.getBasePullTask(
+                ServerTaskPreparer.TASK_PULL,
+                extension.images.icmbase)
+
+        val baseContainer = serverPreparer.getBaseContainer(pullImage)
+        val startContainer = serverPreparer.getStartContainer(baseContainer)
+        val removeContainer = serverPreparer.getFinalizeContainer(startContainer)
+
+
+        val dbprepare = serverPreparer.getDBPrepareTask(baseContainer)
+        dbprepare.dependsOn(startContainer)
+        dbprepare.finalizedBy(removeContainer)
+        dbprepare.mustRunAfter(startDatabase)
+
+        baseContainer.dependsOn(removeContainerByName)
+        startContainer.finalizedBy(removeContainer)
+
+        val ishunitreport = serverPreparer.getISHUnitHTMLTestReportTask()
+
+        extension.ishUnitTests.all {
+            project.tasks.maybeCreate(it.name + ISHUNIT_TEST, ISHUnitTask::class.java).apply {
+                this.containerId.set(startContainer.containerId)
+                this.testCartridge.set(it.cartridge)
+                this.testSuite.set(it.testSuite)
+
+                this.mustRunAfter(dbprepare)
+                this.finalizedBy(removeContainer)
+                this.dependsOn(startContainer)
+
+                ishunitreport.dependsOn(this)
+            }
+        }
+    }
+
+    private fun prepareDatabaseContainer(project: Project,
+                                         taskPreparer: StandardTaskPreparer,
+                                         extension: IntershopDockerExtension): StartExtraContainerTask {
+
+        val dbTaskPreparer = DatabaseTaskPreparer(project, extension)
+        val pullMSSQL = taskPreparer.getPullTask(
+                DatabaseTaskPreparer.TASK_PULL,
+                extension.images.mssqldb)
+        taskPreparer.getStopTask(
+                DatabaseTaskPreparer.TASK_STOP,
+                DatabaseTaskPreparer.CONTAINER_EXTENSION,
+                extension.images.mssqldb)
+        taskPreparer.getRemoveTask(
+                DatabaseTaskPreparer.TASK_REMOVE,
+                DatabaseTaskPreparer.CONTAINER_EXTENSION)
+
+        return dbTaskPreparer.getMSSQLStartTask(pullMSSQL)
+    }
+
+    private fun prepareSolrCloudContainer(project: Project,
+                                          taskPreparer: StandardTaskPreparer,
+                                          extension: IntershopDockerExtension) {
+        val pullZK = taskPreparer.getPullTask(
+                SolrCloudPreparer.TASK_PULL_ZK,
+                extension.images.zookeeper)
+        val pullSolr = taskPreparer.getPullTask(
+                SolrCloudPreparer.TASK_PULL_SOLR,
+                extension.images.solr)
+
+        val solrCloudTaskPreparer = SolrCloudPreparer(project, extension)
+        val zkStartTask = solrCloudTaskPreparer.getZKStartTask(pullZK)
+        val solrStartTask = solrCloudTaskPreparer.getSolrStartTask(pullSolr)
+
+        solrStartTask.dependsOn(zkStartTask)
+
+        val stopZK = taskPreparer.getStopTask(
+                SolrCloudPreparer.TASK_STOP_ZK,
+                SolrCloudPreparer.CONTAINER_EXTENSION_ZK,
+                extension.images.zookeeper)
+        val stopSolr = taskPreparer.getStopTask(
+                SolrCloudPreparer.TASK_STOP_SOLR,
+                SolrCloudPreparer.CONTAINER_EXTENSION_SOLR,
+                extension.images.solr)
+        stopZK.dependsOn(stopSolr)
+
+        taskPreparer.getRemoveTask(
+                SolrCloudPreparer.TASK_REMOVE_ZK,
+                SolrCloudPreparer.CONTAINER_EXTENSION_ZK)
+        taskPreparer.getRemoveTask(
+                SolrCloudPreparer.TASK_REMOVE_SOLR,
+                SolrCloudPreparer.CONTAINER_EXTENSION_SOLR)
     }
 
     private fun addTestReportConfiguration(project: Project) {

@@ -29,6 +29,10 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val webadapteragent: Property<String> = objectFactory.property(String::class.java)
 
+    val solr: Property<String> = objectFactory.property(String::class.java)
+
+    val zookeeper: Property<String> = objectFactory.property(String::class.java)
+
     val icmbase: Property<String> = objectFactory.property(String::class.java)
 
     val mssqldb: Property<String> = objectFactory.property(String::class.java)

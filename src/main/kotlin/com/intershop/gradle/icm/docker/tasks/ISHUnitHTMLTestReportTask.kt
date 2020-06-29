@@ -35,6 +35,10 @@ import javax.inject.Inject
 open class ISHUnitHTMLTestReportTask @Inject constructor(projectLayout: ProjectLayout,
                                                     objectFactory: ObjectFactory) : DefaultTask() {
 
+    init {
+        group = "icm docker project"
+    }
+
     @get:InputDirectory
     val testResultDirectory: DirectoryProperty = objectFactory.directoryProperty()
 

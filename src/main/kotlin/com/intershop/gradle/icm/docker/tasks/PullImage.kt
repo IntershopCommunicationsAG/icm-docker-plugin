@@ -34,89 +34,9 @@ import javax.inject.Inject
  * Task to pull an image.
  */
 open class PullImage
-    @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
-
-    private val registryCredentials: DockerRegistryCredentials =
-        objectFactory.newInstance(DockerRegistryCredentials::class.java)
-
+    @Inject constructor(objectFactory: ObjectFactory) : APullImage(objectFactory) {
 
     @get:Option(option= "altImage", description = "Use an other image independent from the build configuration")
     @get:Input
-    val image: Property<String> = objectFactory.property(String::class.java)
-
-    @get:Option(option = "forcePull", description = "Call pull always also if the image is available.")
-    @get:Input
-    val force: Property<Boolean> = objectFactory.property(Boolean::class.java)
-
-    /**
-     * The target Docker registry credentials for usage with a task.
-     */
-    override fun getRegistryCredentials(): DockerRegistryCredentials {
-        return registryCredentials
-    }
-
-    /**
-     * Configures the target Docker registry credentials for use with a task.
-     *
-     * action
-     * 6.0.0
-     */
-    override fun registryCredentials(action: Action<in DockerRegistryCredentials>?) {
-        action!!.execute(registryCredentials)
-    }
-
-    /**
-     * Set the credentials for the task.
-     *
-     * @param c closure with Docker registry credentials.
-     */
-    fun registryCredentials(c: Closure<DockerRegistryCredentials>) {
-        ConfigureUtil.configure(c, registryCredentials)
-    }
-
-    init {
-        force.set(false)
-    }
-
-    /**
-     * Executes the remote Docker command.
-     */
-    override fun runRemoteCommand() {
-        with(project) {
-            logger.quiet("Pulling image '${image.get()}'.")
-
-            var pull = true
-
-            if(! force.get()) {
-                val listImagesCmd = dockerClient.listImagesCmd()
-                listImagesCmd.withImageNameFilter(image.get())
-                val images = listImagesCmd.exec()
-                pull = images.size < 1
-            }
-
-            if(pull) {
-                val pullImageCmd = dockerClient.pullImageCmd(image.get())
-                val authConfig = registryAuthLocator.lookupAuthConfig(image.get(), registryCredentials)
-                pullImageCmd.withAuthConfig(authConfig)
-                val callback = createCallback(nextHandler)
-                pullImageCmd.exec(callback).awaitCompletion()
-            }
-        }
-    }
-
-    private fun createCallback(action: Action<in PullResponseItem>?): PullImageResultCallback {
-        return object: PullImageResultCallback() {
-            override fun onNext(item: PullResponseItem) {
-                if (action != null) {
-                    try {
-                        action.execute(item)
-                    } catch ( e: Exception) {
-                        logger.error("Failed to handle pull response", e)
-                        return
-                    }
-                }
-                super.onNext(item)
-            }
-        }
-    }
+    override val image: Property<String> = objectFactory.property(String::class.java)
 }

@@ -167,6 +167,9 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 images {
                     icmbase = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
+                    
+                    solr = 'solr:8.5.2-slim'
+                    zookeeper = 'zookeeper:3.6.1'
                 }
 
                 ishUnitTests {
@@ -710,7 +713,41 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 .build()
 
         then:
-        result3.task(":removeMSSQL").outcome == SKIPPED
+        result3.task(":removeMSSQL").outcome == SUCCESS
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'run solrcloud'() {
+        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("startSolr", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result1.task(":startSolr").outcome == SUCCESS
+
+        when:
+        def result2 = getPreparedGradleRunner()
+                .withArguments("stopZK", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":stopZK").outcome == SUCCESS
+
+        when:
+        def result3 = getPreparedGradleRunner()
+                .withArguments("removeSolr", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result3.task(":removeSolr").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
