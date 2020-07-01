@@ -25,6 +25,8 @@ import javax.inject.Inject
  */
 open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
+    val icmsetup: Property<String> = objectFactory.property(String::class.java)
+
     val webadapter: Property<String> = objectFactory.property(String::class.java)
 
     val webadapteragent: Property<String> = objectFactory.property(String::class.java)
@@ -34,6 +36,8 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
     val zookeeper: Property<String> = objectFactory.property(String::class.java)
 
     val icmbase: Property<String> = objectFactory.property(String::class.java)
+
+    val icminit: Property<String> = objectFactory.property(String::class.java)
 
     val mssqldb: Property<String> = objectFactory.property(String::class.java)
 }
