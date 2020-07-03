@@ -18,14 +18,15 @@ package com.intershop.gradle.icm.docker
 
 import com.avast.gradle.dockercompose.DockerComposePlugin
 import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-import com.intershop.gradle.icm.docker.extension.ImageBuild
-import com.intershop.gradle.icm.docker.extension.ImageConfiguration
+import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
+import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.extension.Images
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
+import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
+import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -43,6 +44,8 @@ open class ICMDockerPlugin: Plugin<Project> {
         const val BUILD_IMAGES = "buildImages"
         const val PUSH_IMAGES = "pushImages"
         const val WRITE_IMAGE_PROPERTIES = "writeImageProperties"
+
+        const val BUILD_IMG_REGISTRY = "ishBuildImageRegistry"
     }
 
     /**
@@ -60,6 +63,8 @@ open class ICMDockerPlugin: Plugin<Project> {
             plugins.apply(DockerComposePlugin::class.java)
             plugins.apply(DockerRemoteApiPlugin::class.java)
 
+            gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
+
             createImageTasks(this, extension)
         }
     }
@@ -68,9 +73,6 @@ open class ICMDockerPlugin: Plugin<Project> {
         val mainTask = project.tasks.maybeCreate(BUILD_IMAGES).apply {
             group = "build"
         }
-
-        val pushImage = project.tasks.maybeCreate(PUSH_IMAGES, PushImages::class.java)
-        val writeProperties = project.tasks.maybeCreate(WRITE_IMAGE_PROPERTIES, ImageProperties::class.java)
 
         val imgTask = createImageTask(project,
                 extension.images,
@@ -84,94 +86,73 @@ open class ICMDockerPlugin: Plugin<Project> {
                 extension.imageBuild.images.initImage,
                 BUILD_INIT_IMAGE)
 
-        if(imgTask != null) {
-            pushImage.images.addAll(imgTask.images.get())
-            writeProperties.images.addAll(imgTask.images.get())
-            val imgTestTask = createTestImageTask(project,
-                    extension.images,
-                    extension.imageBuild,
-                    extension.imageBuild.images.testImage,
-                    imgTask,
-                    BUILD_TEST_IMAGE)
-
-            if(imgTestTask != null) {
-                pushImage.images.addAll(imgTestTask.images.get())
-                writeProperties.images.addAll(imgTestTask.images.get())
+        val imgTestTask = createTestImageTask(project,
+                extension.images,
+                extension.imageBuild,
+                extension.imageBuild.images.testImage,
+                imgTask,
+                BUILD_TEST_IMAGE)
                 mainTask.dependsOn(imgTestTask)
-            } else {
-                mainTask.dependsOn(imgTask)
-            }
-        }
 
-        if(initImgTask != null) {
-            pushImage.images.addAll(initImgTask.images.get())
-            writeProperties.images.addAll(initImgTask.images.get())
-            val imgInitTestTask = createTestImageTask(project,
-                    extension.images,
-                    extension.imageBuild,
-                    extension.imageBuild.images.testInitImage,
-                    initImgTask,
-                    BUILD_INIT_TEST_IMAGE)
-
-            if(imgInitTestTask != null) {
-                pushImage.images.addAll(imgInitTestTask.images.get())
-                writeProperties.images.addAll(imgInitTestTask.images.get())
+        val imgInitTestTask = createTestImageTask(project,
+                extension.images,
+                extension.imageBuild,
+                extension.imageBuild.images.testInitImage,
+                initImgTask,
+                BUILD_INIT_TEST_IMAGE)
                 mainTask.dependsOn(imgInitTestTask)
-            } else {
-                mainTask.dependsOn(initImgTask)
-            }
-        }
 
+        val push = project.tasks.maybeCreate(PUSH_IMAGES, PushImages::class.java).apply {
+            dependsOn(imgTestTask, imgInitTestTask)
+        }
+        project.tasks.maybeCreate(WRITE_IMAGE_PROPERTIES, ImageProperties::class.java).apply {
+            dependsOn(push)
+        }
     }
 
     private fun createImageTask(project: Project,
                                 imgs: Images,
-                                imgBuild: ImageBuild,
+                                imgBuild: ProjectConfiguration,
                                 imgConf: ImageConfiguration,
-                                taskName: String): DockerBuildImage? {
-        return if(imgConf.createImage.get()) {
-            project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
+                                taskName: String): BuildImage {
+        return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
+                srcFiles.from(imgConf.srcFiles)
+                dirname.set(imgConf.dockerBuildDirProvider)
+                version.set(imgBuild.version)
+
                 with(this.labels) {
-                    put("license", imgBuild.license.get())
-                    put("version", project.version.toString())
-                    put("maintainer", imgBuild.maintainer.get())
+                    put("license", imgBuild.licenseProvider)
+                    put("maintainer", imgBuild.maintainerProvider)
                     put("description", "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}")
-                    put("created", imgBuild.created.get())
+                    put("created", imgBuild.createdProvider)
                 }
 
-                buildArgs.put( "SETUP_IMAGE", imgs.icmsetup.get() )
+                buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
 
-                val nameExt = imgConf.imageExtension.get()
-                val nameComplete = if(nameExt.isNotEmpty()) { "- ${nameExt}" } else { "" }
-                images.set(mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}"))
+                val nameExt = imgConf.nameExtension.get()
+                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
+                images.set(mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}"))
             }
-        } else {
-            null
-        }
     }
 
     private fun createTestImageTask(project: Project,
                                     imgs: Images,
-                                    imgBuild: ImageBuild,
+                                    imgBuild: ProjectConfiguration,
                                     imgConf: ImageConfiguration,
-                                    imgTask: DockerBuildImage,
-                                    taskName: String): DockerBuildImage? {
-        return if(imgConf.createImage.get()) {
-            project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
+                                    imgTask: BuildImage,
+                                    taskName: String): BuildImage {
+        return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
                 with(this.labels) {
                     put("description", "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}")
                 }
 
-                buildArgs.put( "SETUP_IMAGE", imgs.icmsetup.get() )
+                buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
                 buildArgs.put( "BASE_IMAGE", imgTask.images.get().first())
 
-                val nameExt = imgConf.imageExtension.get()
-                val nameComplete = if(nameExt.isNotEmpty()) { "- ${nameExt}" } else { "" }
-                images.set(mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}"))
+                val nameExt = imgConf.nameExtension.get()
+                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
+                images.set(mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}"))
                 dependsOn(imgTask)
             }
-        } else {
-            null
-        }
     }
 }

@@ -14,21 +14,18 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.tasks
 
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.options.Option
-import javax.inject.Inject
+package com.intershop.gradle.icm.docker.utils
 
-/**
- * Task to pull an image.
- */
-open class PullImage
-    @Inject constructor(objectFactory: ObjectFactory) : APullImage(objectFactory) {
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+import java.util.*
 
-    @get:Option(option= "altImage", description = "Use an other image independent from the build configuration")
-    @get:Input
-    override val image: Property<String> = objectFactory.property(String::class.java)
+abstract class BuildImageRegistry : BuildService<BuildServiceParameters.None> {
+
+    val images = Collections.synchronizedSet(mutableSetOf<String>())
+
+    fun addImages(imgs: List<String>) {
+        images.addAll(imgs)
+    }
 }

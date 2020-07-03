@@ -17,11 +17,18 @@
 
 package com.intershop.gradle.icm.docker.tasks
 
+import com.intershop.gradle.icm.docker.ICMDockerPlugin
+import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Provider
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceRegistry
+import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -30,15 +37,12 @@ import java.nio.charset.Charset
 import java.util.*
 import javax.inject.Inject
 
-class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
+open class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
                                           projectLayout: ProjectLayout): DefaultTask() {
 
     companion object {
         const val IMAGE_PROPERTIES_FILE = "containerimages/image.properties"
     }
-
-    @get:Input
-    val images: ListProperty<String> = objectFactory.listProperty(String::class.java)
 
     @get:OutputFile
     val outputFile: RegularFileProperty = objectFactory.fileProperty()
@@ -49,6 +53,10 @@ class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
 
     init {
         group = "intershop container build"
+
+        outputs.upToDateWhen {
+            false
+        }
 
         onlyIf {
             project.hasProperty("runOnCI") &&
@@ -65,13 +73,20 @@ class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
         val props = linkedMapOf<String,String>()
         var counter = 1
 
-        images.get().forEach {
+        val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
+        val buildImgResourceProvider: Provider<BuildImageRegistry> = getBuildService(serviceRegistry,
+            ICMDockerPlugin.BUILD_IMG_REGISTRY
+        )
+
+        buildImgResourceProvider.get().images.forEach {
+            props["image.${counter}"] = it
+
             val imageName = it.split(":")
             if(imageName.size > 1) {
-                props.set("image.${counter}", it)
-                props.set("image.${counter}.name", imageName[0])
-                props.set("image.tag", imageName[1])
+                props["image.${counter}.name"] = imageName[0]
+                props["image.tag"] = imageName[1]
             }
+            counter++
         }
 
         val comment = "Built images"
@@ -90,4 +105,10 @@ class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
         }
     }
 
+    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+        val registration = registry.registrations.findByName(name)
+            ?: throw GradleException ("Unable to find build service with name '$name'.")
+
+        return registration.getService() as Provider<T>
+    }
 }

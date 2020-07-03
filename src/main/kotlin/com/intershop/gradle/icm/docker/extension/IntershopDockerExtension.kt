@@ -16,6 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.extension
 
+import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
@@ -70,7 +71,7 @@ open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFac
         action.execute(images)
     }
 
-    val imageBuild: ImageBuild = objectFactory.newInstance(ImageBuild::class.java)
+    val imageBuild: ProjectConfiguration = objectFactory.newInstance(ProjectConfiguration::class.java)
 
     /**
      * Configures images configuration from a closure.
@@ -78,7 +79,7 @@ open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFac
      * @param closure   closure with an image configuration.
      */
     @Suppress("unused")
-    fun imageBuild(closure: Closure<ImageBuild>) {
+    fun imageBuild(closure: Closure<ProjectConfiguration>) {
         ConfigureUtil.configure(closure, imageBuild)
     }
 
@@ -87,7 +88,7 @@ open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFac
      *
      * @param action   action with an image configuration.
      */
-    fun imageBuild(action: Action<in ImageBuild>) {
+    fun imageBuild(action: Action<in ProjectConfiguration>) {
         action.execute(imageBuild)
     }
 

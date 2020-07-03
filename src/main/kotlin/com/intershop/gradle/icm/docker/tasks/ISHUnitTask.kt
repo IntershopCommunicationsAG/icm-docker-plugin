@@ -32,6 +32,7 @@ import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.options.Option
 import org.gradle.internal.resources.ResourceLock
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -42,8 +43,11 @@ import java.util.concurrent.TimeUnit
  */
 open class ISHUnitTask : AbstractDockerRemoteApiTask() {
 
+    private val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
+
     init {
         group = "icm docker project"
+        debugProperty.convention(false)
     }
 
     /**
@@ -58,6 +62,21 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
 
     @get:Input
     val testSuite: Property<String> = project.objects.property(String::class.java)
+
+    /**
+     * Enable debugging for the process. The process is started suspended and listening on port 5005.
+     * This can be configured also over the gradle parameter "debug-java".
+     *
+     * @property debug is the task property
+     */
+    @set:Option(
+        option = "debug-jvm",
+        description = "Enable debugging for the process. The process is started suspended and listening on port 5005."
+    )
+    @get:Input
+    var debug: Boolean
+        get() = debugProperty.get()
+        set(value: Boolean) = debugProperty.set(value)
 
     @Internal
     override fun getSharedResources(): List<ResourceLock> {
@@ -89,6 +108,10 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
         val execCmd = dockerClient.execCreateCmd(containerId.get())
         execCmd.withAttachStderr(true)
         execCmd.withAttachStdout(true)
+
+        if(debugProperty.get()) {
+            execCmd.withEnv(listOf("ENABLE_DEBUG=true"))
+        }
 
         execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh",
                 buildDirName,

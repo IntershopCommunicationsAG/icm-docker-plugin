@@ -14,8 +14,10 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.extension
+package com.intershop.gradle.icm.docker.extension.image.build
 
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.FileCollection
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -24,43 +26,47 @@ import javax.inject.Inject
 /**
  * Extension to configure a special image build.
  */
-class ImageConfiguration @Inject constructor(objectFactory: ObjectFactory) {
-
-    /**
-     * Provider for image creation.
-     */
-    val createImageProvider: Provider<Boolean>
-        get() = this.createImage
-
-    /**
-     * The image should be created if the value is true.
-     */
-    val createImage: Property<Boolean> = objectFactory.property(Boolean::class.java)
+open class ImageConfiguration @Inject constructor(objectFactory: ObjectFactory) {
 
     /**
      * Provider for image name extension.
      */
-    val imageExtensionProvider: Provider<String>
-        get() = this.imageExtension
+    val nameExtensionProvider: Provider<String>
+        get() = this.nameExtension
 
     /**
      * Image name extension of the special image.
      */
-    val imageExtension: Property<String> = objectFactory.property(String::class.java)
+    val nameExtension: Property<String> = objectFactory.property(String::class.java)
 
     /**
      * Provider for description extension.
      */
     val descriptionProvider: Provider<String>
-        get() = this.imageExtension
+        get() = this.description
 
     /**
      * Description extension of the special image.
      */
     val description: Property<String> = objectFactory.property(String::class.java)
 
-    init {
-        createImage.convention(false)
-        imageExtension.convention("")
+    /**
+     * File collection for the build of the image.
+     */
+    val srcFiles: ConfigurableFileCollection = objectFactory.fileCollection()
+
+    fun addFiles(srcfiles: FileCollection) {
+        srcFiles.from(srcfiles)
     }
+
+    /**
+     * Provider for description extension.
+     */
+    val dockerBuildDirProvider: Provider<String>
+        get() = this.dockerBuildDir
+
+    /**
+     * Description extension of the special image.
+     */
+    val dockerBuildDir: Property<String> = objectFactory.property(String::class.java)
 }

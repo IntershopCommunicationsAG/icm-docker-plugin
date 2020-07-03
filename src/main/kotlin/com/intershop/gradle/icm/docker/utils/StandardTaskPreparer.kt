@@ -63,15 +63,12 @@ class StandardTaskPreparer(val project: Project) {
 
     fun getRemoveTask(taskname: String, containerext: String): RemoveContainerByName {
         with(project) {
-            val cleanTask = tasks.findByName("clean")
 
             return tasks.maybeCreate( taskname, RemoveContainerByName::class.java ).apply {
                 group = "icm docker project"
                 containerName.set("${project.name.toLowerCase()}-${containerext}")
 
-                if(cleanTask != null) {
-                    cleanTask.dependsOn(this)
-                }
+                tasks.findByName("clean")?.dependsOn(this)
             }
         }
     }

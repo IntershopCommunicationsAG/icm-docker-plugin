@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.extension
+package com.intershop.gradle.icm.docker.extension.image.build
 
 import groovy.lang.Closure
 import org.gradle.api.Action
@@ -22,7 +22,7 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
 
-class ImageBuildConfiguration @Inject constructor(objectFactory: ObjectFactory) {
+open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val mainImage: ImageConfiguration = objectFactory.newInstance(ImageConfiguration::class.java)
 
@@ -109,17 +109,16 @@ class ImageBuildConfiguration @Inject constructor(objectFactory: ObjectFactory) 
     }
 
     init {
-        mainImage.createImage.set(true)
-        mainImage.imageExtension.set("")
+        mainImage.nameExtension.set("as")
         mainImage.description.set("Appserver")
 
-        initImage.imageExtension.set("init")
-        initImage.description.set("Initialization")
+        initImage.nameExtension.set("as-init")
+        initImage.description.set("Appserver Initialization")
 
-        testImage.imageExtension.set("test")
-        testImage.description.set("Test")
+        testImage.nameExtension.set("as-test")
+        testImage.description.set("Appserver Test")
 
-        testInitImage.imageExtension.set("test-init")
-        testInitImage.description.set("Test Initialization")
+        testInitImage.nameExtension.set("as-test-init")
+        testInitImage.description.set("Appserver Test Initialization")
     }
 }

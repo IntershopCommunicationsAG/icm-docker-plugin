@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.extension
+package com.intershop.gradle.icm.docker.extension.image.build
 
 import groovy.lang.Closure
 import org.gradle.api.Action
@@ -30,7 +30,7 @@ import javax.inject.Inject
 /**
  * Extension to configure the image labels.
  */
-class ImageBuild @Inject constructor(objectFactory: ObjectFactory) {
+open class ProjectConfiguration @Inject constructor(objectFactory: ObjectFactory) {
 
     /**
      * License provider of all images.
@@ -68,13 +68,13 @@ class ImageBuild @Inject constructor(objectFactory: ObjectFactory) {
     /**
      * Provider for the version information of images in one project.
      */
-    val imageVersionProvider: Provider<String>
-        get() = imageVersion
+    val versionProvider: Provider<String>
+        get() = version
 
     /**
      * Version information of images in one project.
      */
-    val imageVersion: Property<String> = objectFactory.property(String::class.java)
+    val version: Property<String> = objectFactory.property(String::class.java)
 
     /**
      * Provider for the creation time of images in one project.
@@ -98,7 +98,7 @@ class ImageBuild @Inject constructor(objectFactory: ObjectFactory) {
      */
     val baseImageName: Property<String> = objectFactory.property(String::class.java)
 
-    val images: ImageBuildConfiguration = objectFactory.newInstance(ImageBuildConfiguration::class.java)
+    val images: Images = objectFactory.newInstance(Images::class.java)
 
     /**
      * Configures images configuration from a closure.
@@ -106,7 +106,7 @@ class ImageBuild @Inject constructor(objectFactory: ObjectFactory) {
      * @param closure   closure with an image configuration.
      */
     @Suppress("unused")
-    fun images(closure: Closure<ImageBuildConfiguration>) {
+    fun images(closure: Closure<Images>) {
         ConfigureUtil.configure(closure, images)
     }
 
@@ -115,7 +115,7 @@ class ImageBuild @Inject constructor(objectFactory: ObjectFactory) {
      *
      * @param action   action with an image configuration.
      */
-    fun images(action: Action<in ImageBuildConfiguration>) {
+    fun images(action: Action<in Images>) {
         action.execute(images)
     }
 
@@ -126,6 +126,6 @@ class ImageBuild @Inject constructor(objectFactory: ObjectFactory) {
         baseDescription.convention("Intershop Commerce Management")
         created.convention(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT))
 
-        baseImageName.convention("intershop/icm-as")
+        baseImageName.convention("server/intershop/icm")
     }
 }

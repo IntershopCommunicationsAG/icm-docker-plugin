@@ -16,9 +16,53 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
+import com.bmuschko.gradle.docker.DockerRegistryCredentials
+import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
+import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
+import com.github.dockerjava.api.model.PushResponseItem
+import com.github.dockerjava.core.command.PushImageResultCallback
+import com.intershop.gradle.icm.docker.ICMDockerPlugin
+import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
+import groovy.lang.Closure
+import org.gradle.api.Action
+import org.gradle.api.GradleException
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Provider
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceRegistry
+import org.gradle.api.services.internal.BuildServiceRegistryInternal
+import org.gradle.util.ConfigureUtil
+import javax.inject.Inject
 
-class PushImages: DockerPushImage() {
+open class PushImages
+        @Inject constructor(objectFactory: ObjectFactory):
+        AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
+
+    private val registryCredentials: DockerRegistryCredentials =
+            objectFactory.newInstance(DockerRegistryCredentials::class.java)
+
+    /**
+     * The target Docker registry credentials for usage with a task.
+     */
+    override fun getRegistryCredentials(): DockerRegistryCredentials {
+        return registryCredentials
+    }
+
+    /**
+     * Configures the target Docker registry credentials for use with a task.
+     */
+    override fun registryCredentials(action: Action<in DockerRegistryCredentials>?) {
+        action!!.execute(registryCredentials)
+    }
+
+    /**
+     * Set the credentials for the task.
+     *
+     * @param c closure with Docker registry credentials.
+     */
+    fun registryCredentials(c: Closure<DockerRegistryCredentials>) {
+        ConfigureUtil.configure(c, registryCredentials)
+    }
 
     init {
         group = "intershop container build"
@@ -32,5 +76,46 @@ class PushImages: DockerPushImage() {
         if(checkTask != null) {
             mustRunAfter(checkTask)
         }
+    }
+
+    override fun runRemoteCommand() {
+
+        val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
+        val buildImgResourceProvider: Provider<BuildImageRegistry> = getBuildService(serviceRegistry,
+                ICMDockerPlugin.BUILD_IMG_REGISTRY
+        )
+
+        buildImgResourceProvider.get().images.forEach { image ->
+
+            logger.quiet("Pushing image '${image}'.")
+            val pushImageCmd = dockerClient.pushImageCmd(image)
+            val authConfig = getRegistryAuthLocator().lookupAuthConfig(image, registryCredentials)
+            pushImageCmd.withAuthConfig(authConfig)
+            val callback = createCallback(nextHandler)
+            pushImageCmd.exec(callback).awaitCompletion()
+        }
+    }
+
+    private fun createCallback(nextHandler: Action<in PushResponseItem>?): PushImageResultCallback {
+        return object : PushImageResultCallback() {
+            override fun onNext(item: PushResponseItem) {
+                if(nextHandler != null) {
+                    try {
+                        nextHandler.execute(item)
+                    } catch ( e: Exception) {
+                        logger.error("Failed to handle push response", e)
+                        return
+                    }
+                }
+                super.onNext(item)
+            }
+        }
+    }
+
+    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+        val registration = registry.registrations.findByName(name)
+                ?: throw GradleException ("Unable to find build service with name '$name'.")
+
+        return registration.getService() as Provider<T>
     }
 }

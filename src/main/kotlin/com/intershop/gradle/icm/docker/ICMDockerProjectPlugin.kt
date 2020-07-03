@@ -61,9 +61,9 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
                 addTestReportConfiguration(this)
 
-                gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY, ISHUnitTestRegistry::class.java, {
+                gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY, ISHUnitTestRegistry::class.java) {
                     it.maxParallelUsages.set(1)
-                })
+                }
 
                 val standardTaksPreparer = StandardTaskPreparer(project)
                 val startMSSQL = prepareDatabaseContainer(project, standardTaksPreparer, extension)
@@ -164,12 +164,15 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 extension.images.solr)
         stopZK.dependsOn(stopSolr)
 
-        taskPreparer.getRemoveTask(
+        val removeZK = taskPreparer.getRemoveTask(
                 SolrCloudPreparer.TASK_REMOVE_ZK,
                 SolrCloudPreparer.CONTAINER_EXTENSION_ZK)
-        taskPreparer.getRemoveTask(
+        val removeSolr = taskPreparer.getRemoveTask(
                 SolrCloudPreparer.TASK_REMOVE_SOLR,
                 SolrCloudPreparer.CONTAINER_EXTENSION_SOLR)
+
+        removeSolr.dependsOn(removeZK)
+
     }
 
     private fun addTestReportConfiguration(project: Project) {

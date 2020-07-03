@@ -16,20 +16,372 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.DockerRegistryCredentials
+import com.bmuschko.gradle.docker.internal.OutputCollector
+import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
+import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
+import com.github.dockerjava.api.command.BuildImageResultCallback
+import com.github.dockerjava.api.exception.DockerException
+import com.github.dockerjava.api.model.BuildResponseItem
+import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_IMG_REGISTRY
+import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin
+import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
+import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
+import groovy.lang.Closure
+import org.gradle.api.Action
+import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceRegistry
+import org.gradle.api.services.internal.BuildServiceRegistryInternal
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFile
+import org.gradle.util.ConfigureUtil
+import java.io.File
+import java.io.IOException
+import java.util.function.Consumer
+import javax.inject.Inject
 
-open class BuildImage: DockerBuildImage() {
+open class BuildImage
+        @Inject constructor(objectFactory: ObjectFactory,
+                                          @Internal var projectLayout: ProjectLayout,
+                                          @Internal var fsOps: FileSystemOperations):
+        AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
+
+    private val registryCredentials: DockerRegistryCredentials =
+            objectFactory.newInstance(DockerRegistryCredentials::class.java)
+
+    /**
+     * The target Docker registry credentials for usage with a task.
+     */
+    override fun getRegistryCredentials(): DockerRegistryCredentials {
+        return registryCredentials
+    }
+
+    /**
+     * Configures the target Docker registry credentials for use with a task.
+     */
+    override fun registryCredentials(action: Action<in DockerRegistryCredentials>?) {
+        action!!.execute(registryCredentials)
+    }
+
+    /**
+     * Set the credentials for the task.
+     *
+     * @param c closure with Docker registry credentials.
+     */
+    fun registryCredentials(c: Closure<DockerRegistryCredentials>) {
+        ConfigureUtil.configure(c, registryCredentials)
+    }
+
+    /**
+     * Additional files to build the image.
+     */
+    @get:InputFiles
+    val srcFiles: ConfigurableFileCollection = objectFactory.fileCollection()
+
+    /**
+     * The Dockerfile to use to build the image.  If null, will use 'Dockerfile' in the
+     * build context, i.e. "Dockerfile" in the srcfiles.
+     */
+    @get:InputFile
+    @get:Optional
+    val dockerFile: RegularFileProperty = project.objects.fileProperty()
+
+    /**
+     * The images including repository, image name and tag used e.g. {@code vieux/apache:2.0}.
+     */
+    @get:Input
+    @get:Optional
+    val images: SetProperty<String> = project.objects.setProperty(String::class.java)
+
+    /**
+     * The images including repository, image name and tag used e.g. {@code vieux/apache:2.0}.
+     */
+    @get:Input
+    @get:Optional
+    val version: Property<String> = project.objects.property(String::class.java)
+
+    /**
+     * When {@code true}, do not use docker cache when building the image.
+     */
+    @get:Input
+    @get:Optional
+    val noCache:Property<Boolean>  = project.objects.property(Boolean::class.java)
+
+    /**
+     * When {@code true}, remove intermediate containers after a successful build.
+     */
+    @get:Input
+    @get:Optional
+    val remove:Property<Boolean> = project.objects.property(Boolean::class.java)
+
+    /**
+     * When {@code true}, suppress the build output and print image ID on success.
+     */
+    @get:Input
+    @get:Optional
+    val quiet:Property<Boolean> = project.objects.property(Boolean::class.java)
+
+    /**
+     * When {@code true}, always attempt to pull a newer version of the image.
+     */
+    @get:Input
+    @get:Optional
+    val pull:Property<Boolean>  = project.objects.property(Boolean::class.java)
+
+    /**
+     * Labels to attach as metadata for to the image.
+     */
+    @get:Input
+    @get:Optional
+    val labels: MapProperty<String, String> = project.objects.mapProperty(String::class.java, String::class.java)
+
+    /**
+     * Networking mode for the RUN instructions during build.
+     */
+    @get:Input
+    @get:Optional
+    val network:Property<String> = project.objects.property(String::class.java)
+
+    /**
+     * Build-time variables to pass to the image build.
+     */
+    @get:Input
+    @get:Optional
+    val buildArgs:MapProperty<String, String> = project.objects.mapProperty(String::class.java, String::class.java)
+
+    /**
+     * Images to consider as cache sources.
+     */
+    @get:Input
+    @get:Optional
+    val cacheFrom:SetProperty<String> = project.objects.setProperty(String::class.java)
+
+    /**
+     * Size of {@code /dev/shm} in bytes.
+     * The size must be greater than 0.
+     * If omitted the system uses 64MB.
+     */
+    @get:Input
+    @get:Optional
+    val shmSize:Property<Long> = project.objects.property(Long::class.java)
+
+    /**
+     * With this parameter it is possible to build a special stage in a multi-stage Docker file.
+     * <p>
+     * This feature is only available for use with Docker 17.05 and higher.
+     */
+    @get:Input
+    @get:Optional
+    val target:Property<String> = project.objects.property(String::class.java)
+
+    /**
+     * Build-time additional host list to pass to the image build in the format {@code host:ip}.
+     */
+    @get:Input
+    @get:Optional
+    val extraHosts:SetProperty<String> = project.objects.setProperty(String::class.java)
+    
+
+    /**
+     * Output file containing the image ID of the built image.
+     * Defaults to "$buildDir/.docker/$taskpath-imageId.txt".
+     * If path contains ':' it will be replaced by '_'.
+     */
+    @get:OutputFile
+    val imageIdFile:RegularFileProperty = project.objects.fileProperty()
+
+    /**
+     * The id of the image built.
+     */
+    @Internal
+    val imageId:Property<String> = project.objects.property(String::class.java)
+
+    @get:Input
+    val dirname: Property<String> = objectFactory.property(String::class.java)
 
     init {
-        group = "intershop container build"
+        images.empty()
+        noCache.set(false)
+        remove.set(true)
+        quiet.set(false)
+        pull.set(false)
+        cacheFrom.empty()
+        val safeTaskPath = this.path.replaceFirst("^:", "").replace(":", "_")
+        imageIdFile.set(project.layout.buildDirectory.file(".docker/${safeTaskPath}-imageId.txt"))
+        buildArgs.empty()
 
-        remove.set(
-                project.hasProperty("runOnCI") &&
-                project.property("runOnCI") == "true")
+        outputs.upToDateWhen {
+            val file = imageIdFile.get().asFile
+            val returnValue =
+                    if(file.exists()) {
+                        try {
+                            val fileImageId = file.readText()
+                            dockerClient.inspectImageCmd(fileImageId).exec()
+                            imageId.set(fileImageId)
 
-        val checkTask = project.tasks.findByName("check")
-        if(checkTask != null) {
-            mustRunAfter(checkTask)
+                            true
+                        } catch (e: DockerException) {
+                            e.printStackTrace()
+                            false
+                        }
+                    } else {
+                        false
+                    }
+            returnValue
         }
+
+        onlyIf {
+            ! srcFiles.isEmpty || dockerFile.isPresent
+        }
+    }
+
+    override fun runRemoteCommand() {
+        val finalDir = dirname.getOrElse("docker")
+        val imgBuildDir = projectLayout.buildDirectory.dir("buildimage/${finalDir}").get().asFile
+        val defaultDockerFile = File(imgBuildDir, "Dockerfile")
+
+        val versionStr = version.getOrElse(project.version.toString())
+
+        imgBuildDir.mkdirs()
+        logger.quiet("Building image using context '{}'.", imgBuildDir.absolutePath)
+
+        fsOps.copy {
+            it.from(srcFiles)
+            it.into(imgBuildDir)
+        }
+
+        val buildImageCmd = dockerClient.buildImageCmd().withBaseDirectory(imgBuildDir)
+
+        if (dockerFile.orNull != null) {
+            logger.quiet("Using Dockerfile '{}'", dockerFile.get().asFile)
+            buildImageCmd.withDockerfile(dockerFile.get().asFile)
+        } else {
+            buildImageCmd.withDockerfile(defaultDockerFile)
+        }
+
+        val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
+        val buildImgResourceProvider: Provider<BuildImageRegistry> = getBuildService(serviceRegistry,
+            BUILD_IMG_REGISTRY)
+
+        if (images.orNull != null) {
+            val imgs = mutableSetOf<String>()
+            images.get().forEach {
+                val imgParts = it.split(":")
+                if(imgParts.size < 2) {
+                    imgs.add("${it}:${versionStr}")
+                }
+            }
+            val tagListString = imgs.joinToString(separator = ",") { "'${it}'" }
+            logger.quiet("Using images {}.", tagListString)
+            buildImgResourceProvider.get().addImages(imgs.toList())
+            buildImageCmd.withTags(imgs)
+        }
+
+        buildImageCmd.withNoCache(noCache.get())
+        buildImageCmd.withRemove(remove.get())
+        buildImageCmd.withQuiet(quiet.get())
+        buildImageCmd.withPull(pull.get())
+
+        if(network.isPresent && network.getOrElse("").isNotEmpty()) {
+            buildImageCmd.withNetworkMode(network.get())
+        }
+
+        if(labels.get().isNotEmpty()) {
+            val map = mutableMapOf<String, String>()
+            map.putAll(labels.get())
+            map["version"] = versionStr
+
+            buildImageCmd.withLabels(map)
+        }
+
+        if(shmSize.isPresent) { // 0 is valid input
+            buildImageCmd.withShmsize(shmSize.get())
+        }
+
+        if(target.isPresent) {
+            buildImageCmd.withTarget(target.get())
+        }
+
+        val authConfigurations = registryAuthLocator.lookupAllAuthConfigs(registryCredentials)
+        buildImageCmd.withBuildAuthConfigs(authConfigurations)
+
+        if (buildArgs.get().isNotEmpty()) {
+            buildArgs.get().forEach { (key, value) ->
+                buildImageCmd.withBuildArg(key, value)
+            }
+        }
+
+        if (cacheFrom.get().isNotEmpty()) {
+            buildImageCmd.withCacheFrom(cacheFrom.get())
+        }
+
+        if (extraHosts.get().isNotEmpty()) {
+            buildImageCmd.withExtraHosts(extraHosts.get())
+        }
+
+        val createdImageId = buildImageCmd.exec(createCallback(nextHandler)).awaitImageId()
+        imageId.set(createdImageId)
+        imageIdFile.get().asFile.writeText(createdImageId)
+        logger.quiet("Created image with ID '{}'.", createdImageId)
+    }
+
+    private fun createCallback(nextHandler: Action<in BuildResponseItem>?): BuildImageResultCallback {
+        if (nextHandler != null) {
+            return object : BuildImageResultCallback() {
+                override fun onNext(item: BuildResponseItem) {
+                    try {
+                        nextHandler.execute(item)
+                    } catch (e: Exception) {
+                        logger.error("Failed to handle build response", e)
+                        return
+                    }
+                    super.onNext(item)
+                }
+            }
+        }
+
+        return object : BuildImageResultCallback() {
+            val collector = OutputCollector(Consumer<String> { s -> logger.quiet(s) })
+
+            override fun onNext(item: BuildResponseItem) {
+                try {
+                    val possibleStream = item.stream
+                    if (possibleStream != null) {
+                        collector.accept(possibleStream)
+                    }
+                } catch(e: Exception) {
+                    logger.error("Failed to handle build response", e)
+                    return
+                }
+                super.onNext(item)
+            }
+
+            @Throws(IOException::class)
+            override fun close() {
+                collector.close()
+                super.close()
+            }
+        }
+    }
+
+    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+        val registration = registry.registrations.findByName(name)
+            ?: throw GradleException ("Unable to find build service with name '$name'.")
+
+        return registration.getService() as Provider<T>
     }
 }
