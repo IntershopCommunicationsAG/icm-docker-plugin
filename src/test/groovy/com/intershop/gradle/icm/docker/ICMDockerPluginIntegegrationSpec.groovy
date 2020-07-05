@@ -18,6 +18,7 @@ package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.util.TestRepo
 import com.intershop.gradle.test.AbstractIntegrationGroovySpec
+import spock.lang.Ignore
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.SKIPPED
@@ -165,6 +166,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop_docker {
                 images {
+                    icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
@@ -182,10 +184,48 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                         testSuite = "tests.suite.SFResponsivB2bAllSuite"
                     }
                 }
+                
+                println(tasks.createInitPkg.outputs.files)
+                imageBuild {
+                    images {
+                        mainImage {
+                           addFiles(files("docker/main/Dockerfile"))
+                           addFiles(tasks.createMainPkg.outputs.files)
+                           dockerBuildDir = "main"
+                        }
+                        initImage {
+                            addFiles(files("docker/init/Dockerfile"))
+                            addFiles(tasks.createInitPkg.outputs.files)
+                            dockerBuildDir = "init"
+                        }
+                    } 
+                }
             }
+
+            tasks.buildMainImage.dependsOn(tasks.createMainPkg)
 
             ${repoConf}
 
+        """.stripIndent()
+
+        def dockerInitFile = new File(testProjectDir, "docker/init/Dockerfile")
+        dockerInitFile.parentFile.mkdirs()
+        dockerInitFile.createNewFile()
+        dockerInitFile <<
+        """
+        ARG SETUP_IMAGE
+        FROM \$SETUP_IMAGE as BUILD
+        RUN mkdir -p /intershop/sites
+        """.stripIndent()
+
+        def dockerMainFile = new File(testProjectDir, "docker/main/Dockerfile")
+        dockerMainFile.parentFile.mkdirs()
+        dockerMainFile.createNewFile()
+        dockerMainFile <<
+        """
+        ARG SETUP_IMAGE
+        FROM \$SETUP_IMAGE as BUILD
+        RUN mkdir -p /intershop-prj
         """.stripIndent()
 
         def prj1dir = createSubProject('prjCartridge_prod', """
@@ -748,6 +788,66 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result3.task(":removeSolr").outcome == SUCCESS
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'buildImages for projects'() {
+        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("tasks", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+            result1.task(":tasks").outcome == SUCCESS
+
+        when:
+        def result2 = getPreparedGradleRunner()
+                .withArguments("buildMainImage","-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":buildMainImage").outcome == SUCCESS
+
+        when:
+        def result3 = getPreparedGradleRunner()
+                .withArguments("buildInitImage", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result3.task(":buildInitImage").outcome == SUCCESS
+
+        when:
+        def result4 = getPreparedGradleRunner()
+                .withArguments("buildTestImage", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result4.task(":buildTestImage").outcome == SKIPPED
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    @Ignore
+    def 'writeImageProperties for projects'() {
+        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("writeImageProperties", "-s", "-i", "-PrunOnCI=true")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result1.task(":writeImageProperties").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions

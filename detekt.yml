@@ -67,7 +67,7 @@ complexity:
     includePrivateDeclarations: false
   ComplexMethod:
     active: true
-    threshold: 15
+    threshold: 25
     ignoreSingleWhenExpression: false
     ignoreSimpleWhenEntries: false
     ignoreNestingFunctions: false
@@ -83,8 +83,8 @@ complexity:
     threshold: 80
   LongParameterList:
     active: true
-    functionThreshold: 6
-    constructorThreshold: 7
+    functionThreshold: 8
+    constructorThreshold: 9
     ignoreDefaultParameters: false
     ignoreDataClasses: true
     ignoreAnnotated: []

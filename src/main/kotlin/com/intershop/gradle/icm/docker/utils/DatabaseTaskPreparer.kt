@@ -18,10 +18,7 @@ package com.intershop.gradle.icm.docker.utils
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.APullImage
-import com.intershop.gradle.icm.docker.tasks.PullExtraImage
-import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
-import com.intershop.gradle.icm.docker.tasks.StopExtraContainerTask
 import org.gradle.api.Project
 
 class DatabaseTaskPreparer(val project: Project,

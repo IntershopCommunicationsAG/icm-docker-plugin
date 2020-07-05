@@ -24,7 +24,6 @@ import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareCallback
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
@@ -62,11 +61,29 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
     @get:Input
     val propertyKeys: Property<String> = project.objects.property(String::class.java)
 
+    private val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
+    /**
+     * Enable debugging for the process. The process is started suspended and listening on port 5005.
+     * This can be configured also over the gradle parameter "debug-java".
+     *
+     * @property debug is the task property
+     */
+    @set:Option(
+        option = "debug-jvm",
+        description = "Enable debugging for the process. The process is started suspended and listening on port 5005."
+    )
+    @get:Input
+    var debug: Boolean
+        get() = debugProperty.get()
+        set(value: Boolean) = debugProperty.set(value)
+
+
     init {
-        mode.set("auto")
-        cleanDB.set("no")
-        cartridges.set("")
-        propertyKeys.set("")
+        mode.convention("auto")
+        cleanDB.convention("no")
+        cartridges.convention("")
+        propertyKeys.convention("")
+        debugProperty.convention(false)
 
         group = "icm docker project"
     }
@@ -83,6 +100,11 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
 
         val command = mutableListOf<String>()
         command.addAll(listOf("/intershop/bin/intershop.sh", "dbprepare", "-classic"))
+
+        if(debugProperty.get()) {
+            execCmd.withEnv(listOf("ENABLE_DEBUG=true"))
+        }
+
         command.add("--mode=${mode.get()}")
         command.add("--clean-db=${cleanDB.get()}")
         if(cartridges.get().trim().isNotEmpty()) {

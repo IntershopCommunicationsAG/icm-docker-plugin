@@ -23,10 +23,8 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.APullImage
 import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
-import com.intershop.gradle.icm.docker.tasks.PullImage
-import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
-import org.gradle.api.Project
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import java.io.File
@@ -102,6 +100,8 @@ class ServerTaskPreparer(val project: Project, private val dockerExtension: Inte
                 containerName.set("${project.name.toLowerCase()}-container")
 
                 entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
+
+                hostConfig.portBindings.set(listOf("5005:7746"))
 
                 hostConfig.binds.set(transformVolumes( mutableMapOf(
                         getOutputPathFor(TASK_CREATESITES, "sites")
