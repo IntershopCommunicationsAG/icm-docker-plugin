@@ -24,9 +24,7 @@ import com.github.dockerjava.api.command.BuildImageResultCallback
 import com.github.dockerjava.api.exception.DockerException
 import com.github.dockerjava.api.model.BuildResponseItem
 import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_IMG_REGISTRY
-import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
-import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.GradleException
@@ -56,8 +54,8 @@ import javax.inject.Inject
 
 open class BuildImage
         @Inject constructor(objectFactory: ObjectFactory,
-                                          @Internal var projectLayout: ProjectLayout,
-                                          @Internal var fsOps: FileSystemOperations):
+                            @Internal var projectLayout: ProjectLayout,
+                            @Internal var fsOps: FileSystemOperations):
         AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
 
     private val registryCredentials: DockerRegistryCredentials =
@@ -106,13 +104,6 @@ open class BuildImage
     @get:Input
     @get:Optional
     val images: SetProperty<String> = project.objects.setProperty(String::class.java)
-
-    /**
-     * The images including repository, image name and tag used e.g. {@code vieux/apache:2.0}.
-     */
-    @get:Input
-    @get:Optional
-    val version: Property<String> = project.objects.property(String::class.java)
 
     /**
      * When {@code true}, do not use docker cache when building the image.
@@ -245,7 +236,13 @@ open class BuildImage
         }
 
         onlyIf {
-            ! srcFiles.isEmpty || dockerFile.isPresent
+            val returnValue = (! srcFiles.isEmpty || dockerFile.isPresent)
+            if(! returnValue) {
+                project.logger.quiet("Task {} skipped. Source files are empty or/and a Dockerfile is " +
+                        "not configured. (srcFiles: {}, dockerFile: {}",
+                        this.name, srcFiles.isEmpty, dockerFile.isPresent)
+            }
+            returnValue
         }
     }
 
@@ -253,8 +250,6 @@ open class BuildImage
         val finalDir = dirname.getOrElse("docker")
         val imgBuildDir = projectLayout.buildDirectory.dir("buildimage/${finalDir}").get().asFile
         val defaultDockerFile = File(imgBuildDir, "Dockerfile")
-
-        val versionStr = version.getOrElse(project.version.toString())
 
         imgBuildDir.mkdirs()
         logger.quiet("Building image using context '{}'.", imgBuildDir.absolutePath)
@@ -278,17 +273,10 @@ open class BuildImage
             BUILD_IMG_REGISTRY)
 
         if (images.orNull != null) {
-            val imgs = mutableSetOf<String>()
-            images.get().forEach {
-                val imgParts = it.split(":")
-                if(imgParts.size < 2) {
-                    imgs.add("${it}:${versionStr}")
-                }
-            }
-            val tagListString = imgs.joinToString(separator = ",") { "'${it}'" }
+            val tagListString = images.get().joinToString(separator = ",") { "'${it}'" }
             logger.quiet("Using images {}.", tagListString)
-            buildImgResourceProvider.get().addImages(imgs.toList())
-            buildImageCmd.withTags(imgs)
+            buildImgResourceProvider.get().addImages(images.get().toList())
+            buildImageCmd.withTags(images.get())
         }
 
         buildImageCmd.withNoCache(noCache.get())
@@ -301,11 +289,7 @@ open class BuildImage
         }
 
         if(labels.get().isNotEmpty()) {
-            val map = mutableMapOf<String, String>()
-            map.putAll(labels.get())
-            map["version"] = versionStr
-
-            buildImageCmd.withLabels(map)
+            buildImageCmd.withLabels(labels.get())
         }
 
         if(shmSize.isPresent) { // 0 is valid input
@@ -382,6 +366,11 @@ open class BuildImage
         val registration = registry.registrations.findByName(name)
             ?: throw GradleException ("Unable to find build service with name '$name'.")
 
-        return registration.getService() as Provider<T>
+        val service = registration.getService()
+        if(service is Provider) {
+            return service as Provider<T>
+        } else {
+            throw GradleException("There is no correct Provider of a BuildServiceRegistry.")
+        }
     }
 }

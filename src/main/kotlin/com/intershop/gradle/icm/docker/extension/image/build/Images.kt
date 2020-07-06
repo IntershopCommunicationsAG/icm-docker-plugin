@@ -87,7 +87,7 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         action.execute(initImage)
     }
 
-    val testInitImage: ImageConfiguration = objectFactory.newInstance(ImageConfiguration::class.java)
+    val initTestImage: ImageConfiguration = objectFactory.newInstance(ImageConfiguration::class.java)
 
     /**
      * Configures the test init image configuration from a closure.
@@ -95,8 +95,8 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
      * @param closure   closure with an image configuration.
      */
     @Suppress("unused")
-    fun testInitImage(closure: Closure<ImageConfiguration>) {
-        ConfigureUtil.configure(closure, testInitImage)
+    fun initTestImage(closure: Closure<ImageConfiguration>) {
+        ConfigureUtil.configure(closure, initTestImage)
     }
 
     /**
@@ -104,8 +104,8 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
      *
      * @param action   action with an image configuration.
      */
-    fun testInitImage(action: Action<in ImageConfiguration>) {
-        action.execute(testInitImage)
+    fun initTestImage(action: Action<in ImageConfiguration>) {
+        action.execute(initTestImage)
     }
 
     init {
@@ -118,7 +118,7 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         testImage.nameExtension.set("as-test")
         testImage.description.set("Appserver Test")
 
-        testInitImage.nameExtension.set("as-test-init")
-        testInitImage.description.set("Appserver Test Initialization")
+        initTestImage.nameExtension.set("as-test-init")
+        initTestImage.description.set("Appserver Test Initialization")
     }
 }
