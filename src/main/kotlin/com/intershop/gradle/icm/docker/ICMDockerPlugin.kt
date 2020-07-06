@@ -92,15 +92,15 @@ open class ICMDockerPlugin: Plugin<Project> {
                 extension.imageBuild.images.testImage,
                 imgTask,
                 BUILD_TEST_IMAGE)
-                mainTask.dependsOn(imgTestTask)
+        mainTask.dependsOn(imgTestTask)
 
         val imgInitTestTask = createTestImageTask(project,
                 extension.images,
                 extension.imageBuild,
-                extension.imageBuild.images.testInitImage,
+                extension.imageBuild.images.initTestImage,
                 initImgTask,
                 BUILD_INIT_TEST_IMAGE)
-                mainTask.dependsOn(imgInitTestTask)
+        mainTask.dependsOn(imgInitTestTask)
 
         val push = project.tasks.maybeCreate(PUSH_IMAGES, PushImages::class.java).apply {
             dependsOn(imgTestTask, imgInitTestTask)
@@ -116,22 +116,28 @@ open class ICMDockerPlugin: Plugin<Project> {
                                 imgConf: ImageConfiguration,
                                 taskName: String): BuildImage {
         return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
-                srcFiles.from(imgConf.srcFiles)
-                dirname.set(imgConf.dockerBuildDirProvider)
-                version.set(imgBuild.version)
+            srcFiles.from(imgConf.srcFiles)
+            dirname.set(imgConf.dockerBuildDirProvider)
 
-                with(this.labels) {
-                    put("license", imgBuild.licenseProvider)
-                    put("maintainer", imgBuild.maintainerProvider)
-                    put("description", "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}")
-                    put("created", imgBuild.createdProvider)
-                }
+            with(this.labels) {
+                put("license", imgBuild.licenseProvider)
+                put("maintainer", imgBuild.maintainerProvider)
+                put("description", project.provider {
+                    "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
+                })
+                put("created", imgBuild.createdProvider)
+                put("version", project.provider {
+                    project.version.toString()
+                })
+            }
 
                 buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
 
-                val nameExt = imgConf.nameExtension.get()
-                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
-                images.set(mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}"))
+                images.set(project.provider {
+                    val nameExt = imgConf.nameExtension.get()
+                    val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
+                    mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}")
+                })
             }
     }
 
@@ -142,17 +148,24 @@ open class ICMDockerPlugin: Plugin<Project> {
                                     imgTask: BuildImage,
                                     taskName: String): BuildImage {
         return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
-                with(this.labels) {
-                    put("description", "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}")
-                }
+            srcFiles.from(imgConf.srcFiles)
+            dirname.set(imgConf.dockerBuildDirProvider)
 
-                buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
-                buildArgs.put( "BASE_IMAGE", imgTask.images.get().first())
+            with(this.labels) {
+                put("description", project.provider {
+                    "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
+                })
+            }
 
+            buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
+            buildArgs.put( "BASE_IMAGE", project.provider { imgTask.images.get().first() })
+            images.set(project.provider {
                 val nameExt = imgConf.nameExtension.get()
                 val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
-                images.set(mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}"))
-                dependsOn(imgTask)
-            }
+                mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}")
+            })
+
+            dependsOn(imgTask)
+        }
     }
 }
