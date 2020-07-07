@@ -40,4 +40,10 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
     val icminit: Property<String> = objectFactory.property(String::class.java)
 
     val mssqldb: Property<String> = objectFactory.property(String::class.java)
+
+    init {
+        icmsetup.convention("")
+        icmbase.convention("")
+        icminit.convention("")
+    }
 }

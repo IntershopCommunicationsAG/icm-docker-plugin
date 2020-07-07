@@ -131,14 +131,16 @@ open class ICMDockerPlugin: Plugin<Project> {
                 })
             }
 
-                buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
+            buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
+            buildArgs.put( "ICM_BASE_IMAGE", imgs.icmbase)
+            buildArgs.put( "ICM_INIT_IMAGE", imgs.icminit)
 
-                images.set(project.provider {
-                    val nameExt = imgConf.nameExtension.get()
-                    val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
-                    mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}")
-                })
-            }
+            images.set(project.provider {
+                val nameExt = imgConf.nameExtension.get()
+                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
+                mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}")
+            })
+        }
     }
 
     private fun createTestImageTask(project: Project,
@@ -158,7 +160,10 @@ open class ICMDockerPlugin: Plugin<Project> {
             }
 
             buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
+            buildArgs.put( "ICM_BASE_IMAGE", imgs.icmbase)
+            buildArgs.put( "ICM_INIT_IMAGE", imgs.icminit)
             buildArgs.put( "BASE_IMAGE", project.provider { imgTask.images.get().first() })
+
             images.set(project.provider {
                 val nameExt = imgConf.nameExtension.get()
                 val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
