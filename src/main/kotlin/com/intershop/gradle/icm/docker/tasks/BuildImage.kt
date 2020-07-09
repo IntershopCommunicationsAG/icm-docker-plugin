@@ -96,7 +96,7 @@ open class BuildImage
      */
     @get:InputFile
     @get:Optional
-    val dockerFile: RegularFileProperty = project.objects.fileProperty()
+    val dockerfile: RegularFileProperty = project.objects.fileProperty()
 
     /**
      * The images including repository, image name and tag used e.g. {@code vieux/apache:2.0}.
@@ -204,6 +204,9 @@ open class BuildImage
     @get:Input
     val dirname: Property<String> = objectFactory.property(String::class.java)
 
+    @get:Internal
+    val enabled: Property<Boolean> = objectFactory.property(Boolean::class.java)
+
     init {
         images.empty()
         noCache.set(false)
@@ -236,11 +239,9 @@ open class BuildImage
         }
 
         onlyIf {
-            val returnValue = (! srcFiles.isEmpty || dockerFile.isPresent)
+            val returnValue = enabled.getOrElse(false)
             if(! returnValue) {
-                project.logger.quiet("Task {} skipped. Source files are empty or/and a Dockerfile is " +
-                        "not configured. (srcFiles: {}, dockerFile: {}",
-                        this.name, srcFiles.isEmpty, dockerFile.isPresent)
+                project.logger.quiet("Task {} skipped, because it is not enabled.")
             }
             returnValue
         }
@@ -254,19 +255,18 @@ open class BuildImage
         imgBuildDir.mkdirs()
         logger.quiet("Building image using context '{}'.", imgBuildDir.absolutePath)
 
+
         fsOps.copy {
+            if (dockerfile.orNull != null) {
+                logger.quiet("Dockerfile '{}' will be copied to working dir: {}", dockerfile.get().asFile, imgBuildDir)
+                it.from(dockerfile)
+            }
             it.from(srcFiles)
             it.into(imgBuildDir)
         }
 
         val buildImageCmd = dockerClient.buildImageCmd().withBaseDirectory(imgBuildDir)
-
-        if (dockerFile.orNull != null) {
-            logger.quiet("Using Dockerfile '{}'", dockerFile.get().asFile)
-            buildImageCmd.withDockerfile(dockerFile.get().asFile)
-        } else {
-            buildImageCmd.withDockerfile(defaultDockerFile)
-        }
+        buildImageCmd.withDockerfile(defaultDockerFile)
 
         val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
         val buildImgResourceProvider: Provider<BuildImageRegistry> = getBuildService(serviceRegistry,

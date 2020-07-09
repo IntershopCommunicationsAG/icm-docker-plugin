@@ -18,6 +18,8 @@ package com.intershop.gradle.icm.docker.extension.image.build
 
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -59,6 +61,16 @@ open class ImageConfiguration @Inject constructor(objectFactory: ObjectFactory) 
         srcFiles.from(srcfiles)
     }
 
+    val pkgTaskNameProvider: Provider<String>
+        get() = this.pkgTaskNameProvider
+
+    val pkgTaskName: Property<String> = objectFactory.property(String::class.java)
+
+    val dockerfileProvider: Provider<RegularFile>
+        get() = this.dockerfile
+
+    val dockerfile: RegularFileProperty = objectFactory.fileProperty()
+
     /**
      * Provider for description extension.
      */
@@ -69,4 +81,9 @@ open class ImageConfiguration @Inject constructor(objectFactory: ObjectFactory) 
      * Description extension of the special image.
      */
     val dockerBuildDir: Property<String> = objectFactory.property(String::class.java)
+
+    val enabledProvider: Provider<Boolean>
+        get() = this.enabled
+
+    val enabled: Property<Boolean> = objectFactory.property(Boolean::class.java)
 }

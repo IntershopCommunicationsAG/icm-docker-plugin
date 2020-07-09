@@ -16,12 +16,15 @@
  */
 package com.intershop.gradle.icm.docker
 
+import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_MAIN_IMAGE
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
+import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.SolrCloudPreparer
 import com.intershop.gradle.icm.docker.utils.StandardTaskPreparer
 import org.gradle.api.GradleException
@@ -64,6 +67,8 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY, ISHUnitTestRegistry::class.java) {
                     it.maxParallelUsages.set(1)
                 }
+
+                ProjectImageBuildPreparer(project, extension.images, extension.imageBuild.images).prepareImageBuilds()
 
                 val standardTaksPreparer = StandardTaskPreparer(project)
                 val startMSSQL = prepareDatabaseContainer(project, standardTaksPreparer, extension)

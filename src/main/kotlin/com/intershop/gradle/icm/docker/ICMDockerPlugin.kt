@@ -116,6 +116,9 @@ open class ICMDockerPlugin: Plugin<Project> {
                                 imgConf: ImageConfiguration,
                                 taskName: String): BuildImage {
         return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
+            enabled.set(imgConf.enabledProvider)
+            dockerfile.set(imgConf.dockerfileProvider)
+
             srcFiles.from(imgConf.srcFiles)
             dirname.set(imgConf.dockerBuildDirProvider)
 
@@ -132,8 +135,6 @@ open class ICMDockerPlugin: Plugin<Project> {
             }
 
             buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
-            buildArgs.put( "ICM_BASE_IMAGE", imgs.icmbase)
-            buildArgs.put( "ICM_INIT_IMAGE", imgs.icminit)
 
             images.set(project.provider {
                 val nameExt = imgConf.nameExtension.get()
@@ -150,6 +151,9 @@ open class ICMDockerPlugin: Plugin<Project> {
                                     imgTask: BuildImage,
                                     taskName: String): BuildImage {
         return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
+            enabled.set(imgConf.enabledProvider)
+            dockerfile.set(imgConf.dockerfileProvider)
+
             srcFiles.from(imgConf.srcFiles)
             dirname.set(imgConf.dockerBuildDirProvider)
 
