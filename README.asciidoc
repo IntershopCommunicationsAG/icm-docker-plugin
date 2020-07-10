@@ -1,0 +1,119 @@
+= Intershop Commerce Management Container Project Plugins
+:latestRevision: 1.0.0
+:toc:
+:icons: font
+
+== Summary
+This plugin collection contains plugins for building container images and
+starting container of Intershop Commerce Management. For some configuration it is necessary
+that the ICM Gradle plugin (https://github.com/IntershopCommunicationsAG/icm-gradle-plugin) was
+applied to the project. Version 2.2.0 of this plugin is the minimum version.
+
+This plugin is based on https://github.com/bmuschko/gradle-docker-plugin.
+
+== Intershop Commerce Management Docker Plugin
+This plugin configures the basics for an Intershop Commerce Management product project.
+
+=== Plugin Configuration
+
+++++
+<details open>
+<summary>Groovy</summary>
+++++
+.build.gradle
+[source,groovy]
+----
+plugins {
+    id 'com.intershop.gradle.icm.base' version '2.2.0'
+    id 'com.intershop.gradle.icm.docker' version '{latestRevision}'
+}
+
+intershop {
+    ...
+}
+
+intershop_docker {
+
+}
+----
+++++
+</details>
+++++
+
+++++
+<details>
+<summary>Kotlin</summary>
+++++
+.build.gradle.kts
+[source,kotlin]
+----
+plugins {
+    id("com.intershop.gradle.icm.base") version '2.2.0'
+    id("com.intershop.gradle.icm.docker") version "{latestRevision}"
+}
+
+intershop {
+    ...
+}
+
+intershop_docker {
+
+}
+----
+++++
+</details>
+++++
+
+== Intershop Commerce Management Docker Project Plugin
+This plugin add tasks and configurations for an project based on Intershop Commerce Management. It applies
+the Intershop Commerce Management Docker Plugin.
+
+=== Plugin Configuration
+
+++++
+<details open>
+<summary>Groovy</summary>
+++++
+.build.gradle
+[source,groovy]
+----
+plugins {
+    id 'com.intershop.gradle.icm.project' version '2.2.0'
+    id 'com.intershop.gradle.icm.docker.project' version '{latestRevision}'
+}
+
+intershop {
+    ...
+}
+
+intershop_docker {
+
+}
+----
+++++
+</details>
+++++
+
+++++
+<details>
+<summary>Kotlin</summary>
+++++
+.build.gradle.kts
+[source,kotlin]
+----
+plugins {
+    id("com.intershop.gradle.icm.project") version '2.2.0'
+    id("com.intershop.gradle.icm.docker.project") version "{latestRevision}"
+}
+
+intershop {
+    ...
+}
+
+intershop_docker {
+
+}
+----
+++++
+</details>
+++++
