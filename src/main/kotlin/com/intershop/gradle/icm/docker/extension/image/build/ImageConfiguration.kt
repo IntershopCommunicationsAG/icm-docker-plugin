@@ -62,7 +62,7 @@ open class ImageConfiguration @Inject constructor(objectFactory: ObjectFactory) 
     }
 
     val pkgTaskNameProvider: Provider<String>
-        get() = this.pkgTaskNameProvider
+        get() = this.pkgTaskName
 
     val pkgTaskName: Property<String> = objectFactory.property(String::class.java)
 

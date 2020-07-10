@@ -18,17 +18,19 @@ package com.intershop.gradle.icm.docker
 
 import com.avast.gradle.dockercompose.DockerComposePlugin
 import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
-import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
-import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.extension.Images
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
+import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
-import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
+import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
+import com.intershop.gradle.icm.docker.utils.StandardTaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 
 /**
  * Main plugin class of the project plugin.
@@ -63,10 +65,31 @@ open class ICMDockerPlugin: Plugin<Project> {
             plugins.apply(DockerComposePlugin::class.java)
             plugins.apply(DockerRemoteApiPlugin::class.java)
 
-            gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
+            val standardTaksPreparer = StandardTaskPreparer(project)
+            prepareDatabaseContainer(project, standardTaksPreparer, extension)
 
+            gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
             createImageTasks(this, extension)
         }
+    }
+
+    private fun prepareDatabaseContainer(project: Project,
+                                         taskPreparer: StandardTaskPreparer,
+                                         extension: IntershopDockerExtension) {
+
+        val dbTaskPreparer = DatabaseTaskPreparer(project, extension)
+        val pullMSSQL = taskPreparer.getPullTask(
+                DatabaseTaskPreparer.TASK_PULL,
+                extension.images.mssqldb)
+        taskPreparer.getStopTask(
+                DatabaseTaskPreparer.TASK_STOP,
+                DatabaseTaskPreparer.CONTAINER_EXTENSION,
+                extension.images.mssqldb)
+        taskPreparer.getRemoveTask(
+                DatabaseTaskPreparer.TASK_REMOVE,
+                DatabaseTaskPreparer.CONTAINER_EXTENSION)
+
+        dbTaskPreparer.getMSSQLStartTask(pullMSSQL)
     }
 
     private fun createImageTasks(project: Project, extension: IntershopDockerExtension) {
@@ -136,11 +159,7 @@ open class ICMDockerPlugin: Plugin<Project> {
 
             buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
 
-            images.set(project.provider {
-                val nameExt = imgConf.nameExtension.get()
-                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
-                mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}")
-            })
+            images.set( calculateImageTag(project, imgBuild, imgConf) )
         }
     }
 
@@ -164,17 +183,19 @@ open class ICMDockerPlugin: Plugin<Project> {
             }
 
             buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
-            buildArgs.put( "ICM_BASE_IMAGE", imgs.icmbase)
-            buildArgs.put( "ICM_INIT_IMAGE", imgs.icminit)
             buildArgs.put( "BASE_IMAGE", project.provider { imgTask.images.get().first() })
 
-            images.set(project.provider {
-                val nameExt = imgConf.nameExtension.get()
-                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
-                mutableListOf("${imgBuild.baseImageName.get()}${nameComplete}:${project.version}")
-            })
-
+            images.set( calculateImageTag(project, imgBuild, imgConf) )
             dependsOn(imgTask)
         }
     }
+
+    fun calculateImageTag(project: Project,
+                          prjconf: ProjectConfiguration,
+                          imgConf: ImageConfiguration): Provider<List<String>> =
+            project.provider {
+                val nameExt = imgConf.nameExtension.get()
+                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
+                mutableListOf("${prjconf.baseImageName.get()}${nameComplete}:${project.version}")
+            }
 }

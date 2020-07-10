@@ -22,8 +22,7 @@ import com.intershop.gradle.icm.docker.tasks.APullImage
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
 import org.gradle.api.Project
 
-class SolrCloudPreparer(val project: Project,
-                        private val dockerExtension: IntershopDockerExtension) {
+class SolrCloudPreparer(val project: Project) {
 
     companion object {
         const val TASK_PULL_ZK = "pullZK"

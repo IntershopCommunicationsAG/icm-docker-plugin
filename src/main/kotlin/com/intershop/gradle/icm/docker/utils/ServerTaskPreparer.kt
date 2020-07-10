@@ -54,9 +54,6 @@ class ServerTaskPreparer(val project: Project, private val dockerExtension: Inte
         const val TASK_CREATECLUSTERID = "createClusterID"
         const val TASK_COPYLIBS = "copyLibs"
 
-        const val TASK_DBPREPARE = "dbPrepare"
-        const val TASK_ISHUNIT_REPORT = "ishUnitTestReport"
-
         const val CONTAINER_EXTENSION = "container"
     }
 

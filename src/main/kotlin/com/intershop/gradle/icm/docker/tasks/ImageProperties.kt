@@ -24,12 +24,10 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.internal.util.PropertiesUtils
@@ -108,7 +106,6 @@ open class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
     private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
         val registration = registry.registrations.findByName(name)
             ?: throw GradleException ("Unable to find build service with name '$name'.")
-
         return registration.getService() as Provider<T>
     }
 }
