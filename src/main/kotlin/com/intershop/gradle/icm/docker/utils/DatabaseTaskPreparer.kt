@@ -49,20 +49,20 @@ class DatabaseTaskPreparer(val project: Project,
 
                 with(dockerExtension.developmentConfig) {
                     hostConfig.portBindings.set(
-                        listOf("${getConfigProperty( "intershop.db.msql.hostport", "1433")}:1433"))
+                        listOf("${getConfigProperty( "intershop.db.mssql.hostport", "1433")}:1433"))
                     envVars.set( mutableMapOf(
                         "ACCEPT_EULA" to
                                 "Y",
                         "SA_PASSWORD" to
-                                getConfigProperty( "intershop.db.msql.sa.password", "1nstershop5A"),
+                                getConfigProperty( "intershop.db.mssql.sa.password", "1nstershop5A"),
                         "MSSQL_PID" to
                                 "Developer",
                         "RECREATEDB" to
-                                getConfigProperty("intershop.db.msql.recreatedb", "false"),
+                                getConfigProperty("intershop.db.mssql.recreatedb", "false"),
                         "RECREATEUSER" to
-                                getConfigProperty("intershop.db.msql.recreateuser", "false"),
+                                getConfigProperty("intershop.db.mssql.recreateuser", "false"),
                         "ICM_DB_NAME" to
-                                getConfigProperty("intershop.db.msql.dbname", "icmtestdb"),
+                                getConfigProperty("intershop.db.mssql.dbname", "icmtestdb"),
                         "ICM_DB_USER" to
                                 getConfigProperty("intershop.jdbc.user", "intershop"),
                         "ICM_DB_PASSWORD" to
