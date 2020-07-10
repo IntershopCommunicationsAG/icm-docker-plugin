@@ -57,6 +57,13 @@ open class StopExtraContainerTask @Inject constructor(objectFactory: ObjectFacto
         }
 
         containerIDList.forEach {
+            val stopContainer = dockerClient.stopContainerCmd(it)
+            stopContainer.withTimeout(waitTime.getOrElse(0))
+
+            logger.quiet("Stop container with ID '${it}'('${containerName.get()}').")
+
+            stopContainer.exec()
+
             if (remove.get()) {
                 val removeContainerCmd = dockerClient.removeContainerCmd(it)
                 removeContainerCmd.withRemoveVolumes(true)

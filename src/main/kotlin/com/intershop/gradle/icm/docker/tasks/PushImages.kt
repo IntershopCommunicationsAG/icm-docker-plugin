@@ -89,7 +89,7 @@ open class PushImages
 
             logger.quiet("Pushing image '${image}'.")
             val pushImageCmd = dockerClient.pushImageCmd(image)
-            val authConfig = getRegistryAuthLocator().lookupAuthConfig(image, registryCredentials)
+            val authConfig = registryAuthLocator.lookupAuthConfig(image, registryCredentials)
             pushImageCmd.withAuthConfig(authConfig)
             val callback = createCallback(nextHandler)
             pushImageCmd.exec(callback).awaitCompletion()

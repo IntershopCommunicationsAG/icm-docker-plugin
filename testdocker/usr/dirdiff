@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "run diff ..."
+
+exit 0

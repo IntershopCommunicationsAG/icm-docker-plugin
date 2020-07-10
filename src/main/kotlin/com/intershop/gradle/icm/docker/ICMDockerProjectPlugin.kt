@@ -18,10 +18,10 @@ package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
-import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
+import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.SolrCloudPreparer
 import com.intershop.gradle.icm.docker.utils.StandardTaskPreparer
 import org.gradle.api.GradleException
@@ -65,20 +65,19 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                     it.maxParallelUsages.set(1)
                 }
 
+                ProjectImageBuildPreparer(project, extension.images, extension.imageBuild.images).prepareImageBuilds()
+
                 val standardTaksPreparer = StandardTaskPreparer(project)
-                val startMSSQL = prepareDatabaseContainer(project, standardTaksPreparer, extension)
 
-                prepareSolrCloudContainer(project, standardTaksPreparer, extension)
-                prepareBaseContainer(this, standardTaksPreparer, extension, startMSSQL)
-
+                prepareSolrCloudContainer(this, standardTaksPreparer, extension)
+                prepareBaseContainer(this, standardTaksPreparer, extension)
             }
         }
     }
 
     private fun prepareBaseContainer(project: Project,
                                      taskPreparer: StandardTaskPreparer,
-                                     extension: IntershopDockerExtension,
-                                     startDatabase: StartExtraContainerTask) {
+                                     extension: IntershopDockerExtension) {
 
         val serverPreparer = ServerTaskPreparer(project, extension)
 
@@ -97,7 +96,11 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
         val dbprepare = serverPreparer.getDBPrepareTask(baseContainer)
         dbprepare.dependsOn(startContainer)
         dbprepare.finalizedBy(removeContainer)
-        dbprepare.mustRunAfter(startDatabase)
+
+        val startDatabase = project.tasks.findByName(DatabaseTaskPreparer.TASK_START)
+        if(startDatabase != null) {
+            dbprepare.mustRunAfter(startDatabase)
+        }
 
         baseContainer.dependsOn(removeContainerByName)
         startContainer.finalizedBy(removeContainer)
@@ -119,25 +122,6 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
         }
     }
 
-    private fun prepareDatabaseContainer(project: Project,
-                                         taskPreparer: StandardTaskPreparer,
-                                         extension: IntershopDockerExtension): StartExtraContainerTask {
-
-        val dbTaskPreparer = DatabaseTaskPreparer(project, extension)
-        val pullMSSQL = taskPreparer.getPullTask(
-                DatabaseTaskPreparer.TASK_PULL,
-                extension.images.mssqldb)
-        taskPreparer.getStopTask(
-                DatabaseTaskPreparer.TASK_STOP,
-                DatabaseTaskPreparer.CONTAINER_EXTENSION,
-                extension.images.mssqldb)
-        taskPreparer.getRemoveTask(
-                DatabaseTaskPreparer.TASK_REMOVE,
-                DatabaseTaskPreparer.CONTAINER_EXTENSION)
-
-        return dbTaskPreparer.getMSSQLStartTask(pullMSSQL)
-    }
-
     private fun prepareSolrCloudContainer(project: Project,
                                           taskPreparer: StandardTaskPreparer,
                                           extension: IntershopDockerExtension) {
@@ -148,7 +132,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 SolrCloudPreparer.TASK_PULL_SOLR,
                 extension.images.solr)
 
-        val solrCloudTaskPreparer = SolrCloudPreparer(project, extension)
+        val solrCloudTaskPreparer = SolrCloudPreparer(project)
         val zkStartTask = solrCloudTaskPreparer.getZKStartTask(pullZK)
         val solrStartTask = solrCloudTaskPreparer.getSolrStartTask(pullSolr)
 

@@ -25,6 +25,185 @@ import static org.gradle.testkit.runner.TaskOutcome.SKIPPED
 
 class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
+    private def prepareBuildConfig(File testProjectDir, File settingsFile, File buildFile) {
+        TestRepo repo = new TestRepo(new File(testProjectDir, "/repo"))
+        String repoConf = repo.getRepoConfig()
+
+        settingsFile << """
+        rootProject.name='rootproject'
+        """.stripIndent()
+
+        createLocalFile("config/base/cluster/test.properties", "test.properties = base_dir")
+        createLocalFile("config/base/cluster/cartridgelist.properties", "cartridgelist = base_dir")
+        createLocalFile("config/test/cluster/test.properties", "test_test = 1")
+        createLocalFile("config/dev/cluster/test.properties", "dev_test = 1")
+        createLocalFile("config/prod/cluster/test.properties", "test.properties = prod_dir")
+
+        createLocalFile("sites/base/test-site1/units/test.properties", "test-site1-sites = base")
+        createLocalFile("sites/base/test-site2/units/test.properties", "test-site2-sites = 2")
+        createLocalFile("sites/prod/test-site1/units/test.properties", "test-site1-sites = prod")
+        createLocalFile("sites/test/test-site1/units/test.properties", "test-site1-sites = test")
+        createLocalFile("sites/dev/test-site1/units/test.properties", "test-site1-sites = dev")
+
+        buildFile << """
+            plugins {
+                id 'java'
+                id 'com.intershop.gradle.icm.base' version '2.2.0'
+                id 'com.intershop.gradle.icm.docker'
+            }
+            
+            group = 'com.intershop.test'
+            version = '10.0.0'
+
+            intershop_docker {
+                images {
+                    icmsetup = 'alpine:latest'
+                    icmbase = 'intershopmock/icm-as-mock:latest'
+                }
+
+                imageBuild {
+                    images {
+                        mainImage {
+                           dockerfile = file("docker/main/Dockerfile")
+                           addFiles(tasks.createMainPkg.outputs.files)
+                           dockerBuildDir = "main"
+                           enabled = true
+                        }
+                        initImage {
+                            dockerfile = file("docker/init/Dockerfile")
+                            addFiles(tasks.createInitPkg.outputs.files)
+                            dockerBuildDir = "init"
+                            enabled = true
+                        }
+                    } 
+                }
+            }
+
+            tasks.buildMainImage.dependsOn(tasks.createMainPkg)
+
+            ${repoConf}
+
+        """.stripIndent()
+
+        def dockerInitFile = new File(testProjectDir, "docker/init/Dockerfile")
+        dockerInitFile.parentFile.mkdirs()
+        dockerInitFile.createNewFile()
+        dockerInitFile <<
+                """
+        ARG SETUP_IMAGE
+        FROM \$SETUP_IMAGE as BUILD
+        RUN mkdir -p /intershop/sites
+        """.stripIndent()
+
+        def dockerMainFile = new File(testProjectDir, "docker/main/Dockerfile")
+        dockerMainFile.parentFile.mkdirs()
+        dockerMainFile.createNewFile()
+        dockerMainFile <<
+                """
+        ARG SETUP_IMAGE
+        FROM \$SETUP_IMAGE as BUILD
+        RUN mkdir -p /intershop-prj
+        """.stripIndent()
+
+        def prj1dir = createSubProject('prjCartridge_prod', """
+        plugins {
+            id 'java-library'
+            id 'com.intershop.icm.cartridge.product'
+        }
+        
+        dependencies {
+            implementation 'com.google.inject:guice:4.0'
+            implementation 'com.google.inject.extensions:guice-servlet:3.0'
+            implementation 'javax.servlet:javax.servlet-api:3.1.0'
+        
+            implementation 'io.prometheus:simpleclient:0.6.0'
+            implementation 'io.prometheus:simpleclient_hotspot:0.6.0'
+            implementation 'io.prometheus:simpleclient_servlet:0.6.0'
+        } 
+        
+        repositories {
+            jcenter()
+        }
+        """.stripIndent())
+
+        def prj21dir = createSubProject('ac_solr_cloud_test', """
+        plugins {
+            id 'java-library'
+            id 'com.intershop.icm.cartridge.test'
+        }
+        
+        buildDir = "target"
+        
+        dependencies {
+            implementation 'org.codehaus.janino:janino:2.5.16'
+            implementation 'org.codehaus.janino:commons-compiler:3.0.6'
+            implementation 'ch.qos.logback:logback-core:1.2.3'
+            implementation 'ch.qos.logback:logback-classic:1.2.3'
+            implementation 'commons-collections:commons-collections:3.2.2'
+        } 
+        
+        repositories {
+            jcenter()
+        }        
+        """.stripIndent())
+
+        def prj22dir = createSubProject('app_sf_responsive_b2b_test', """
+        plugins {
+            id 'java-library'
+            id 'com.intershop.icm.cartridge.test'
+        }
+        
+        buildDir = "target"
+        
+        dependencies {
+            implementation 'org.codehaus.janino:janino:2.5.16'
+            implementation 'org.codehaus.janino:commons-compiler:3.0.6'
+            implementation 'ch.qos.logback:logback-core:1.2.3'
+            implementation 'ch.qos.logback:logback-classic:1.2.3'
+            implementation 'commons-collections:commons-collections:3.2.2'
+        } 
+        
+        repositories {
+            jcenter()
+        }        
+        """.stripIndent())
+
+        def prj3dir = createSubProject('prjCartridge_dev', """
+        plugins {
+            id 'java-library'
+            id 'com.intershop.icm.cartridge.development'
+        }
+        
+        repositories {
+            jcenter()
+        }        
+        """.stripIndent())
+
+        def prj4dir = createSubProject('prjCartridge_adapter', """
+        plugins {
+            id 'java-library'
+            id 'com.intershop.icm.cartridge.adapter'
+        }
+        
+        dependencies {
+            implementation 'ch.qos.logback:logback-core:1.2.3'
+            implementation 'ch.qos.logback:logback-classic:1.2.3'
+        } 
+        
+        repositories {
+            jcenter()
+        }        
+        """.stripIndent())
+
+        writeJavaTestClass("com.intershop.prod", prj1dir)
+        writeJavaTestClass("com.intershop.test", prj21dir)
+        writeJavaTestClass("com.intershop.test", prj22dir)
+        writeJavaTestClass("com.intershop.dev", prj3dir)
+        writeJavaTestClass("com.intershop.adapter", prj4dir)
+
+        return repoConf
+    }
+
     private def prepareDefaultBuildConfig(File testProjectDir, File settingsFile, File buildFile) {
         TestRepo repo = new TestRepo(new File(testProjectDir, "/repo"))
         String repoConf = repo.getRepoConfig()
@@ -168,6 +347,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 images {
                     icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
+                    icminit = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
                     solr = 'solr:8.5.2-slim'
@@ -185,18 +365,19 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     }
                 }
                 
-                println(tasks.createInitPkg.outputs.files)
                 imageBuild {
                     images {
                         mainImage {
-                           addFiles(files("docker/main/Dockerfile"))
+                           dockerfile = file("docker/main/Dockerfile")
                            addFiles(tasks.createMainPkg.outputs.files)
                            dockerBuildDir = "main"
+                           enabled = true
                         }
                         initImage {
-                            addFiles(files("docker/init/Dockerfile"))
+                            dockerfile = file("docker/init/Dockerfile")
                             addFiles(tasks.createInitPkg.outputs.files)
                             dockerBuildDir = "init"
+                            enabled = true
                         }
                     } 
                 }
@@ -468,7 +649,9 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop_docker {
                 images {
+                    icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
+                    icminit = 'intershopmock/icm-as-mock:latest'
                 }
 
                 ishUnitTests {
@@ -481,6 +664,19 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                         cartridge = 'app_sf_responsive_b2b_test'
                         testSuite = "tests.suite.SFResponsivB2bAllSuite"
                     }
+                }
+
+                imageBuild {
+                    images {
+                        mainImage {
+                           dockerBuildDir = "main"
+                           enabled = true
+                        }
+                        initImage {
+                            dockerBuildDir = "init"
+                            enabled = true
+                        }
+                    } 
                 }
             }
 
@@ -793,7 +989,41 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
-    def 'buildImages for projects'() {
+    def 'buildImages'() {
+        prepareBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result2 = getPreparedGradleRunner()
+                .withArguments("buildMainImage","-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":buildMainImage").outcome == SUCCESS
+
+        when:
+        def result3 = getPreparedGradleRunner()
+                .withArguments("buildInitImage", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result3.task(":buildInitImage").outcome == SUCCESS
+
+        when:
+        def result4 = getPreparedGradleRunner()
+                .withArguments("buildTestImage", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result4.task(":buildTestImage").outcome == SKIPPED
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'buildImages for projects - complex'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
         when:
@@ -804,6 +1034,49 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
             result1.task(":tasks").outcome == SUCCESS
+
+        when:
+        def result2 = getPreparedGradleRunner()
+                .withArguments("buildMainImage","-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":buildMainImage").outcome == SUCCESS
+
+        when:
+        def result3 = getPreparedGradleRunner()
+                .withArguments("buildInitImage", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result3.task(":buildInitImage").outcome == SUCCESS
+
+        when:
+        def result4 = getPreparedGradleRunner()
+                .withArguments("buildTestImage", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result4.task(":buildTestImage").outcome == SKIPPED
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'buildImages for projects - simple'() {
+        prepareSimpleBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("tasks", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result1.task(":tasks").outcome == SUCCESS
 
         when:
         def result2 = getPreparedGradleRunner()
