@@ -137,6 +137,7 @@ class ProjectImageBuildPreparer(val project: Project, val images: BaseImages, va
         return with(project) {
             tasks.maybeCreate(taskname, Dockerfile::class.java).apply {
                 arg("SETUP_IMAGE")
+                arg("BASE_IMAGE")
 
                 from(Dockerfile.From("\${SETUP_IMAGE}").withStage(PREBUILDSTAGE))
                 runCommand("mkdir -p /${PRJ_DIR}/org")
