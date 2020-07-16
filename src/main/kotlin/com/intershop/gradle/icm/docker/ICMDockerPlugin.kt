@@ -69,6 +69,7 @@ open class ICMDockerPlugin: Plugin<Project> {
 
             tasks.register("containerClean") {task ->
                 task.group = "icm container"
+                task.description = "Removes all available container from Docker"
             }
 
             val addServerPreparer = ServerTaskPreparer(project, extension)
@@ -98,6 +99,7 @@ open class ICMDockerPlugin: Plugin<Project> {
                     project, images.icmsetup, imageBuild, imageBuild.images.mainImage, BUILD_MAIN_IMAGE)
 
             imgTask.configure { task ->
+                task.description = "Creates the main image with an appserver."
                 configureLables(task.labels, project, imageBuild)
             }
 
@@ -105,6 +107,7 @@ open class ICMDockerPlugin: Plugin<Project> {
                 project, images.icmsetup, imageBuild, imageBuild.images.initImage, BUILD_INIT_IMAGE)
 
             initImgTask.configure { task ->
+                task.description = "Creates the main init image for initialization of an appserver."
                 configureLables(task.labels, project, imageBuild)
             }
 
@@ -112,6 +115,7 @@ open class ICMDockerPlugin: Plugin<Project> {
                     project, images.icmsetup, imageBuild, imageBuild.images.testImage, BUILD_TEST_IMAGE)
 
             testImgTask.configure { task ->
+                task.description = "Creates the test image of an appserver."
                 task.buildArgs.put( "BASE_IMAGE", project.provider { imgTask.get().images.get().first() })
                 task.dependsOn(imgTask)
             }
@@ -120,12 +124,14 @@ open class ICMDockerPlugin: Plugin<Project> {
                     project, images.icmsetup, imageBuild, imageBuild.images.initTestImage, BUILD_INIT_TEST_IMAGE)
 
             initTestImgTask.configure { task ->
+                task.description = "Creates the init test image for initialization of an test appserver."
                 task.buildArgs.put( "BASE_IMAGE", project.provider { initImgTask.get().images.get().first() })
                 task.dependsOn(initImgTask)
             }
 
             project.tasks.register(BUILD_IMAGES) { task ->
                 task.group = "build"
+                task.description = "Build all configured images"
                 task.dependsOn(imgTask, initImgTask, testImgTask, initTestImgTask)
             }
 

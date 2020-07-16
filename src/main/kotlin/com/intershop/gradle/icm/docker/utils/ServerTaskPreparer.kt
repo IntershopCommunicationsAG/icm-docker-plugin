@@ -19,7 +19,11 @@ package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.*
+import com.intershop.gradle.icm.docker.tasks.APullImage
+import com.intershop.gradle.icm.docker.tasks.CreateVolumes
+import com.intershop.gradle.icm.docker.tasks.RemoveVolumes
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.tasks.StartServerContainerTask
 import com.intershop.gradle.icm.docker.utils.ContainerUtils.transformVolumes
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -84,6 +88,7 @@ class ServerTaskPreparer(private val project: Project,
 
         project.tasks.register ("start${TASK_EXT_MSSQL}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerExt)
+            task.description = "Starts an MSSQL server"
             task.targetImageId( project.provider { imageTask.get().image.get() } )
 
             with(dockerExtension.developmentConfig) {
@@ -120,6 +125,7 @@ class ServerTaskPreparer(private val project: Project,
 
         project.tasks.register ("start${TASK_EXT_MAIL}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerExt)
+            task.description = "Starts an local mail server for testing"
             task.targetImageId( project.provider { imageTask.get().image.get() } )
 
             task.envVars.set(mutableMapOf(
@@ -148,6 +154,8 @@ class ServerTaskPreparer(private val project: Project,
 
         val createVolumes =
             project.tasks.register("create${TASK_EXT_VOLUMES}", CreateVolumes::class.java) { task ->
+                task.group = "icm container webserver"
+                task.description = "Creates volumes in Docker"
                 task.volumeNames.set(
                     mutableListOf(
                         "${project.name.toLowerCase()}-waproperties",
@@ -159,6 +167,8 @@ class ServerTaskPreparer(private val project: Project,
 
         val removeVolumes =
             project.tasks.register("remove${TASK_EXT_VOLUMES}", RemoveVolumes::class.java) { task ->
+                task.group = "icm container webserver"
+                task.description = "Removes volumes from Docker"
                 task.volumeNames.set(
                     mutableListOf(
                         "${project.name.toLowerCase()}-waproperties",
@@ -175,6 +185,8 @@ class ServerTaskPreparer(private val project: Project,
 
         val startWA = project.tasks.register("start${TASK_EXT_WA}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerWAExt)
+            task.group = "icm container webserver"
+            task.description = "Start ICM WebServer with WebAdapter"
             task.targetImageId(project.provider { imageWATask.get().image.get() })
 
             task.hostConfig.portBindings.set(
@@ -190,6 +202,8 @@ class ServerTaskPreparer(private val project: Project,
 
         val startWAA = project.tasks.register("start${TASK_EXT_WAA}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerWAAExt)
+            task.group = "icm container webserver"
+            task.description = "Start ICM WebAdapterAgent"
             task.targetImageId(project.provider { imageWAATask.get().image.get() })
 
             task.hostConfig.binds.set( volumes )
@@ -201,12 +215,14 @@ class ServerTaskPreparer(private val project: Project,
         val stopWA = project.tasks.named("stop${TASK_EXT_WAA}")
 
         project.tasks.register(START_WEBSERVER) {task ->
-            task.group = "icm container"
+            task.group = "icm container webserver"
+            task.description = "Start all components for ICM WebServer"
             task.dependsOn(startWA, startWAA)
         }
 
         project.tasks.register(STOP_WEBSERVER) {task ->
-            task.group = "icm container"
+            task.group = "icm container webserver"
+            task.description = "Stop all components for ICM WebServer"
             task.dependsOn(stopWAA, stopWA)
         }
 
@@ -231,6 +247,8 @@ class ServerTaskPreparer(private val project: Project,
 
         val startZK = project.tasks.register("start${TASK_EXT_ZK}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerZKExt)
+            task.group = "icm container SolrCloud"
+            task.description = "Start Zookeeper component of SolrCloud"
             task.targetImageId(project.provider { imageZKTask.get().image.get() })
 
             task.hostConfig.portBindings.set(
@@ -246,6 +264,8 @@ class ServerTaskPreparer(private val project: Project,
 
         val startSolr = project.tasks.register("start${TASK_EXT_SOLR}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerSolrExt)
+            task.group = "icm container SolrCloud"
+            task.description = "Start Solr component of SolrCloud"
             task.targetImageId(project.provider { imageSolrTask.get().image.get() })
 
             task.hostConfig.portBindings.set(
@@ -264,10 +284,14 @@ class ServerTaskPreparer(private val project: Project,
         val stopSolr = project.tasks.named("stop${TASK_EXT_SOLR}")
 
         project.tasks.register(START_SOLRCLOUD) { task ->
+            task.group = "icm container SolrCloud"
+            task.description = "Start all components of SolrCloud"
             task.dependsOn(startZK, startSolr)
         }
 
         project.tasks.register(STOP_SOLRCLOUD) { task ->
+            task.group = "icm container SolrCloud"
+            task.description = "Stop all components of SolrCloud"
             task.dependsOn(stopZK, stopSolr)
         }
 
@@ -291,7 +315,7 @@ class ServerTaskPreparer(private val project: Project,
 
         project.tasks.register("start${TASK_EXT_CONTAINER}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerExt)
-
+            task.description = "Start container without any special command (sleep)"
             task.targetImageId(project.provider { imageTask.get().image.get() })
             task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
 
@@ -306,7 +330,7 @@ class ServerTaskPreparer(private val project: Project,
 
         project.tasks.register("start${TASK_EXT_AS}", StartServerContainerTask::class.java) { task ->
             configureContainerTask(task, asContainerExt)
-
+            task.description = "Start container Application server of ICM"
             task.targetImageId(project.provider { imageTask.get().image.get() })
 
             task.hostConfig.portBindings.set(listOf("5005:7746"))
@@ -317,7 +341,7 @@ class ServerTaskPreparer(private val project: Project,
     }
 
     private fun configureContainerTask(task: DockerCreateContainer, containerExt: String) {
-        task.group = "icm container"
+        task.group = "icm container ${containerExt}"
         task.attachStderr.set(true)
         task.attachStdout.set(true)
         task.hostConfig.autoRemove.set(true)

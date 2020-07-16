@@ -66,7 +66,7 @@ open class PushImages
 
     init {
         group = "icm image build"
-
+        description = "Push all available images to registry."
         onlyIf {
             project.hasProperty("runOnCI") &&
                     project.property("runOnCI") == "true"

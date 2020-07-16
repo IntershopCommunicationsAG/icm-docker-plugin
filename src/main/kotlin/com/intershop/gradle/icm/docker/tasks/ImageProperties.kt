@@ -51,6 +51,7 @@ open class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
 
     init {
         group = "icm image build"
+        description = "Writes a property file with all pushed containers for further usage."
 
         outputs.upToDateWhen {
             false

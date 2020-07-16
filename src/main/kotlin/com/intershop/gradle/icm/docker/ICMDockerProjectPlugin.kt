@@ -89,7 +89,8 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
         val startDatabase = project.tasks.named("start${TASK_EXT_MSSQL}")
 
         val dbprepare = project.tasks.register(TASK_DBPREPARE, DBPrepareTask::class.java) { task ->
-            task.group = "icm project db"
+            task.group = "icm docker project"
+            task.description = "Starts dbPrepare in an existing ICM base container."
             task.containerId.set(project.provider {  startContainer.get().containerId.get() })
             task.dependsOn(startContainer)
             task.finalizedBy(removeContainer)
@@ -100,7 +101,8 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
         extension.ishUnitTests.all {
             val ishunitTest = project.tasks.register(it.name + ISHUNIT_TEST, ISHUnitTask::class.java) { task ->
-                task.group = "icm project test"
+                task.group = "icm docker project"
+                task.description = "Starts ISHUnitTest suite '" + it.name + "' in an existing ICM base container."
 
                 task.containerId.set(project.provider {  startContainer.get().containerId.get() })
                 task.testCartridge.set(it.cartridge)
