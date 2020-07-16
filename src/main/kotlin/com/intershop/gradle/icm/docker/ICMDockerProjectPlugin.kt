@@ -21,12 +21,11 @@ import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
+import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_CONTAINER
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_MSSQL
-import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
-import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
-import com.intershop.gradle.icm.docker.utils.StandardTaskPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project

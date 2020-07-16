@@ -168,11 +168,11 @@ class ProjectImageBuildPreparer(private val project: Project,
                 task.onlyIf { checkDockerFile(imgConfiguration.dockerfile) }
             }
 
-    fun checkDockerFile(dockerfile: RegularFileProperty): Boolean =
+    private fun checkDockerFile(dockerfile: RegularFileProperty): Boolean =
             ! dockerfile.isPresent || ! dockerfile.asFile.get().exists()
 
-    fun getDockerfile(dockerfile: RegularFileProperty,
-                      dockerfileTask: TaskProvider<Dockerfile>): Provider<RegularFile> =
+    private fun getDockerfile(dockerfile: RegularFileProperty,
+                              dockerfileTask: TaskProvider<Dockerfile>): Provider<RegularFile> =
             project.provider {
                 if(dockerfile.orNull != null && dockerfile.asFile.get().exists()) {
                     dockerfile.get()

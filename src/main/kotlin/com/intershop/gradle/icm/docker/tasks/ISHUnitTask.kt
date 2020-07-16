@@ -76,7 +76,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
     @get:Input
     var debug: Boolean
         get() = debugProperty.get()
-        set(value: Boolean) = debugProperty.set(value)
+        set(value) = debugProperty.set(value)
 
     @Internal
     override fun getSharedResources(): List<ResourceLock> {

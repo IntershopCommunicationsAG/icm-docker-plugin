@@ -19,12 +19,7 @@ package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.APullImage
-import com.intershop.gradle.icm.docker.tasks.CreateVolumes
-import com.intershop.gradle.icm.docker.tasks.PullImage
-import com.intershop.gradle.icm.docker.tasks.RemoveVolumes
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
-import com.intershop.gradle.icm.docker.tasks.StartServerContainerTask
+import com.intershop.gradle.icm.docker.tasks.*
 import com.intershop.gradle.icm.docker.utils.ContainerUtils.transformVolumes
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -259,7 +254,8 @@ class ServerTaskPreparer(private val project: Project,
             task.envVars.set(mutableMapOf(
                 "SOLR_PORT" to "8983",
                 "ZK_HOST" to "${taskPreparer.getContainerName(containerZKExt)}:2181" ,
-                "SOLR_HOST" to "${taskPreparer.getContainerName(containerSolrExt)}"))
+                "SOLR_HOST" to taskPreparer.getContainerName(containerSolrExt)
+            ))
 
             task.dependsOn(imageSolrTask, startZK)
         }

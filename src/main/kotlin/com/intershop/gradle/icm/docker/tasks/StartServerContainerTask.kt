@@ -43,7 +43,7 @@ open class StartServerContainerTask
     @get:Input
     var debug: Boolean
         get() = debugProperty.get()
-        set(value: Boolean) = debugProperty.set(value)
+        set(value) = debugProperty.set(value)
 
 
     private val jmxProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
@@ -60,7 +60,7 @@ open class StartServerContainerTask
     @get:Input
     var jmx: Boolean
         get() = jmxProperty.get()
-        set(value: Boolean) = jmxProperty.set(value)
+        set(value) = jmxProperty.set(value)
 
     private val gclogProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
     /**

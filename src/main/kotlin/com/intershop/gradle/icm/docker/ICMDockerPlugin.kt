@@ -133,6 +133,15 @@ open class ICMDockerPlugin: Plugin<Project> {
                 task.dependsOn(imgTask, initImgTask, testImgTask, initTestImgTask)
             }
 
+            try {
+                val checkTask = project.tasks.named("check")
+                push.configure { task ->
+                    task.mustRunAfter(checkTask)
+                }
+            } catch (ex: UnknownTaskException) {
+                project.logger.info("Task check is not available!")
+            }
+
             project.tasks.register(WRITE_IMAGE_PROPERTIES, ImageProperties::class.java) { task ->
                 task.dependsOn(push)
             }
@@ -170,7 +179,7 @@ open class ICMDockerPlugin: Plugin<Project> {
         property.put("version", project.provider { project.version.toString() })
     }
 
-    fun calculateImageTag(project: Project, prjconf: ProjectConfiguration,
+    private fun calculateImageTag(project: Project, prjconf: ProjectConfiguration,
                                   imgConf: ImageConfiguration): Provider<List<String>> =
             project.provider {
                 val nameExt = imgConf.nameExtension.get()
