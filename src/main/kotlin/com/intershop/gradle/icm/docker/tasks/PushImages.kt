@@ -65,7 +65,7 @@ open class PushImages
     }
 
     init {
-        group = "intershop container build"
+        group = "icm image build"
 
         onlyIf {
             project.hasProperty("runOnCI") &&

@@ -17,59 +17,47 @@
 
 package com.intershop.gradle.icm.docker.utils
 
-import com.intershop.gradle.icm.docker.tasks.APullImage
 import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainerTask
 import org.gradle.api.Project
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.provider.Provider
 
-class StandardTaskPreparer(val project: Project) {
+class StandardTaskPreparer(private val project: Project) {
 
-    fun getPullTask(taskname: String, imageProvider: Provider<String>): APullImage{
-        return with(project) {
-            tasks.maybeCreate( taskname, PullExtraImage::class.java ).apply {
-                this.image.set(imageProvider)
+    fun createBaseTasks(taskext: String, containerext: String,
+                        imageProvider: Provider<String>, isAppSrv: Boolean = false) {
+        val pullImgTask = if(isAppSrv) PullImage::class.java else PullExtraImage::class.java
 
-                this.onlyIf { imageProvider.isPresent }
+        project.tasks.register( "pull${taskext}", pullImgTask ) { task ->
+            task.group = "icm container"
+            task.image.set(imageProvider)
+        }
+
+        project.tasks.register( "stop${taskext}", StopExtraContainerTask::class.java ) { task ->
+            task.group = "icm container"
+            task.containerName.set(getContainerName(containerext))
+        }
+
+        val removeTask = project.tasks.register( "remove${taskext}", RemoveContainerByName::class.java ) { task ->
+            task.group = "icm container"
+            task.containerName.set(getContainerName(containerext))
+        }
+
+        try {
+            project.tasks.named("clean").configure { task ->
+                task.dependsOn(removeTask)
             }
+        } catch( ex: UnknownTaskException) {
+            project.logger.info("Task clean is not available.")
+        }
+
+        project.tasks.named("containerClean").configure { task ->
+            task.dependsOn(removeTask)
         }
     }
 
-    fun getBasePullTask(taskname: String, imageProvider: Provider<String>): APullImage{
-        return with(project) {
-            tasks.maybeCreate( taskname, PullImage::class.java ).apply {
-                this.image.set(imageProvider)
-
-                this.onlyIf { imageProvider.isPresent }
-            }
-        }
-    }
-
-    fun getStopTask(taskname: String,
-                         containerext: String,
-                         imageProvider: Provider<String>): StopExtraContainerTask {
-        return with(project) {
-            tasks.maybeCreate( taskname, StopExtraContainerTask::class.java ).apply {
-                group = "icm docker project"
-                containerName.set("${project.name.toLowerCase()}-${containerext}")
-
-                this.onlyIf { imageProvider.isPresent }
-            }
-        }
-    }
-
-
-    fun getRemoveTask(taskname: String, containerext: String): RemoveContainerByName {
-        with(project) {
-
-            return tasks.maybeCreate( taskname, RemoveContainerByName::class.java ).apply {
-                group = "icm docker project"
-                containerName.set("${project.name.toLowerCase()}-${containerext}")
-
-                tasks.findByName("clean")?.dependsOn(this)
-            }
-        }
-    }
+    fun getContainerName(ext: String) = "${project.name.toLowerCase()}-${ext}"
 }

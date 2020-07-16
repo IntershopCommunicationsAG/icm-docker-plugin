@@ -50,7 +50,7 @@ open class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
     }
 
     init {
-        group = "intershop container build"
+        group = "icm image build"
 
         outputs.upToDateWhen {
             false

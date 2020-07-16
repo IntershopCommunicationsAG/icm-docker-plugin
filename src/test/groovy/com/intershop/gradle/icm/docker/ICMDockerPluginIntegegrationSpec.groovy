@@ -48,7 +48,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.base' version '2.2.0'
+                id 'com.intershop.gradle.icm.base' version '3.0.0'
                 id 'com.intershop.gradle.icm.docker'
             }
             
@@ -227,7 +227,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '2.2.0'
+                id 'com.intershop.gradle.icm.project' version '3.0.0'
                 id 'com.intershop.gradle.icm.docker.project'
             }
             
@@ -531,7 +531,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '2.2.0'
+                id 'com.intershop.gradle.icm.project' version '3.0.0'
                 id 'com.intershop.gradle.icm.docker.project'
             }
             
@@ -765,13 +765,22 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
         when:
-        def result = getPreparedGradleRunner()
-                .withArguments("pullImage", "-s")
+        def result0 = getPreparedGradleRunner()
+                .withArguments("tasks", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
         then:
-        result.task(":pullImage").outcome == SUCCESS
+        result0.task(":tasks").outcome == SUCCESS
+
+        when:
+        def result = getPreparedGradleRunner()
+                .withArguments("pullAS", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result.task(":pullAS").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
@@ -783,7 +792,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         when:
         def result = getPreparedGradleRunner()
-                .withArguments("pullImage", "--forcePull", "-s")
+                .withArguments("pullAS", "--forcePull", "-s")
                 .withGradleVersion(gradleVersion)
                 .buildAndFail()
 
@@ -799,13 +808,13 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         when:
         def result = getPreparedGradleRunner()
-                .withArguments("pullImage", "--altImage=busybox:latest", "--forcePull", "-s")
+                .withArguments("pullAS", "--altImage=busybox:latest", "--forcePull", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
         then:
         result.output.contains("Pulling image 'busybox:latest'")
-        result.task(":pullImage").outcome == SUCCESS
+        result.task(":pullAS").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
@@ -907,40 +916,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result2.task(":stopMSSQL").outcome == SUCCESS
-
-        when:
-        def result3 = getPreparedGradleRunner()
-                .withArguments("removeMSSQL", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result3.task(":removeMSSQL").outcome == SUCCESS
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    def 'check mssql db tasks'() {
-        prepareSimpleBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("startMSSQL", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result1.task(":startMSSQL").outcome == SKIPPED
-
-        when:
-        def result2 = getPreparedGradleRunner()
-                .withArguments("stopMSSQL", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result2.task(":stopMSSQL").outcome == SKIPPED
 
         when:
         def result3 = getPreparedGradleRunner()

@@ -65,21 +65,21 @@ open class DevelopmentConfiguration
         // read environment
         val gradleUserHomePath = GradleUserHomeLookup.gradleUserHome().absolutePath
 
-        var licDirPath = providerFactory.environmentVariable(LICENSE_DIR_ENV).orNull
-        var configDirPath = providerFactory.environmentVariable(CONFIG_DIR_ENV).orNull
+        var licDirPath = providerFactory.environmentVariable(LICENSE_DIR_ENV).forUseAtConfigurationTime().orNull
+        var configDirPath = providerFactory.environmentVariable(CONFIG_DIR_ENV).forUseAtConfigurationTime().orNull
 
         // read system if necessary
         if(licDirPath == null) {
-            licDirPath = providerFactory.systemProperty(LICENSE_DIR_SYS).orNull
+            licDirPath = providerFactory.systemProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
         }
 
         if(configDirPath == null) {
-            configDirPath = providerFactory.systemProperty(CONFIG_DIR_SYS).orNull
+            configDirPath = providerFactory.systemProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
         }
 
         if(licDirPath == null) {
             try {
-                licDirPath = providerFactory.gradleProperty(LICENSE_DIR_SYS).orNull
+                licDirPath = providerFactory.gradleProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
             } catch ( ise: IllegalStateException ) {
                 log.error(ise.message)
             }
@@ -87,7 +87,7 @@ open class DevelopmentConfiguration
 
         if(configDirPath == null) {
             try {
-                configDirPath = providerFactory.gradleProperty(CONFIG_DIR_SYS).orNull
+                configDirPath = providerFactory.gradleProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
             } catch ( ise: IllegalStateException ) {
                 log.error(ise.message)
             }
