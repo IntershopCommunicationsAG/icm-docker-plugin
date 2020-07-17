@@ -16,21 +16,23 @@
  */
 package com.intershop.gradle.icm.docker
 
-import com.avast.gradle.dockercompose.DockerComposePlugin
 import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
-import com.intershop.gradle.icm.docker.extension.Images
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_MSSQL
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
-import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
-import com.intershop.gradle.icm.docker.utils.StandardTaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.UnknownTaskException
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 
 /**
  * Main plugin class of the project plugin.
@@ -56,146 +58,139 @@ open class ICMDockerPlugin: Plugin<Project> {
      * @param project target project
      */
     override fun apply(project: Project) {
-        with(project) {
+        with(project.rootProject) {
+
             logger.info("ICM Docker build plugin will be initialized")
             val extension = extensions.findByType(
                     IntershopDockerExtension::class.java
             ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
-            plugins.apply(DockerComposePlugin::class.java)
             plugins.apply(DockerRemoteApiPlugin::class.java)
 
-            val standardTaksPreparer = StandardTaskPreparer(project)
-            prepareDatabaseContainer(project, standardTaksPreparer, extension)
+            tasks.register("containerClean") {task ->
+                task.group = "icm container"
+                task.description = "Removes all available container from Docker"
+            }
+
+            val addServerPreparer = ServerTaskPreparer(project, extension)
+            addServerPreparer.createMSSQLServerTasks()
+
+            val startMSSQL = tasks.named("start${TASK_EXT_MSSQL}")
+            try {
+                tasks.named("dbPrepare").configure {
+                    it.mustRunAfter(startMSSQL)
+                }
+            } catch(ex: UnknownTaskException) {
+                project.logger.info("No dbPrepare task available!")
+            }
+
+            addServerPreparer.createMailServerTasks()
+            addServerPreparer.createWebServerTasks()
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
-            createImageTasks(this, extension)
+
+            createImageTasks(project, extension)
         }
-    }
-
-    private fun prepareDatabaseContainer(project: Project,
-                                         taskPreparer: StandardTaskPreparer,
-                                         extension: IntershopDockerExtension) {
-
-        val dbTaskPreparer = DatabaseTaskPreparer(project, extension)
-        val pullMSSQL = taskPreparer.getPullTask(
-                DatabaseTaskPreparer.TASK_PULL,
-                extension.images.mssqldb)
-        taskPreparer.getStopTask(
-                DatabaseTaskPreparer.TASK_STOP,
-                DatabaseTaskPreparer.CONTAINER_EXTENSION,
-                extension.images.mssqldb)
-        taskPreparer.getRemoveTask(
-                DatabaseTaskPreparer.TASK_REMOVE,
-                DatabaseTaskPreparer.CONTAINER_EXTENSION)
-
-        dbTaskPreparer.getMSSQLStartTask(pullMSSQL)
     }
 
     private fun createImageTasks(project: Project, extension: IntershopDockerExtension) {
-        val mainTask = project.tasks.maybeCreate(BUILD_IMAGES).apply {
-            group = "build"
-        }
+        with(extension) {
+            val imgTask = createImageTask(
+                    project, images.icmsetup, imageBuild, imageBuild.images.mainImage, BUILD_MAIN_IMAGE)
 
-        val imgTask = createImageTask(project,
-                extension.images,
-                extension.imageBuild,
-                extension.imageBuild.images.mainImage,
-                BUILD_MAIN_IMAGE)
+            imgTask.configure { task ->
+                task.description = "Creates the main image with an appserver."
+                configureLables(task.labels, project, imageBuild)
+            }
 
-        val initImgTask = createImageTask(project,
-                extension.images,
-                extension.imageBuild,
-                extension.imageBuild.images.initImage,
-                BUILD_INIT_IMAGE)
+            val initImgTask = createImageTask(
+                project, images.icmsetup, imageBuild, imageBuild.images.initImage, BUILD_INIT_IMAGE)
 
-        val imgTestTask = createTestImageTask(project,
-                extension.images,
-                extension.imageBuild,
-                extension.imageBuild.images.testImage,
-                imgTask,
-                BUILD_TEST_IMAGE)
-        mainTask.dependsOn(imgTestTask)
+            initImgTask.configure { task ->
+                task.description = "Creates the main init image for initialization of an appserver."
+                configureLables(task.labels, project, imageBuild)
+            }
 
-        val imgInitTestTask = createTestImageTask(project,
-                extension.images,
-                extension.imageBuild,
-                extension.imageBuild.images.initTestImage,
-                initImgTask,
-                BUILD_INIT_TEST_IMAGE)
-        mainTask.dependsOn(imgInitTestTask)
+            val testImgTask = createImageTask(
+                    project, images.icmsetup, imageBuild, imageBuild.images.testImage, BUILD_TEST_IMAGE)
 
-        val push = project.tasks.maybeCreate(PUSH_IMAGES, PushImages::class.java).apply {
-            dependsOn(imgTestTask, imgInitTestTask)
-        }
-        project.tasks.maybeCreate(WRITE_IMAGE_PROPERTIES, ImageProperties::class.java).apply {
-            dependsOn(push)
+            testImgTask.configure { task ->
+                task.description = "Creates the test image of an appserver."
+                task.buildArgs.put( "BASE_IMAGE", project.provider { imgTask.get().images.get().first() })
+                task.dependsOn(imgTask)
+            }
+
+            val initTestImgTask = createImageTask(
+                    project, images.icmsetup, imageBuild, imageBuild.images.initTestImage, BUILD_INIT_TEST_IMAGE)
+
+            initTestImgTask.configure { task ->
+                task.description = "Creates the init test image for initialization of an test appserver."
+                task.buildArgs.put( "BASE_IMAGE", project.provider { initImgTask.get().images.get().first() })
+                task.dependsOn(initImgTask)
+            }
+
+            project.tasks.register(BUILD_IMAGES) { task ->
+                task.group = "build"
+                task.description = "Build all configured images"
+                task.dependsOn(imgTask, initImgTask, testImgTask, initTestImgTask)
+            }
+
+            val push = project.tasks.register(PUSH_IMAGES, PushImages::class.java) { task ->
+                task.dependsOn(imgTask, initImgTask, testImgTask, initTestImgTask)
+            }
+
+            try {
+                val checkTask = project.tasks.named("check")
+                push.configure { task ->
+                    task.mustRunAfter(checkTask)
+                }
+            } catch (ex: UnknownTaskException) {
+                project.logger.info("Task check is not available!")
+            }
+
+            project.tasks.register(WRITE_IMAGE_PROPERTIES, ImageProperties::class.java) { task ->
+                task.dependsOn(push)
+            }
         }
     }
 
     private fun createImageTask(project: Project,
-                                imgs: Images,
+                                setupImg: Property<String>,
                                 imgBuild: ProjectConfiguration,
                                 imgConf: ImageConfiguration,
-                                taskName: String): BuildImage {
-        return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
-            enabled.set(imgConf.enabledProvider)
-            dockerfile.set(imgConf.dockerfileProvider)
+                                taskName: String): TaskProvider<BuildImage> =
+            project.tasks.register(taskName, BuildImage::class.java ) { buildImage ->
+                buildImage.group = "icm image build"
+                buildImage.enabled.set(imgConf.enabledProvider)
+                buildImage.dockerfile.set(imgConf.dockerfileProvider)
 
-            srcFiles.from(imgConf.srcFiles)
-            dirname.set(imgConf.dockerBuildDirProvider)
+                buildImage.srcFiles.from(imgConf.srcFiles)
+                buildImage.dirname.set(imgConf.dockerBuildDirProvider)
 
-            with(this.labels) {
-                put("license", imgBuild.licenseProvider)
-                put("maintainer", imgBuild.maintainerProvider)
-                put("description", project.provider {
-                    "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
-                })
-                put("created", imgBuild.createdProvider)
-                put("version", project.provider {
-                    project.version.toString()
-                })
+                with(buildImage.labels) {
+                    put("description", project.provider {
+                        "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
+                    })
+                }
+                buildImage.buildArgs.put( "SETUP_IMAGE", setupImg )
+                buildImage.images.set( calculateImageTag(project, imgBuild, imgConf) )
             }
 
-            buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
-
-            images.set( calculateImageTag(project, imgBuild, imgConf) )
-        }
+    private fun configureLables(property: MapProperty<String,String>,
+                                project: Project,
+                                imageBuild: ProjectConfiguration) {
+        property.put("license", imageBuild.licenseProvider)
+        property.put("maintainer", imageBuild.maintainerProvider)
+        property.put("created", imageBuild.createdProvider)
+        property.put("version", project.provider { project.version.toString() })
     }
 
-    private fun createTestImageTask(project: Project,
-                                    imgs: Images,
-                                    imgBuild: ProjectConfiguration,
-                                    imgConf: ImageConfiguration,
-                                    imgTask: BuildImage,
-                                    taskName: String): BuildImage {
-        return project.tasks.maybeCreate(taskName, BuildImage::class.java).apply {
-            enabled.set(imgConf.enabledProvider)
-            dockerfile.set(imgConf.dockerfileProvider)
-
-            srcFiles.from(imgConf.srcFiles)
-            dirname.set(imgConf.dockerBuildDirProvider)
-
-            with(this.labels) {
-                put("description", project.provider {
-                    "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
-                })
-            }
-
-            buildArgs.put( "SETUP_IMAGE", imgs.icmsetup )
-            buildArgs.put( "BASE_IMAGE", project.provider { imgTask.images.get().first() })
-
-            images.set( calculateImageTag(project, imgBuild, imgConf) )
-            dependsOn(imgTask)
-        }
-    }
-
-    fun calculateImageTag(project: Project,
-                          prjconf: ProjectConfiguration,
-                          imgConf: ImageConfiguration): Provider<List<String>> =
+    private fun calculateImageTag(project: Project, prjconf: ProjectConfiguration,
+                                  imgConf: ImageConfiguration): Provider<List<String>> =
             project.provider {
                 val nameExt = imgConf.nameExtension.get()
                 val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
                 mutableListOf("${prjconf.baseImageName.get()}${nameComplete}:${project.version}")
             }
+
 }

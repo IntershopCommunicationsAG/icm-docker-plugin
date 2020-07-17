@@ -17,13 +17,15 @@
 package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
+import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
-import com.intershop.gradle.icm.docker.utils.DatabaseTaskPreparer
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.SolrCloudPreparer
-import com.intershop.gradle.icm.docker.utils.StandardTaskPreparer
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_CONTAINER
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_MSSQL
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -39,6 +41,9 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
         const val ISHUNIT_REGISTRY = "ishUnitTestTegistry"
         const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
         const val ISHUNIT_TEST = "ISHUnitTest"
+
+        const val TASK_DBPREPARE = "dbPrepare"
+        const val TASK_ISHUNIT_REPORT = "ishUnitTestReport"
     }
 
     /**
@@ -65,98 +70,53 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                     it.maxParallelUsages.set(1)
                 }
 
+                val serverTaskPreparer = ServerTaskPreparer(project, extension)
+                serverTaskPreparer.createAppServerTasks()
+                serverTaskPreparer.createSolrServerTasks()
+
+                prepareBaseContainer(project, extension)
+
                 ProjectImageBuildPreparer(project, extension.images, extension.imageBuild.images).prepareImageBuilds()
-
-                val standardTaksPreparer = StandardTaskPreparer(project)
-
-                prepareSolrCloudContainer(this, standardTaksPreparer, extension)
-                prepareBaseContainer(this, standardTaksPreparer, extension)
             }
         }
     }
 
     private fun prepareBaseContainer(project: Project,
-                                     taskPreparer: StandardTaskPreparer,
                                      extension: IntershopDockerExtension) {
 
-        val serverPreparer = ServerTaskPreparer(project, extension)
+        val startContainer = project.tasks.named("start${TASK_EXT_CONTAINER}", StartExtraContainerTask::class.java)
+        val removeContainer = project.tasks.named("remove${TASK_EXT_CONTAINER}")
+        val startDatabase = project.tasks.named("start${TASK_EXT_MSSQL}")
 
-        val removeContainerByName = taskPreparer.getRemoveTask(
-                ServerTaskPreparer.TASK_REMOVE,
-                ServerTaskPreparer.CONTAINER_EXTENSION)
-        val pullImage = taskPreparer.getBasePullTask(
-                ServerTaskPreparer.TASK_PULL,
-                extension.images.icmbase)
-
-        val baseContainer = serverPreparer.getBaseContainer(pullImage)
-        val startContainer = serverPreparer.getStartContainer(baseContainer)
-        val removeContainer = serverPreparer.getFinalizeContainer(startContainer)
-
-
-        val dbprepare = serverPreparer.getDBPrepareTask(baseContainer)
-        dbprepare.dependsOn(startContainer)
-        dbprepare.finalizedBy(removeContainer)
-
-        val startDatabase = project.tasks.findByName(DatabaseTaskPreparer.TASK_START)
-        if(startDatabase != null) {
-            dbprepare.mustRunAfter(startDatabase)
+        val dbprepare = project.tasks.register(TASK_DBPREPARE, DBPrepareTask::class.java) { task ->
+            task.group = "icm docker project"
+            task.description = "Starts dbPrepare in an existing ICM base container."
+            task.containerId.set(project.provider {  startContainer.get().containerId.get() })
+            task.dependsOn(startContainer)
+            task.finalizedBy(removeContainer)
+            task.mustRunAfter(startDatabase)
         }
 
-        baseContainer.dependsOn(removeContainerByName)
-        startContainer.finalizedBy(removeContainer)
-
-        val ishunitreport = serverPreparer.getISHUnitHTMLTestReportTask()
+        val ishUnitTest = project.tasks.register(TASK_ISHUNIT_REPORT, ISHUnitHTMLTestReportTask::class.java)
 
         extension.ishUnitTests.all {
-            project.tasks.maybeCreate(it.name + ISHUNIT_TEST, ISHUnitTask::class.java).apply {
-                this.containerId.set(startContainer.containerId)
-                this.testCartridge.set(it.cartridge)
-                this.testSuite.set(it.testSuite)
+            val ishunitTest = project.tasks.register(it.name + ISHUNIT_TEST, ISHUnitTask::class.java) { task ->
+                task.group = "icm docker project"
+                task.description = "Starts ISHUnitTest suite '" + it.name + "' in an existing ICM base container."
 
-                this.mustRunAfter(dbprepare)
-                this.finalizedBy(removeContainer)
-                this.dependsOn(startContainer)
+                task.containerId.set(project.provider {  startContainer.get().containerId.get() })
+                task.testCartridge.set(it.cartridge)
+                task.testSuite.set(it.testSuite)
 
-                ishunitreport.dependsOn(this)
+                task.dependsOn(startContainer)
+                task.finalizedBy(removeContainer)
+                task.mustRunAfter(dbprepare, startDatabase)
+            }
+
+            ishUnitTest.configure { task ->
+                task.dependsOn(ishunitTest)
             }
         }
-    }
-
-    private fun prepareSolrCloudContainer(project: Project,
-                                          taskPreparer: StandardTaskPreparer,
-                                          extension: IntershopDockerExtension) {
-        val pullZK = taskPreparer.getPullTask(
-                SolrCloudPreparer.TASK_PULL_ZK,
-                extension.images.zookeeper)
-        val pullSolr = taskPreparer.getPullTask(
-                SolrCloudPreparer.TASK_PULL_SOLR,
-                extension.images.solr)
-
-        val solrCloudTaskPreparer = SolrCloudPreparer(project)
-        val zkStartTask = solrCloudTaskPreparer.getZKStartTask(pullZK)
-        val solrStartTask = solrCloudTaskPreparer.getSolrStartTask(pullSolr)
-
-        solrStartTask.dependsOn(zkStartTask)
-
-        val stopZK = taskPreparer.getStopTask(
-                SolrCloudPreparer.TASK_STOP_ZK,
-                SolrCloudPreparer.CONTAINER_EXTENSION_ZK,
-                extension.images.zookeeper)
-        val stopSolr = taskPreparer.getStopTask(
-                SolrCloudPreparer.TASK_STOP_SOLR,
-                SolrCloudPreparer.CONTAINER_EXTENSION_SOLR,
-                extension.images.solr)
-        stopZK.dependsOn(stopSolr)
-
-        val removeZK = taskPreparer.getRemoveTask(
-                SolrCloudPreparer.TASK_REMOVE_ZK,
-                SolrCloudPreparer.CONTAINER_EXTENSION_ZK)
-        val removeSolr = taskPreparer.getRemoveTask(
-                SolrCloudPreparer.TASK_REMOVE_SOLR,
-                SolrCloudPreparer.CONTAINER_EXTENSION_SOLR)
-
-        removeSolr.dependsOn(removeZK)
-
     }
 
     private fun addTestReportConfiguration(project: Project) {

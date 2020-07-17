@@ -75,7 +75,7 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
     @get:Input
     var debug: Boolean
         get() = debugProperty.get()
-        set(value: Boolean) = debugProperty.set(value)
+        set(value) = debugProperty.set(value)
 
 
     init {

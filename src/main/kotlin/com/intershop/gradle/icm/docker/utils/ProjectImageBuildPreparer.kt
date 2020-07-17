@@ -32,9 +32,12 @@ import org.gradle.api.Project
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Tar
 
-class ProjectImageBuildPreparer(val project: Project, val images: BaseImages, val buildImages: BuildImages) {
+class ProjectImageBuildPreparer(private val project: Project,
+                                private val images: BaseImages,
+                                private val buildImages: BuildImages) {
 
     companion object {
         const val PRJ_DIR = "intershop-prj"
@@ -58,136 +61,123 @@ class ProjectImageBuildPreparer(val project: Project, val images: BaseImages, va
         const val DOCKERFILE_TEST_DIR = "dockerfile/test"
         const val DOCKERFILE_INIT_DIR = "dockerfile/init"
         const val DOCKERFILE_INITTEST_DIR = "dockerfile/inittest"
-
-        const val ERROR_MSG = "Package task must be a Tar task and build image task must be a BuildImage task!"
     }
 
     fun prepareImageBuilds() {
         val mainPkgTaskName = buildImages.mainImage.pkgTaskName.getOrElse("createMainPkg")
-        val mainPkgTask = project.tasks.getByName(mainPkgTaskName)
-        val mainBuildImageTask = project.tasks.getByName(BUILD_MAIN_IMAGE)
+        val mainPkgTask = project.tasks.named(mainPkgTaskName, Tar::class.java)
+        val mainBuildImageTask = project.tasks.named(BUILD_MAIN_IMAGE, BuildImage::class.java )
 
-        if(mainPkgTask is Tar && mainBuildImageTask is BuildImage) {
-                val mainDockerFile = getBaseDockerfileTask(
-                        DOCKERFILE_MAIN, DOCKERFILE_MAIN_DIR, images.icmbase,
-                        MAIN_ICM_DIR, mainPkgTask, buildImages.mainImage)
+        val mainDockerFile = getBaseDockerfileTask(
+                DOCKERFILE_MAIN, DOCKERFILE_MAIN_DIR, images.icmbase,
+                MAIN_ICM_DIR, mainPkgTask, buildImages.mainImage)
 
-                mainBuildImageTask.dockerfile.set( getDockerfile(buildImages.mainImage.dockerfile, mainDockerFile) )
-                mainBuildImageTask.srcFiles.from(mainPkgTask)
-                mainBuildImageTask.dependsOn(mainDockerFile)
-        } else {
-            throw GradleException("MainImage: $ERROR_MSG")
+        mainBuildImageTask.configure { task ->
+            task.dockerfile.set(getDockerfile(buildImages.mainImage.dockerfile, mainDockerFile))
+            task.srcFiles.from(mainPkgTask)
+            task.dependsOn(mainDockerFile)
         }
 
         val initPkgTaskName = buildImages.initImage.pkgTaskName.getOrElse("createInitPkg")
-        val initPkgTask = project.tasks.getByName(initPkgTaskName)
-        val initBuildImageTask = project.tasks.getByName(BUILD_INIT_IMAGE)
+        val initPkgTask = project.tasks.named(initPkgTaskName, Tar::class.java)
+        val initBuildImageTask = project.tasks.named(BUILD_INIT_IMAGE, BuildImage::class.java )
 
-        if(initPkgTask is Tar && initBuildImageTask is BuildImage) {
-                val initDockerFile = getBaseDockerfileTask(
-                        DOCKERFILE_INIT, DOCKERFILE_INIT_DIR, images.icminit,
-                        INIT_ICM_DIR, initPkgTask, buildImages.initImage)
+        val initDockerFile = getBaseDockerfileTask(
+                DOCKERFILE_INIT, DOCKERFILE_INIT_DIR, images.icminit,
+                INIT_ICM_DIR, initPkgTask, buildImages.initImage)
 
-                initBuildImageTask.dockerfile.set( getDockerfile(buildImages.initImage.dockerfile, initDockerFile) )
-                initBuildImageTask.srcFiles.from(initPkgTask)
-                initBuildImageTask.dependsOn(initDockerFile)
-        } else {
-            throw GradleException("InitImage: $ERROR_MSG")
+        initBuildImageTask.configure { task ->
+            task.dockerfile.set( getDockerfile(buildImages.initImage.dockerfile, initDockerFile) )
+            task.srcFiles.from(initPkgTask)
+            task.dependsOn(initDockerFile)
         }
 
         val testPkgTaskName = buildImages.testImage.pkgTaskName.getOrElse("createTestPkg")
-        val testPkgTask = project.tasks.getByName(testPkgTaskName)
-        val testBuildImageTask = project.tasks.getByName(BUILD_TEST_IMAGE)
+        val testPkgTask = project.tasks.named(testPkgTaskName, Tar::class.java)
+        val testBuildImageTask = project.tasks.named(BUILD_TEST_IMAGE, BuildImage::class.java )
 
-        if(testPkgTask is Tar && testBuildImageTask is BuildImage) {
-                val testDockerFile = getBaseDockerfileTask(
-                        DOCKERFILE_TEST, DOCKERFILE_TEST_DIR, project.provider { "BASE_IMAGE" },
-                        MAIN_ICM_DIR, testPkgTask, buildImages.testImage)
+        val testDockerFile = getBaseDockerfileTask(
+                DOCKERFILE_TEST, DOCKERFILE_TEST_DIR, project.provider { "BASE_IMAGE" },
+                MAIN_ICM_DIR, testPkgTask, buildImages.testImage)
 
-                testBuildImageTask.dockerfile.set( getDockerfile(buildImages.testImage.dockerfile, testDockerFile) )
-                mainBuildImageTask.srcFiles.from(mainPkgTask)
-                mainBuildImageTask.dependsOn(testDockerFile)
-        } else {
-            throw GradleException("TestImage: $ERROR_MSG")
+        testBuildImageTask.configure { task ->
+            task.dockerfile.set( getDockerfile(buildImages.testImage.dockerfile, testDockerFile) )
+            task.srcFiles.from(mainPkgTask)
+            task.dependsOn(testDockerFile)
         }
 
         val initTestPkgTaskName = buildImages.initImage.pkgTaskName.getOrElse("createInitTestPkg")
-        val initTestPkgTask = project.tasks.getByName(initTestPkgTaskName)
-        val initTestBuildImageTask = project.tasks.getByName(BUILD_INIT_TEST_IMAGE)
+        val initTestPkgTask = project.tasks.named(initTestPkgTaskName, Tar::class.java)
+        val initTestBuildImageTask = project.tasks.named(BUILD_INIT_TEST_IMAGE, BuildImage::class.java )
 
-        if(initTestPkgTask is Tar && initTestBuildImageTask is BuildImage) {
-                val initTestDockerFile = getBaseDockerfileTask(
-                        DOCKERFILE_INITTEST, DOCKERFILE_INITTEST_DIR, project.provider { "BASE_IMAGE" },
-                        INIT_ICM_DIR, initTestPkgTask, buildImages.initTestImage)
+        val initTestDockerFile = getBaseDockerfileTask(
+                DOCKERFILE_INITTEST, DOCKERFILE_INITTEST_DIR, project.provider { "BASE_IMAGE" },
+                INIT_ICM_DIR, initTestPkgTask, buildImages.initTestImage)
 
-                initTestBuildImageTask.dockerfile.set( getDockerfile(buildImages.initTestImage.dockerfile,
-                        initTestDockerFile) )
-                initTestBuildImageTask.srcFiles.from(initTestPkgTask)
-                initTestBuildImageTask.dependsOn(initTestDockerFile)
-        } else {
-            throw GradleException("InitTestImage: $ERROR_MSG")
+        initTestBuildImageTask.configure { task ->
+            task.dockerfile.set( getDockerfile(buildImages.initTestImage.dockerfile, initTestDockerFile) )
+            task.srcFiles.from(initTestPkgTask)
+            task.dependsOn(initTestDockerFile)
         }
     }
 
     private fun getBaseDockerfileTask(taskname: String,
                                       dirname: String,
                                       image: Provider<String>,
-                                      icmdir: String, pkg: Tar,
-                                      imgConfiguration: ImageConfiguration): Dockerfile {
-        return with(project) {
-            tasks.maybeCreate(taskname, Dockerfile::class.java).apply {
-                arg("SETUP_IMAGE")
-                arg("BASE_IMAGE")
+                                      icmdir: String, pkg: TaskProvider<Tar>,
+                                      imgConfiguration: ImageConfiguration): TaskProvider<Dockerfile> =
+            project.tasks.register(taskname, Dockerfile::class.java) { task ->
+                task.arg("SETUP_IMAGE")
+                task.arg("BASE_IMAGE")
 
-                from(Dockerfile.From("\${SETUP_IMAGE}").withStage(PREBUILDSTAGE))
-                runCommand("mkdir -p /${PRJ_DIR}/org")
+                task.from(Dockerfile.From("\${SETUP_IMAGE}").withStage(PREBUILDSTAGE))
+                task.runCommand("mkdir -p /${PRJ_DIR}/org")
 
-                addFile(project.provider {
-                    Dockerfile.File(pkg.outputs.files.first().name, "/${PRJ_DIR}/org")
+                task.addFile(project.provider {
+                    Dockerfile.File(pkg.get().outputs.files.first().name, "/${PRJ_DIR}/org")
                 } )
 
-                runCommand("echo '#!/bin/sh' > $DIFFDIRSCRIPT")
-                runCommand("echo 'for i in `ls -1 ${WORKDIR}/org`' >> $DIFFDIRSCRIPT")
-                runCommand("echo '  do' >> $DIFFDIRSCRIPT")
-                runCommand("echo '    dirdiff -srcdir ${WORKDIR}/org/\$i -targetdir ${icmdir}/\$i" +
+                task.runCommand("echo '#!/bin/sh' > $DIFFDIRSCRIPT")
+                task.runCommand("echo 'for i in `ls -1 ${WORKDIR}/org`' >> $DIFFDIRSCRIPT")
+                task.runCommand("echo '  do' >> $DIFFDIRSCRIPT")
+                task.runCommand("echo '    dirdiff -srcdir ${WORKDIR}/org/\$i -targetdir ${icmdir}/\$i" +
                         " -diffdir ${WORKDIR}/diff/' >> $DIFFDIRSCRIPT")
-                runCommand("echo '  done' >> $DIFFDIRSCRIPT")
+                task.runCommand("echo '  done' >> $DIFFDIRSCRIPT")
 
-                runCommand("chmod a+x $DIFFDIRSCRIPT")
+                task.runCommand("chmod a+x $DIFFDIRSCRIPT")
 
-                from( project.provider {
+                task.from( project.provider {
                     if(image.getOrElse("").isEmpty()) {
                         throw GradleException("It is necessary to provide an ICM base oder init image!")
                     }
                     Dockerfile.From(image.getOrElse("")).withStage(BUILDSTAGE) } )
-                runCommand("mkdir -p ${WORKDIR}/diff")
-                instruction("COPY --from=${PREBUILDSTAGE} $USERSET /${PRJ_DIR}/ ${WORKDIR}/")
-                runCommand("${MAIN_ICM_DIR}${DIFFDIRSCRIPT}")
+                task.runCommand("mkdir -p ${WORKDIR}/diff")
+                task.instruction("COPY --from=${PREBUILDSTAGE} $USERSET /${PRJ_DIR}/ ${WORKDIR}/")
+                task.runCommand("${MAIN_ICM_DIR}${DIFFDIRSCRIPT}")
 
-                from( project.provider {
+                task.from( project.provider {
                     if(image.getOrElse("").isEmpty()) {
                         throw GradleException("It is necessary to provide an ICM base oder init image!")
                     }
                     Dockerfile.From(image.getOrElse(""))
                 } )
-                instruction("COPY --from=${BUILDSTAGE} $USERSET ${WORKDIR}/diff ${icmdir}/")
+                task.instruction("COPY --from=${BUILDSTAGE} $USERSET ${WORKDIR}/diff ${icmdir}/")
 
-                destFile.set(project.layout.buildDirectory.file("${dirname}/Dockerfile"))
+                task.destFile.set(project.layout.buildDirectory.file("${dirname}/Dockerfile"))
 
-                onlyIf { checkDockerFile(imgConfiguration.dockerfile) }
+                task.onlyIf { checkDockerFile(imgConfiguration.dockerfile) }
             }
-        }
-    }
 
-    fun checkDockerFile(dockerfile: RegularFileProperty): Boolean =
+    private fun checkDockerFile(dockerfile: RegularFileProperty): Boolean =
             ! dockerfile.isPresent || ! dockerfile.asFile.get().exists()
 
-    fun getDockerfile(dockerfile: RegularFileProperty, dockerfileTask: Dockerfile): Provider<RegularFile> =
+    private fun getDockerfile(dockerfile: RegularFileProperty,
+                              dockerfileTask: TaskProvider<Dockerfile>): Provider<RegularFile> =
             project.provider {
                 if(dockerfile.orNull != null && dockerfile.asFile.get().exists()) {
                     dockerfile.get()
                 } else {
-                    dockerfileTask.destFile.get()
+                    dockerfileTask.get().destFile.get()
                 }
             }
 }

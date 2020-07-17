@@ -14,32 +14,47 @@
  * limitations under the License.
  *
  */
+
 package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.APullImage
-import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
-import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
+import com.intershop.gradle.icm.docker.tasks.CreateVolumes
+import com.intershop.gradle.icm.docker.tasks.RemoveVolumes
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.tasks.StartServerContainerTask
+import com.intershop.gradle.icm.docker.utils.ContainerUtils.transformVolumes
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
-/**
- * Provides methods to configure container related tasks.
- */
-class ServerTaskPreparer(val project: Project, private val dockerExtension: IntershopDockerExtension) {
+class ServerTaskPreparer(private val project: Project,
+                         private val dockerExtension: IntershopDockerExtension) {
 
     companion object {
-        const val TASK_PULL = "pullImage"
-        const val TASK_CREATECONTAINER = "createContainer"
-        const val TASK_STARTCONTAINER = "startContainer"
-        const val TASK_REMOVE = "removeContainer"
-        const val TASK_FINALIZECONTAINER = "finalizeContainer"
+        const val TASK_EXT_MSSQL = "MSSQL"
+        const val TASK_EXT_MAIL = "MailSrv"
+        const val TASK_EXT_WAA = "WAA"
+        const val TASK_EXT_WA = "WA"
+        const val TASK_EXT_SOLR = "Solr"
+        const val TASK_EXT_ZK = "ZK"
+
+        const val TASK_EXT_VOLUMES = "ICMWebVolumes"
+
+        const val START_WEBSERVER = "startWebServer"
+        const val STOP_WEBSERVER = "stopWebServer"
+
+        const val START_SOLRCLOUD = "startSolrCloud"
+        const val STOP_SOLRCLOUD = "stopSolrCloud"
+
+        const val TASK_EXT_CONTAINER = "Container"
+        const val TASK_EXT_AS = "AS"
 
         const val SERVERLOGS = "serverlogs"
         const val SERVERLOGS_PATH = "server/logs"
@@ -53,139 +68,332 @@ class ServerTaskPreparer(val project: Project, private val dockerExtension: Inte
         const val TASK_CREATECONFIG = "createConfig"
         const val TASK_CREATECLUSTERID = "createClusterID"
         const val TASK_COPYLIBS = "copyLibs"
+    }
 
-        const val CONTAINER_EXTENSION = "container"
+    private val taskPreparer : StandardTaskPreparer by lazy {
+        StandardTaskPreparer(project)
     }
 
     private val addDirectories: Map<String, Provider<Directory>> by lazy {
         mapOf(
-            SERVERLOGS to project.layout.buildDirectory.dir(SERVERLOGS_PATH),
-            ISHUNITOUT to project.layout.buildDirectory.dir(ISHUNITOUT_PATH)
+                SERVERLOGS to project.layout.buildDirectory.dir(SERVERLOGS_PATH),
+                ISHUNITOUT to project.layout.buildDirectory.dir(ISHUNITOUT_PATH)
         )
     }
 
-    /**
-     * Creates base container.
-     *
-     * @param pullImage pull image task.
-     */
-    fun getBaseContainer(pullImage: APullImage): DockerCreateContainer {
-        return with(project) {
+    fun createMSSQLServerTasks() {
+        val containerExt = TASK_EXT_MSSQL.toLowerCase()
+        taskPreparer.createBaseTasks(TASK_EXT_MSSQL, containerExt, dockerExtension.images.mssqldb)
+        val imageTask = project.tasks.named("pull${TASK_EXT_MSSQL}", APullImage::class.java)
 
-            val dirprep = tasks.maybeCreate( "dirPreparer").apply {
-                doLast {
-                    addDirectories.forEach { (_, dir) ->
-                        val file = dir.get().asFile
-                        if(file.exists()) {
-                            file.deleteRecursively()
-                        }
-                        dir.get().asFile.mkdirs()
+        project.tasks.register ("start${TASK_EXT_MSSQL}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task, containerExt)
+            task.description = "Starts an MSSQL server"
+            task.targetImageId( project.provider { imageTask.get().image.get() } )
+
+            with(dockerExtension.developmentConfig) {
+                task.hostConfig.portBindings.set(
+                        listOf("${getConfigProperty( "intershop.db.mssql.hostport", "1433")}:1433"))
+                task.envVars.set( mutableMapOf(
+                        "ACCEPT_EULA" to
+                                "Y",
+                        "SA_PASSWORD" to
+                                getConfigProperty( "intershop.db.mssql.sa.password", "1ntershop5A"),
+                        "MSSQL_PID" to
+                                "Developer",
+                        "RECREATEDB" to
+                                getConfigProperty("intershop.db.mssql.recreatedb", "false"),
+                        "RECREATEUSER" to
+                                getConfigProperty("intershop.db.mssql.recreateuser", "false"),
+                        "ICM_DB_NAME" to
+                                getConfigProperty("intershop.db.mssql.dbname", "icmtestdb"),
+                        "ICM_DB_USER" to
+                                getConfigProperty("intershop.jdbc.user", "intershop"),
+                        "ICM_DB_PASSWORD" to
+                                getConfigProperty("intershop.jdbc.password", "intershop")
+                ))
+            }
+
+            task.dependsOn(imageTask)
+        }
+    }
+
+    fun createMailServerTasks() {
+        val containerExt = TASK_EXT_MAIL.toLowerCase()
+        taskPreparer.createBaseTasks(TASK_EXT_MAIL, containerExt, dockerExtension.images.mailsrv)
+        val imageTask = project.tasks.named("pull${TASK_EXT_MAIL}", APullImage::class.java)
+
+        project.tasks.register ("start${TASK_EXT_MAIL}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task, containerExt)
+            task.description = "Starts an local mail server for testing"
+            task.targetImageId( project.provider { imageTask.get().image.get() } )
+
+            task.envVars.set(mutableMapOf(
+                "MH_STORAGE" to "maildir",
+                "MH_MAILDIR_PATH" to "/maildir"))
+
+            task.hostConfig.portBindings.set(listOf("25:1025", "8025:8025"))
+            task.hostConfig.binds.set( project.provider {
+                transformVolumes(
+                    mutableMapOf( project.layout.buildDirectory.dir("mailoutput").get().asFile.absolutePath
+                            to "/maildir" )) })
+
+            task.dependsOn(imageTask)
+        }
+    }
+
+    fun createWebServerTasks() {
+        val containerWAAExt = TASK_EXT_WAA.toLowerCase()
+        val containerWAExt = TASK_EXT_WA.toLowerCase()
+
+        taskPreparer.createBaseTasks(TASK_EXT_WAA, containerWAAExt, dockerExtension.images.webadapteragent)
+        taskPreparer.createBaseTasks(TASK_EXT_WA, containerWAExt, dockerExtension.images.webadapter)
+
+        val imageWAATask = project.tasks.named("pull${TASK_EXT_WAA}", APullImage::class.java)
+        val imageWATask = project.tasks.named("pull${TASK_EXT_WA}", APullImage::class.java)
+
+        val createVolumes =
+            project.tasks.register("create${TASK_EXT_VOLUMES}", CreateVolumes::class.java) { task ->
+                task.group = "icm container webserver"
+                task.description = "Creates volumes in Docker"
+                task.volumeNames.set(
+                    mutableListOf(
+                        "${project.name.toLowerCase()}-waproperties",
+                        "${project.name.toLowerCase()}-pagecache",
+                        "${project.name.toLowerCase()}-walogs"
+                    )
+                )
+            }
+
+        val removeVolumes =
+            project.tasks.register("remove${TASK_EXT_VOLUMES}", RemoveVolumes::class.java) { task ->
+                task.group = "icm container webserver"
+                task.description = "Removes volumes from Docker"
+                task.volumeNames.set(
+                    mutableListOf(
+                        "${project.name.toLowerCase()}-waproperties",
+                        "${project.name.toLowerCase()}-pagecache",
+                        "${project.name.toLowerCase()}-walogs"
+                    )
+                )
+            }
+
+        val volumes = mutableMapOf(
+                "${project.name.toLowerCase()}-waproperties" to "/intershop/webadapter-conf",
+                "${project.name.toLowerCase()}-pagecache" to "/intershop/pagecache",
+                "${project.name.toLowerCase()}-walogs" to "/intershop/logs")
+
+        val startWA = project.tasks.register("start${TASK_EXT_WA}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task, containerWAExt)
+            task.group = "icm container webserver"
+            task.description = "Start ICM WebServer with WebAdapter"
+            task.targetImageId(project.provider { imageWATask.get().image.get() })
+
+            task.hostConfig.portBindings.set(
+                        listOf("8080:8080", "8443:8443"))
+
+            task.hostConfig.binds.set( volumes )
+
+            task.envVars.set(mutableMapOf(
+                        "ICM_ICMSERVLETURLS" to "cs.url.0=http://hostname:1414/servlet/ConfigurationServlet"))
+
+            task.dependsOn(imageWATask, createVolumes)
+        }
+
+        val startWAA = project.tasks.register("start${TASK_EXT_WAA}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task, containerWAAExt)
+            task.group = "icm container webserver"
+            task.description = "Start ICM WebAdapterAgent"
+            task.targetImageId(project.provider { imageWAATask.get().image.get() })
+
+            task.hostConfig.binds.set( volumes )
+
+            task.dependsOn(imageWAATask, startWA, createVolumes)
+        }
+
+        val stopWAA = project.tasks.named("stop${TASK_EXT_WAA}")
+        val stopWA = project.tasks.named("stop${TASK_EXT_WAA}")
+
+        project.tasks.register(START_WEBSERVER) {task ->
+            task.group = "icm container webserver"
+            task.description = "Start all components for ICM WebServer"
+            task.dependsOn(startWA, startWAA)
+        }
+
+        project.tasks.register(STOP_WEBSERVER) {task ->
+            task.group = "icm container webserver"
+            task.description = "Stop all components for ICM WebServer"
+            task.dependsOn(stopWAA, stopWA)
+        }
+
+        try {
+            project.tasks.named("clean").configure { task ->
+                task.dependsOn(removeVolumes)
+            }
+        } catch( ex: UnknownTaskException) {
+            project.logger.info("Task clean is not available.")
+        }
+    }
+
+    fun createSolrServerTasks() {
+        val containerSolrExt = TASK_EXT_SOLR.toLowerCase()
+        val containerZKExt = TASK_EXT_ZK.toLowerCase()
+
+        taskPreparer.createBaseTasks(TASK_EXT_SOLR, containerSolrExt, dockerExtension.images.solr)
+        taskPreparer.createBaseTasks(TASK_EXT_ZK, containerZKExt, dockerExtension.images.zookeeper)
+
+        val imageSolrTask = project.tasks.named("pull${TASK_EXT_SOLR}", APullImage::class.java)
+        val imageZKTask = project.tasks.named("pull${TASK_EXT_ZK}", APullImage::class.java)
+
+        val startZK = project.tasks.register("start${TASK_EXT_ZK}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task, containerZKExt)
+            task.group = "icm container SolrCloud"
+            task.description = "Start Zookeeper component of SolrCloud"
+            task.targetImageId(project.provider { imageZKTask.get().image.get() })
+
+            task.hostConfig.portBindings.set(
+                listOf("2181:2188"))
+
+            task.envVars.set(mutableMapOf(
+                "ZOO_MY_ID" to "1",
+                "ZOO_PORT" to "2181" ,
+                "ZOO_SERVERS" to "server.1=zoo-1:2888:3888"))
+
+            task.dependsOn(imageZKTask)
+        }
+
+        val startSolr = project.tasks.register("start${TASK_EXT_SOLR}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task, containerSolrExt)
+            task.group = "icm container SolrCloud"
+            task.description = "Start Solr component of SolrCloud"
+            task.targetImageId(project.provider { imageSolrTask.get().image.get() })
+
+            task.hostConfig.portBindings.set(
+                listOf("8983:8983"))
+
+            task.envVars.set(mutableMapOf(
+                "SOLR_PORT" to "8983",
+                "ZK_HOST" to "${taskPreparer.getContainerName(containerZKExt)}:2181" ,
+                "SOLR_HOST" to taskPreparer.getContainerName(containerSolrExt)
+            ))
+
+            task.dependsOn(imageSolrTask, startZK)
+        }
+
+        val stopZK = project.tasks.named("stop${TASK_EXT_ZK}")
+        val stopSolr = project.tasks.named("stop${TASK_EXT_SOLR}")
+
+        project.tasks.register(START_SOLRCLOUD) { task ->
+            task.group = "icm container SolrCloud"
+            task.description = "Start all components of SolrCloud"
+            task.dependsOn(startZK, startSolr)
+        }
+
+        project.tasks.register(STOP_SOLRCLOUD) { task ->
+            task.group = "icm container SolrCloud"
+            task.description = "Stop all components of SolrCloud"
+            task.dependsOn(stopZK, stopSolr)
+        }
+
+    }
+
+    fun createAppServerTasks() {
+        try {
+            project.tasks.named(TASK_PREPARESERVER)
+        } catch (ex: UnknownTaskException) {
+            throw GradleException("This plugin requires a task ${TASK_PREPARESERVER}' !")
+        }
+
+        val dirprep = getDirPreparerTask()
+        val prepareServer = project.tasks.named(TASK_PREPARESERVER)
+
+        val containerExt = TASK_EXT_CONTAINER.toLowerCase()
+        val asContainerExt = TASK_EXT_AS.toLowerCase()
+
+        taskPreparer.createBaseTasks(TASK_EXT_CONTAINER, containerExt, dockerExtension.images.icmbase, true)
+        val imageTask = project.tasks.named("pull${TASK_EXT_CONTAINER}", APullImage::class.java)
+
+        project.tasks.register("start${TASK_EXT_CONTAINER}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task, containerExt)
+            task.description = "Start container without any special command (sleep)"
+            task.targetImageId(project.provider { imageTask.get().image.get() })
+            task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
+
+            task.hostConfig.portBindings.set(listOf("5005:7746"))
+            task.hostConfig.binds.set(getServerVolumes())
+
+            task.dependsOn(dirprep, prepareServer, imageTask)
+        }
+
+        taskPreparer.createBaseTasks(TASK_EXT_AS, asContainerExt, dockerExtension.images.icmbase, true)
+        val imageASTask = project.tasks.named("pull${TASK_EXT_AS}", APullImage::class.java)
+
+        project.tasks.register("start${TASK_EXT_AS}", StartServerContainerTask::class.java) { task ->
+            configureContainerTask(task, asContainerExt)
+            task.description = "Start container Application server of ICM"
+            task.targetImageId(project.provider { imageTask.get().image.get() })
+
+            task.hostConfig.portBindings.set(listOf("5005:7746"))
+            task.hostConfig.binds.set(getServerVolumes())
+
+            task.dependsOn(dirprep, prepareServer, imageASTask)
+        }
+    }
+
+    private fun configureContainerTask(task: DockerCreateContainer, containerExt: String) {
+        task.group = "icm container ${containerExt}"
+        task.attachStderr.set(true)
+        task.attachStdout.set(true)
+        task.hostConfig.autoRemove.set(true)
+        task.containerName.set(taskPreparer.getContainerName(containerExt))
+    }
+
+    private fun getDirPreparerTask(): TaskProvider<Task> {
+        return project.tasks.register( "dirPreparer") { task ->
+            task.doLast {
+                addDirectories.forEach { (_, dir) ->
+                    val file = dir.get().asFile
+                    if(file.exists()) {
+                        file.deleteRecursively()
                     }
+                    dir.get().asFile.mkdirs()
                 }
-                dependsOn(pullImage)
-            }
-
-            val prepareServer = tasks.findByName(TASK_PREPARESERVER)
-                ?: throw GradleException("This plugin requires a task ${TASK_PREPARESERVER}' !")
-
-            tasks.maybeCreate(TASK_CREATECONTAINER, DockerCreateContainer::class.java).apply {
-                attachStderr.set(true)
-                attachStdout.set(true)
-
-                targetImageId(pullImage.image)
-
-                containerName.set("${project.name.toLowerCase()}-container")
-
-                entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
-
-                hostConfig.portBindings.set(listOf("5005:7746"))
-
-                hostConfig.binds.set(transformVolumes( mutableMapOf(
-                        getOutputPathFor(TASK_CREATESITES, "sites")
-                                to "/intershop/sites" ,
-                        dockerExtension.developmentConfig.licenseDirectory
-                                to "/intershop/license",
-                        addDirectories.getValue(SERVERLOGS).get().asFile.absolutePath
-                                to "/intershop/logs",
-                        addDirectories.getValue(ISHUNITOUT).get().asFile.absolutePath
-                                to "/intershop/ishunitrunner/output",
-                        project.projectDir.absolutePath
-                                to "/intershop/project/cartridges",
-                        getOutputPathFor(TASK_EXTRACARTRIDGES, "")
-                                to "/intershop/project/extraCartridges",
-                        getOutputPathFor(TASK_COPYLIBS, "")
-                                to "/intershop/project/libs",
-                        getOutputDirFor(TASK_CREATECLUSTERID).parent
-                                to "/intershop/clusterid",
-                        dockerExtension.developmentConfig.configDirectory
-                                to "/intershop/conf",
-                        getOutputPathFor(TASK_CREATECONFIG, "system-conf")
-                                to "/intershop/system-conf"
-                )))
-
-                dependsOn(dirprep, prepareServer)
-
             }
         }
     }
 
-    /**
-     * Starts base container.
-     *
-     * @param container create container task.
-     */
-    fun getStartContainer(container: DockerCreateContainer): DockerStartContainer {
-        return with(project) {
-            tasks.maybeCreate(TASK_STARTCONTAINER, DockerStartContainer::class.java).apply {
-                targetContainerId(container.containerId)
-                dependsOn(container)
-            }
-        }
-    }
-
-    /**
-     * Configures remove container.
-     *
-     * @param startContainer Task, that starts the base container.
-     */
-    fun getFinalizeContainer(startContainer: DockerStartContainer): DockerRemoveContainer {
-        return with(project) {
-            tasks.maybeCreate(TASK_FINALIZECONTAINER, DockerRemoveContainer::class.java)
-                    .apply {
-                        removeVolumes.set(true)
-                        force.set(true)
-                        targetContainerId(startContainer.containerId)
-                    }
-        }
-    }
-
-    /**
-     * Return a configured dbinit task.
-     *
-     * @param containertask task that creates the container.
-     */
-    fun getDBPrepareTask(containertask: DockerCreateContainer): DBPrepareTask {
-        return with(project) {
-            tasks.maybeCreate(RunTaskPreparer.TASK_DBPREPARE, DBPrepareTask::class.java).apply {
-                containerId.set(containertask.containerId)
-            }
-        }
-    }
-
-    /**
-     * Returns a task to create a HTML report from tes results.
-     */
-    fun getISHUnitHTMLTestReportTask(): ISHUnitHTMLTestReportTask {
-        return with(project) {
-            tasks.maybeCreate(RunTaskPreparer.TASK_ISHUNIT_REPORT, ISHUnitHTMLTestReportTask::class.java)
-        }
+    private fun getServerVolumes(): Provider<Map<String,String>> = project.provider {
+        transformVolumes( mapOf(
+                getOutputPathFor(TASK_CREATESITES, "sites")
+                        to "/intershop/sites" ,
+                dockerExtension.developmentConfig.licenseDirectory
+                        to "/intershop/license",
+                addDirectories.getValue(SERVERLOGS).get().asFile.absolutePath
+                        to "/intershop/logs",
+                addDirectories.getValue(ISHUNITOUT).get().asFile.absolutePath
+                        to "/intershop/ishunitrunner/output",
+                project.projectDir.absolutePath
+                        to "/intershop/project/cartridges",
+                getOutputPathFor(TASK_EXTRACARTRIDGES, "")
+                        to "/intershop/project/extraCartridges",
+                getOutputPathFor(TASK_COPYLIBS, "")
+                        to "/intershop/project/libs",
+                getOutputDirFor(TASK_CREATECLUSTERID).parent
+                        to "/intershop/clusterid",
+                dockerExtension.developmentConfig.configDirectory
+                        to "/intershop/conf",
+                getOutputPathFor(TASK_CREATECONFIG, "system-conf")
+                        to "/intershop/system-conf"
+        ))
     }
 
     private fun getOutputDirFor(taskName: String): File {
-        val task = project.tasks.findByName(taskName)
-            ?: throw GradleException("Task name '${taskName}' not found in project.")
-
-        return task.outputs.files.first()
+        try {
+            val task = project.tasks.named(taskName)
+            return task.get().outputs.files.first()
+        } catch (ex: UnknownTaskException) {
+            throw GradleException("Task name '${taskName}' not found in project.")
+        }
     }
 
     private fun getOutputPathFor(taskName: String, path: String): String {
@@ -196,17 +404,4 @@ class ServerTaskPreparer(val project: Project, private val dockerExtension: Inte
         }
     }
 
-    private fun transformVolumes(volumes: Map<String,String>) : Map<String, String> {
-        val tv = mutableMapOf<String, String>()
-
-        volumes.forEach { (k, v) ->
-            if(k.contains('\\')) {
-                tv["//${k.replace('\\','/')}".replace(":", "")] = v
-            } else {
-                tv[k] = v
-            }
-        }
-
-        return tv
-    }
 }

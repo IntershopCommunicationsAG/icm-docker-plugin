@@ -41,9 +41,19 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val mssqldb: Property<String> = objectFactory.property(String::class.java)
 
+    val mailsrv: Property<String> = objectFactory.property(String::class.java)
+
     init {
-        icmsetup.convention("")
-        icmbase.convention("")
-        icminit.convention("")
+        icmbase.convention("docker.intershop.de/intershop/icm-as:latest")
+        icminit.convention("docker.intershop.de/intershop/icm-as-init:latest")
+
+        icmsetup.convention("docker.intershop.de/intershop/icm-base:latest")
+        webadapter.convention("docker.intershop.de/intershop/icm-webadapter:latest")
+        webadapteragent.convention("docker.intershop.de/intershop/icm-webadapteragent:latest")
+
+        solr.convention("solr:latest")
+        zookeeper.convention("zookeeper:latest")
+        mssqldb.convention("mcr.microsoft.com/mssql/server:2019-latest")
+        mailsrv.convention("mailhog/mailhog:latest")
     }
 }
