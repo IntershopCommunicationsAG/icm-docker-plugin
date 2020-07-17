@@ -126,10 +126,18 @@ open class StartServerContainerTask
     }
 
     override fun runRemoteCommand() {
-        this.envVars.put("ENABLE_DEBUG", "")
-        this.envVars.put("ENABLE_GCLOG", "")
-        this.envVars.put("ENABLE_JMX", "")
-        this.envVars.put("ENABLE_HEAPDUMP", "")
+        if(debugProperty.get()) {
+            this.envVars.put("ENABLE_DEBUG", "true")
+        }
+        if(gclogProperty.get()) {
+            this.envVars.put("ENABLE_GCLOG", "true")
+        }
+        if(jmxProperty.get()) {
+            this.envVars.put("ENABLE_JMX", "")
+        }
+        if(heapdumpProperty.get()) {
+            this.envVars.put("ENABLE_HEAPDUMP", "")
+        }
 
         for (prop in envpropsProperty.get()) {
             val pl = prop.split("=")
