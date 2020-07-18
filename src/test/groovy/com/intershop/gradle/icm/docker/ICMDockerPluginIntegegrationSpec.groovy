@@ -896,6 +896,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore
     def 'run mssql db'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
