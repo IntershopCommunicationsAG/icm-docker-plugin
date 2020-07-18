@@ -93,12 +93,18 @@ class DBPrepareCallback (
     private fun getMessageString(input: String): String? {
         val s1 = input.indexOf(MESSAGELOG_START)
         val e1 = input.indexOf(MESSAGELOG_END)
-        if(s1 > -1) {
-            return if( e1 > s1 ) {
+
+        val rv = if(s1 > -1) {
+            if( e1 > s1  && (e1 - 3) > input.length ) {
                 input.substring(s1 + MESSAGELOG_START.length + 3, e1 - 3)
             } else {
-                input.substring(s1 + MESSAGELOG_START.length + 3)
+                input.substring(s1 + MESSAGELOG_START.length - 1)
             }
+        } else {
+            input.trim()
+        }
+        if(rv.trim().isNotEmpty()) {
+            return rv.trim()
         }
         return null
     }
