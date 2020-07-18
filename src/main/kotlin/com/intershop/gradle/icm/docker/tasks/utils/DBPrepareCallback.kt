@@ -96,7 +96,7 @@ class DBPrepareCallback (
         val substr = if(s1 > -1 && start < input.length) { input.substring(start) } else { input }
 
         val e1 = substr.indexOf(MESSAGELOG_END)
-        val out = if(e1 > -1 && e1 - 3 < substr.length) { input.substring(0, e1 - 3) } else { substr }
+        val out = if(e1 > -1 && e1 - 3 < substr.length) { substr.substring(0, e1 - 3) } else { substr }
 
         return if(out.trim().isNotEmpty()) {
             out.trim()
