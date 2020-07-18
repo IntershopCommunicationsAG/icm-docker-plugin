@@ -92,21 +92,17 @@ class DBPrepareCallback (
 
     private fun getMessageString(input: String): String? {
         val s1 = input.indexOf(MESSAGELOG_START)
-        val e1 = input.indexOf(MESSAGELOG_END)
+        val start = s1 + MESSAGELOG_START.length + 3
+        val substr = if(s1 > -1 && start < input.length) { input.substring(start) } else { input }
 
-        val rv = if(s1 > -1) {
-            if( e1 > s1  && (e1 - 3) > input.length ) {
-                input.substring(s1 + MESSAGELOG_START.length + 3, e1 - 3)
-            } else {
-                input.substring(s1 + MESSAGELOG_START.length - 1)
-            }
+        val e1 = substr.indexOf(MESSAGELOG_END)
+        val out = if(e1 > -1 && e1 - 3 < substr.length) { input.substring(0, e1 - 3) } else { substr }
+
+        return if(out.trim().isNotEmpty()) {
+            out.trim()
         } else {
-            input.trim()
+            null
         }
-        if(rv.trim().isNotEmpty()) {
-            return rv.trim()
-        }
-        return null
     }
 
     private fun getCartrigeInfo(input: String?): DBPrepareResult? {
