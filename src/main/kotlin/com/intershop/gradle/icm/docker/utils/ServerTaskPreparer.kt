@@ -171,43 +171,27 @@ class ServerTaskPreparer(private val project: Project,
         val imageWAATask = project.tasks.named("pull${TASK_EXT_WAA}", APullImage::class.java)
         val imageWATask = project.tasks.named("pull${TASK_EXT_WA}", APullImage::class.java)
 
+        val volumes = mapOf(
+            "${project.name.toLowerCase()}-waproperties" to "/intershop/webadapter-conf",
+            "${project.name.toLowerCase()}-pagecache" to "/intershop/pagecache",
+            "${project.name.toLowerCase()}-walogs" to "/intershop/logs")
+
         val createVolumes =
             project.tasks.register("create${TASK_EXT_VOLUMES}", CreateVolumes::class.java) { task ->
-                task.group = "icm container webserver"
-                task.description = "Creates volumes in Docker"
-                task.volumeNames.set(
-                    mutableListOf(
-                        "${project.name.toLowerCase()}-waproperties",
-                        "${project.name.toLowerCase()}-pagecache",
-                        "${project.name.toLowerCase()}-walogs"
-                    )
-                )
+                configureWebServerTasks(task, "Creates volumes in Docker")
+                task.volumeNames.set( volumes.keys )
             }
 
         val removeVolumes =
             project.tasks.register("remove${TASK_EXT_VOLUMES}", RemoveVolumes::class.java) { task ->
-                task.group = "icm container webserver"
-                task.description = "Removes volumes from Docker"
-                task.volumeNames.set(
-                    mutableListOf(
-                        "${project.name.toLowerCase()}-waproperties",
-                        "${project.name.toLowerCase()}-pagecache",
-                        "${project.name.toLowerCase()}-walogs"
-                    )
-                )
+                configureWebServerTasks(task, "Removes volumes from Docker")
+                task.volumeNames.set( volumes.keys )
             }
-
-        val volumes = mutableMapOf(
-                "${project.name.toLowerCase()}-waproperties" to "/intershop/webadapter-conf",
-                "${project.name.toLowerCase()}-pagecache" to "/intershop/pagecache",
-                "${project.name.toLowerCase()}-walogs" to "/intershop/logs")
 
         val startWA = project.tasks.register("start${TASK_EXT_WA}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerWAExt)
-            task.group = "icm container webserver"
-            task.description = "Start ICM WebServer with WebAdapter"
+            configureWebServerTasks(task, "Start ICM WebServer with WebAdapter")
             task.targetImageId(project.provider { imageWATask.get().image.get() })
-
 
             with(dockerExtension.developmentConfig) {
                 val httpPort = getConfigProperty(
@@ -222,7 +206,7 @@ class ServerTaskPreparer(private val project: Project,
                 val httpsContainerPort = getConfigProperty(
                     Configuration.WS_CONTAINER_HTTP_PORT,
                     Configuration.WS_CONTAINER_HTTPS_PORT_VALUE)
-                // public port: container port
+
                 task.hostConfig.portBindings.set(
                     listOf("${httpPort}:${httpContainerPort}", "${httpsPort}:${httpsContainerPort}"))
 
@@ -250,8 +234,7 @@ class ServerTaskPreparer(private val project: Project,
 
         val startWAA = project.tasks.register("start${TASK_EXT_WAA}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task, containerWAAExt)
-            task.group = "icm container webserver"
-            task.description = "Start ICM WebAdapterAgent"
+            configureWebServerTasks(task, "Start ICM WebAdapterAgent")
             task.targetImageId(project.provider { imageWAATask.get().image.get() })
 
             task.hostConfig.binds.set( volumes )
@@ -263,14 +246,12 @@ class ServerTaskPreparer(private val project: Project,
         val stopWA = project.tasks.named("stop${TASK_EXT_WAA}")
 
         project.tasks.register(START_WEBSERVER) {task ->
-            task.group = "icm container webserver"
-            task.description = "Start all components for ICM WebServer"
+            configureWebServerTasks(task, "Start all components for ICM WebServer")
             task.dependsOn(startWA, startWAA)
         }
 
         project.tasks.register(STOP_WEBSERVER) {task ->
-            task.group = "icm container webserver"
-            task.description = "Stop all components for ICM WebServer"
+            configureWebServerTasks(task, "Stop all components for ICM WebServer")
             task.dependsOn(stopWAA, stopWA)
         }
 
@@ -281,6 +262,11 @@ class ServerTaskPreparer(private val project: Project,
         } catch( ex: UnknownTaskException) {
             project.logger.info("Task clean is not available.")
         }
+    }
+
+    private fun configureWebServerTasks(task: Task, description: String) {
+        task.group = "icm container webserver"
+        task.description = description
     }
 
     fun createSolrServerTasks() {
