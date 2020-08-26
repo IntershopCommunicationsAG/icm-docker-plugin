@@ -92,25 +92,44 @@ class ServerTaskPreparer(private val project: Project,
             task.targetImageId( project.provider { imageTask.get().image.get() } )
 
             with(dockerExtension.developmentConfig) {
+                val port = getConfigProperty(
+                    Configuration.DB_MSSQL_PORT,
+                    Configuration.DB_MSSQL_PORT_VALUE)
+                val containerPort = getConfigProperty(
+                    Configuration.DB_MSSQL_CONTAINER_PORT,
+                    Configuration.DB_MSSQL_CONTAINER_PORT_VALUE)
+
                 task.hostConfig.portBindings.set(
-                        listOf("${getConfigProperty( "intershop.db.mssql.hostport", "1433")}:1433"))
+                        listOf("${port}:${containerPort}"))
                 task.envVars.set( mutableMapOf(
                         "ACCEPT_EULA" to
                                 "Y",
                         "SA_PASSWORD" to
-                                getConfigProperty( "intershop.db.mssql.sa.password", "1ntershop5A"),
+                                getConfigProperty(
+                                    Configuration.DB_MSSQL_SA_PASSWORD,
+                                    Configuration.DB_MSSQL_SA_PASSWORD_VALUE),
                         "MSSQL_PID" to
                                 "Developer",
                         "RECREATEDB" to
-                                getConfigProperty("intershop.db.mssql.recreatedb", "false"),
+                                getConfigProperty(
+                                    Configuration.DB_MSSQL_RECREATE_DB,
+                                    Configuration.DB_MSSQL_RECREATE_DB_VALUE),
                         "RECREATEUSER" to
-                                getConfigProperty("intershop.db.mssql.recreateuser", "false"),
+                                getConfigProperty(
+                                    Configuration.DB_MSSQL_RECREATE_USER,
+                                    Configuration.DB_MSSQL_RECREATE_USER_VALUE),
                         "ICM_DB_NAME" to
-                                getConfigProperty("intershop.db.mssql.dbname", "icmtestdb"),
+                                getConfigProperty(
+                                    Configuration.DB_MSSQL_DBNAME,
+                                    Configuration.DB_MSSQL_DBNAME_VALUE),
                         "ICM_DB_USER" to
-                                getConfigProperty("intershop.jdbc.user", "intershop"),
+                                getConfigProperty(
+                                    Configuration.DB_USER_NAME,
+                                    Configuration.DB_USER_NAME_VALUE),
                         "ICM_DB_PASSWORD" to
-                                getConfigProperty("intershop.jdbc.password", "intershop")
+                                getConfigProperty(
+                                    Configuration.DB_USER_PASSWORD,
+                                    Configuration.DB_USER_PASSWORD_VALUE)
                 ))
             }
 
@@ -189,13 +208,42 @@ class ServerTaskPreparer(private val project: Project,
             task.description = "Start ICM WebServer with WebAdapter"
             task.targetImageId(project.provider { imageWATask.get().image.get() })
 
-            task.hostConfig.portBindings.set(
-                        listOf("8080:8080", "8443:8443"))
+
+            with(dockerExtension.developmentConfig) {
+                val httpPort = getConfigProperty(
+                    Configuration.WS_HTTP_PORT,
+                    Configuration.WS_HTTP_PORT_VALUE)
+                val httpContainerPort = getConfigProperty(
+                    Configuration.WS_CONTAINER_HTTPS_PORT,
+                    Configuration.WS_CONTAINER_HTTP_PORT_VALUE)
+                val httpsPort = getConfigProperty(
+                    Configuration.WS_HTTPS_PORT,
+                    Configuration.WS_HTTPS_PORT_VALUE)
+                val httpsContainerPort = getConfigProperty(
+                    Configuration.WS_CONTAINER_HTTP_PORT,
+                    Configuration.WS_CONTAINER_HTTPS_PORT_VALUE)
+                // public port: container port
+                task.hostConfig.portBindings.set(
+                    listOf("${httpPort}:${httpContainerPort}", "${httpsPort}:${httpsContainerPort}"))
+
+                val asHttpPort = getConfigProperty(
+                    Configuration.AS_CONNECTOR_PORT,
+                    Configuration.AS_CONNECTOR_PORT_VALUE)
+                val runASContainerStr = getConfigProperty(Configuration.RUN_AS_CONTAINER, "true").trim()
+                val runASContainer = runASContainerStr.toBoolean()
+
+                val asHostname = if(runASContainer) {
+                        taskPreparer.getContainerName(TASK_EXT_AS.toLowerCase())
+                    } else {
+                        getConfigProperty(
+                            Configuration.AS_CONNECTOR_HOST,
+                            Configuration.AS_CONNECTOR_HOST_VALUE)
+                    }
+                task.envVars.set(mutableMapOf(
+                    "ICM_ICMSERVLETURLS" to "cs.url.0=http://${asHostname}:${asHttpPort}/servlet/ConfigurationServlet"))
+            }
 
             task.hostConfig.binds.set( volumes )
-
-            task.envVars.set(mutableMapOf(
-                        "ICM_ICMSERVLETURLS" to "cs.url.0=http://hostname:1414/servlet/ConfigurationServlet"))
 
             task.dependsOn(imageWATask, createVolumes)
         }
