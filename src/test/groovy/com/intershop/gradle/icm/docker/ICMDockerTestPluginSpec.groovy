@@ -25,6 +25,7 @@ class ICMDockerTestPluginSpec extends AbstractProjectSpec {
 
     def setup() {
         project.plugins.apply(ICMProjectPlugin.class)
+        project.plugins.apply(ICMDockerPlugin.class)
     }
 
     @Override
