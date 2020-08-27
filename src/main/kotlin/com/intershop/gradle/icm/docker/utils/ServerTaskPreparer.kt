@@ -243,7 +243,7 @@ class ServerTaskPreparer(private val project: Project,
         }
 
         val stopWAA = project.tasks.named("stop${TASK_EXT_WAA}")
-        val stopWA = project.tasks.named("stop${TASK_EXT_WAA}")
+        val stopWA = project.tasks.named("stop${TASK_EXT_WA}")
 
         project.tasks.register(START_WEBSERVER) {task ->
             configureWebServerTasks(task, "Start all components for ICM WebServer")
@@ -252,7 +252,7 @@ class ServerTaskPreparer(private val project: Project,
 
         project.tasks.register(STOP_WEBSERVER) {task ->
             configureWebServerTasks(task, "Stop all components for ICM WebServer")
-            task.dependsOn(stopWAA, stopWA)
+            task.dependsOn(stopWA, stopWAA)
         }
 
         try {

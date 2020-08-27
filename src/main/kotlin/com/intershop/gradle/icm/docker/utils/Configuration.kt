@@ -50,9 +50,9 @@ object Configuration {
     const val AS_CONNECTOR_HOST_VALUE = "localhost"
 
     const val WS_HTTP_PORT = "webserver.http.port"
-    const val WS_HTTPS_PORT = "webserver.http.port"
+    const val WS_HTTPS_PORT = "webserver.https.port"
     const val WS_CONTAINER_HTTP_PORT = "webserver.container.http.port"
-    const val WS_CONTAINER_HTTPS_PORT = "webserver.container.http.port"
+    const val WS_CONTAINER_HTTPS_PORT = "webserver.container.https.port"
 
     const val WS_HTTP_PORT_VALUE = "8080"
     const val WS_HTTPS_PORT_VALUE = "8443"
