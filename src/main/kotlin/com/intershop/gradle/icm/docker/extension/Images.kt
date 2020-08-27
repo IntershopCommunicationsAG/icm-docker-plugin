@@ -43,6 +43,8 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val mailsrv: Property<String> = objectFactory.property(String::class.java)
 
+    val testmailsrv: Property<String> = objectFactory.property(String::class.java)
+
     init {
         icmbase.convention("docker.intershop.de/intershop/icm-as:latest")
         icminit.convention("docker.intershop.de/intershop/icm-as-init:latest")
@@ -55,5 +57,7 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         zookeeper.convention("zookeeper:latest")
         mssqldb.convention("mcr.microsoft.com/mssql/server:2019-latest")
         mailsrv.convention("mailhog/mailhog:latest")
+
+        testmailsrv.convention("docker-internal.rnd.intershop.de/icm-test/iste-mail:latest")
     }
 }

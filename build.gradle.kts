@@ -72,11 +72,17 @@ gradlePlugin {
             displayName = "icm-docker-plugin"
             description = "This ICM plugin contains Docker ICM integration."
         }
+        create("icmDockerTestProjectPlugin") {
+            id = "com.intershop.gradle.icm.docker.test"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerTestPlugin"
+            displayName = "icm-docker-test-plugin"
+            description = "This ICM plugin contains special Docker tasks for special test container."
+        }
         create("icmDockerProjectPlugin") {
             id = "com.intershop.gradle.icm.docker.project"
             implementationClass = "com.intershop.gradle.icm.docker.ICMDockerProjectPlugin"
             displayName = "icm-docker-project-plugin"
-            description = "This ICM plugin contains Docker the integration for ICM project."
+            description = "This ICM plugin integrate Docker tasks to an ICM project."
         }
     }
 }
