@@ -50,6 +50,9 @@ open class ICMDockerPlugin: Plugin<Project> {
         const val WRITE_IMAGE_PROPERTIES = "writeImageProperties"
 
         const val BUILD_IMG_REGISTRY = "ishBuildImageRegistry"
+
+        const val GROUP_CONTAINER = "icm container"
+        const val GROUP_SERVERBUILD = "icm server build"
     }
 
     /**
@@ -68,7 +71,7 @@ open class ICMDockerPlugin: Plugin<Project> {
             plugins.apply(DockerRemoteApiPlugin::class.java)
 
             tasks.register("containerClean") {task ->
-                task.group = "icm container"
+                task.group = GROUP_CONTAINER
                 task.description = "Removes all available container from Docker"
             }
 

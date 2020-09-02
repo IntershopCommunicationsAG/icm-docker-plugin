@@ -213,8 +213,7 @@ class ServerTaskPreparer(private val project: Project,
                 val asHttpPort = getConfigProperty(
                     Configuration.AS_CONNECTOR_PORT,
                     Configuration.AS_CONNECTOR_PORT_VALUE)
-                val runASContainerStr = getConfigProperty(Configuration.RUN_AS_CONTAINER, "true").trim()
-                val runASContainer = runASContainerStr.toBoolean()
+                val runASContainer = project.hasProperty("runASasContainer")
 
                 val asHostname = if(runASContainer) {
                         taskPreparer.getContainerName(TASK_EXT_AS.toLowerCase())

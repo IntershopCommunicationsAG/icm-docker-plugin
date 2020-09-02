@@ -16,6 +16,7 @@
  */
 package com.intershop.gradle.icm.docker
 
+import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.GROUP_SERVERBUILD
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
@@ -24,6 +25,8 @@ import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.START_WEBSERVER
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.STOP_WEBSERVER
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_CONTAINER
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_MSSQL
 import org.gradle.api.GradleException
@@ -44,6 +47,9 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
         const val TASK_DBPREPARE = "dbPrepare"
         const val TASK_ISHUNIT_REPORT = "ishUnitTestReport"
+
+        const val TASK_START_SERVER = "startServer"
+        const val TASK_STOP_SERVER = "stopServer"
     }
 
     /**
@@ -61,6 +67,8 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                         IntershopDockerExtension::class.java
                 ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
+                project.setProperty("runASasContainer", true)
+
                 extensions.findByName(INTERSHOP_EXTENSION_NAME)
                     ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
@@ -73,6 +81,23 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 val serverTaskPreparer = ServerTaskPreparer(project, extension)
                 serverTaskPreparer.createAppServerTasks()
                 serverTaskPreparer.createSolrServerTasks()
+
+                val startWS = project.tasks.named(START_WEBSERVER)
+                val stopWS = project.tasks.named(STOP_WEBSERVER)
+                val startAS = project.tasks.named("start${ServerTaskPreparer.TASK_EXT_AS}")
+                val stopAS = project.tasks.named("stop${ServerTaskPreparer.TASK_EXT_AS}")
+
+                project.tasks.register(TASK_START_SERVER) { task ->
+                    task.group = GROUP_SERVERBUILD
+                    task.description = "Start app server container with webserver containers"
+                    task.dependsOn(startAS, startWS)
+                }
+
+                project.tasks.register(TASK_STOP_SERVER) { task ->
+                    task.group = GROUP_SERVERBUILD
+                    task.description = "Stop app server container and webserver containers"
+                    task.dependsOn( stopAS, stopWS)
+                }
 
                 prepareBaseContainer(project, extension)
 
@@ -89,7 +114,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
         val startDatabase = project.tasks.named("start${TASK_EXT_MSSQL}")
 
         val dbprepare = project.tasks.register(TASK_DBPREPARE, DBPrepareTask::class.java) { task ->
-            task.group = "icm docker project"
+            task.group = GROUP_SERVERBUILD
             task.description = "Starts dbPrepare in an existing ICM base container."
             task.containerId.set(project.provider {  startContainer.get().containerId.get() })
             task.dependsOn(startContainer)
@@ -101,7 +126,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
         extension.ishUnitTests.all {
             val ishunitTest = project.tasks.register(it.name + ISHUNIT_TEST, ISHUnitTask::class.java) { task ->
-                task.group = "icm docker project"
+                task.group = GROUP_SERVERBUILD
                 task.description = "Starts ISHUnitTest suite '" + it.name + "' in an existing ICM base container."
 
                 task.containerId.set(project.provider {  startContainer.get().containerId.get() })

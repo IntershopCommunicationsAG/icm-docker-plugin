@@ -46,7 +46,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
     private val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
 
     init {
-        group = "icm docker project"
+        group = "icm container project"
         debugProperty.convention(false)
     }
 
