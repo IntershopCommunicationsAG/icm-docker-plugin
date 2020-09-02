@@ -32,6 +32,7 @@ import org.gradle.api.UnknownTaskException
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.extra
 import java.io.File
 
 class ServerTaskPreparer(private val project: Project,
@@ -213,7 +214,7 @@ class ServerTaskPreparer(private val project: Project,
                 val asHttpPort = getConfigProperty(
                     Configuration.AS_CONNECTOR_PORT,
                     Configuration.AS_CONNECTOR_PORT_VALUE)
-                val runASContainer = project.hasProperty("runASasContainer")
+                val runASContainer = project.extra.properties["runASasContainer"] != null
 
                 val asHostname = if(runASContainer) {
                         taskPreparer.getContainerName(TASK_EXT_AS.toLowerCase())
