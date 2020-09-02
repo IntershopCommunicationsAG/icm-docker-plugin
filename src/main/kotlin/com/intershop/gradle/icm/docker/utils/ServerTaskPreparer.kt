@@ -211,29 +211,28 @@ class ServerTaskPreparer(private val project: Project,
                 task.hostConfig.portBindings.set(
                     listOf("${httpPort}:${httpContainerPort}", "${httpsPort}:${httpsContainerPort}"))
 
-                val asHttpPort = if(dockerExtension.developmentConfig.appserverAsContainer) {
-                    getConfigProperty(
+                if(dockerExtension.developmentConfig.appserverAsContainer) {
+                    val asHTTPPort = getConfigProperty(
                         Configuration.AS_CONNECTOR_CONTAINER_PORT,
                         Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE)
+                    val asHostname = taskPreparer.getContainerName(TASK_EXT_AS.toLowerCase())
+
+                    task.envVars.put(
+                        "ICM_ICMSERVLETURLS",
+                        "cs.url.0=http://${asHostname}:${asHTTPPort}/servlet/ConfigurationServlet")
+                    task.hostConfig.links.add("${asHostname}:${asHostname}")
+
                 } else {
-                    getConfigProperty(
+                    val asHTTPPort = getConfigProperty(
                         Configuration.AS_CONNECTOR_PORT,
                         Configuration.AS_CONNECTOR_PORT_VALUE)
-                }
+                    val asHostname = getConfigProperty(
+                        Configuration.AS_CONNECTOR_HOST,
+                        Configuration.AS_CONNECTOR_HOST_VALUE)
 
-                val asHostname = if(dockerExtension.developmentConfig.appserverAsContainer) {
-                        taskPreparer.getContainerName(TASK_EXT_AS.toLowerCase())
-                    } else {
-                        getConfigProperty(
-                            Configuration.AS_CONNECTOR_HOST,
-                            Configuration.AS_CONNECTOR_HOST_VALUE)
-                    }
-
-                task.envVars.set(mutableMapOf(
-                    "ICM_ICMSERVLETURLS" to "cs.url.0=http://${asHostname}:${asHttpPort}/servlet/ConfigurationServlet"))
-
-                if(dockerExtension.developmentConfig.appserverAsContainer) {
-                    task.hostConfig.links.add("${asHostname}:${asHostname}")
+                    task.envVars.put(
+                        "ICM_ICMSERVLETURLS",
+                        "cs.url.0=http://${asHostname}:${asHTTPPort}/servlet/ConfigurationServlet")
                 }
             }
 
@@ -383,9 +382,10 @@ class ServerTaskPreparer(private val project: Project,
                     Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
                 )
                 val httpASPort = getConfigProperty(
-                    Configuration.AS_CONNECTOR_PORT,
-                    Configuration.AS_CONNECTOR_PORT_VALUE
+                    Configuration.AS_CONNECTOR_EXT_PORT,
+                    Configuration.AS_CONNECTOR_EXT_PORT_VALUE
                 )
+                task.envVars.put("INTERSHOP_SERVLET_ENGINE_CONNECTOR_PORT", httpASContainerPort)
                 task.hostConfig.portBindings.set(listOf("5005:7746", "${httpASPort}:${httpASContainerPort}"))
             }
 
