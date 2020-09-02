@@ -199,8 +199,8 @@ class ServerTaskPreparer(private val project: Project,
                     Configuration.WS_HTTP_PORT,
                     Configuration.WS_HTTP_PORT_VALUE)
                 val httpContainerPort = getConfigProperty(
-                    Configuration.WS_CONTAINER_HTTPS_PORT,
-                    Configuration.WS_CONTAINER_HTTPS_PORT_VALUE)
+                    Configuration.WS_CONTAINER_HTTP_PORT,
+                    Configuration.WS_CONTAINER_HTTP_PORT_VALUE)
                 val httpsPort = getConfigProperty(
                     Configuration.WS_HTTPS_PORT,
                     Configuration.WS_HTTPS_PORT_VALUE)
@@ -231,6 +231,10 @@ class ServerTaskPreparer(private val project: Project,
 
                 task.envVars.set(mutableMapOf(
                     "ICM_ICMSERVLETURLS" to "cs.url.0=http://${asHostname}:${asHttpPort}/servlet/ConfigurationServlet"))
+
+                if(dockerExtension.developmentConfig.appserverAsContainer) {
+                    task.hostConfig.links.add("${asHostname}:${asHostname}")
+                }
             }
 
             task.hostConfig.binds.set( volumes )
