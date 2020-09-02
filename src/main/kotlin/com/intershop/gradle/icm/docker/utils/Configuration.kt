@@ -45,6 +45,8 @@ object Configuration {
 
     const val AS_CONNECTOR_PORT = "intershop.servletEngine.connector.port"
     const val AS_CONNECTOR_PORT_VALUE = "10104"
+    const val AS_CONNECTOR_CONTAINER_PORT = "intershop.servletEngine.connector.container.port"
+    const val AS_CONNECTOR_CONTAINER_PORT_VALUE = "10104"
 
     const val AS_CONNECTOR_HOST = "intershop.as.hostname"
     const val AS_CONNECTOR_HOST_VALUE = "localhost"
@@ -58,7 +60,5 @@ object Configuration {
     const val WS_HTTPS_PORT_VALUE = "8443"
     const val WS_CONTAINER_HTTP_PORT_VALUE = "8080"
     const val WS_CONTAINER_HTTPS_PORT_VALUE = "8443"
-
-    const val RUN_AS_CONTAINER = "run.as.container"
 
 }

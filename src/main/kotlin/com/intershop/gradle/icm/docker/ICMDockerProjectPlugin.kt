@@ -68,7 +68,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                         IntershopDockerExtension::class.java
                 ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
-                project.extra.properties["runASasContainer"] = true
+                extension.developmentConfig.appserverAsContainer = true
 
                 extensions.findByName(INTERSHOP_EXTENSION_NAME)
                     ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")

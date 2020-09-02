@@ -50,6 +50,9 @@ open class DevelopmentConfiguration
         const val LICENSE_DIR_SYS = "licenseDir"
         const val CONFIG_DIR_SYS = "configDir"
 
+        const val APPSRV_AS_CONTAINER_ENV = "APPSRVASCONTAINER"
+        const val APPSRV_AS_CONTAINER_SYS = "appSrvAsContainer"
+
         const val DEFAULT_LIC_PATH = "icm-default/lic"
         const val DEFAULT_CONFIG_PATH = "icm-default/conf"
 
@@ -59,6 +62,7 @@ open class DevelopmentConfiguration
 
     private val licenseDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
     private val configDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
+    private val appserverAsContainerProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
     private val configProperties: Properties = Properties()
 
     init {
@@ -110,7 +114,16 @@ open class DevelopmentConfiguration
         } else {
             logger.warn("File '{}' does not exists!", configFile.absolutePath)
         }
+
+        appserverAsContainerProperty.convention(false)
     }
+
+    /**
+     * AppServer runs as a container if the value is true
+     */
+    var appserverAsContainer: Boolean
+        get() = appserverAsContainerProperty.get()
+        set(value) = appserverAsContainerProperty.set(value)
 
     /**
      * License directory path of the project.
@@ -137,4 +150,6 @@ open class DevelopmentConfiguration
     fun getConfigProperty(property: String, defaultValue: String): String {
         return configProperties.getProperty(property, defaultValue)
     }
+
+
 }
