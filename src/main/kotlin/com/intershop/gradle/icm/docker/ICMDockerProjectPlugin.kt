@@ -91,7 +91,11 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 project.tasks.register(TASK_START_SERVER) { task ->
                     task.group = GROUP_SERVERBUILD
                     task.description = "Start app server container with webserver containers"
-                    task.dependsOn(startAS, startWS)
+                    task.dependsOn(startWS)
+                }
+
+                if(startWS != null) {
+                    startWS.get().dependsOn(startAS)
                 }
 
                 project.tasks.register(TASK_STOP_SERVER) { task ->
