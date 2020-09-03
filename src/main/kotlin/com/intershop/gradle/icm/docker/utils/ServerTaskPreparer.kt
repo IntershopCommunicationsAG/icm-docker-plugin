@@ -377,16 +377,31 @@ class ServerTaskPreparer(private val project: Project,
             task.targetImageId(project.provider { imageTask.get().image.get() })
 
             with(dockerExtension.developmentConfig) {
+
                 val httpASContainerPort = getConfigProperty(
                     Configuration.AS_CONNECTOR_CONTAINER_PORT,
                     Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
                 )
                 val httpASPort = getConfigProperty(
-                    Configuration.AS_CONNECTOR_EXT_PORT,
-                    Configuration.AS_CONNECTOR_EXT_PORT_VALUE
+                    Configuration.AS_EXT_CONNECTOR_PORT,
+                    Configuration.AS_EXT_CONNECTOR_PORT_VALUE
                 )
-                task.envVars.put("INTERSHOP_SERVLET_ENGINE_CONNECTOR_PORT", httpASContainerPort)
-                task.hostConfig.portBindings.set(listOf("5005:7746", "${httpASPort}:${httpASContainerPort}"))
+
+                val httpJMXContainerPort = getConfigProperty(
+                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT,
+                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
+                )
+                val httpJMXPort = getConfigProperty(
+                    Configuration.AS_JMX_CONNECTOR_PORT,
+                    Configuration.AS_JMX_CONNECTOR_PORT_VALUE
+                )
+
+                task.envVars.put("INTERSHOP_SERVLETENGINE_CONNECTOR_PORT", httpASContainerPort)
+                task.hostConfig.portBindings.set(
+                    listOf(
+                        "5005:7746",
+                        "${httpASPort}:${httpASContainerPort}",
+                        "${httpJMXPort}:${httpJMXContainerPort}"))
             }
 
             task.hostConfig.binds.set(getServerVolumes())

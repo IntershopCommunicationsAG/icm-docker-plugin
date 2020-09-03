@@ -45,13 +45,20 @@ object Configuration {
 
     const val AS_CONNECTOR_PORT = "intershop.servletEngine.connector.port"
     const val AS_CONNECTOR_PORT_VALUE = "7743"
-    const val AS_CONNECTOR_CONTAINER_PORT = "intershop.servletEngine.connector.container.port"
-    const val AS_CONNECTOR_CONTAINER_PORT_VALUE = "7743"
 
     const val AS_CONNECTOR_HOST = "intershop.as.hostname"
     const val AS_CONNECTOR_HOST_VALUE = "localhost"
-    const val AS_CONNECTOR_EXT_PORT = "intershop.as.port"
-    const val AS_CONNECTOR_EXT_PORT_VALUE = "7743"
+
+    const val AS_CONNECTOR_CONTAINER_PORT = "intershop.servletEngine.connector.container.port"
+    const val AS_CONNECTOR_CONTAINER_PORT_VALUE = "7743"
+    const val AS_EXT_CONNECTOR_PORT = "intershop.as.connector.port"
+    const val AS_EXT_CONNECTOR_PORT_VALUE = "7743"
+
+    const val AS_JMX_CONNECTOR_CONTAINER_PORT = "intershop.as.jmx.connector.container.port"
+    const val AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE = "7747"
+    const val AS_JMX_CONNECTOR_PORT = "intershop.as.jmx.connector.port"
+    const val AS_JMX_CONNECTOR_PORT_VALUE = "7747"
+
 
     const val WS_HTTP_PORT = "webserver.http.port"
     const val WS_HTTPS_PORT = "webserver.https.port"
