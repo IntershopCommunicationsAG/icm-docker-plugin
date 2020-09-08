@@ -283,7 +283,7 @@ dependencies {
 
     implementation(gradleKotlinDsl())
 
-    implementation("com.bmuschko:gradle-docker-plugin:6.5.0")
+    implementation("com.bmuschko:gradle-docker-plugin:6.6.1")
 
     testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:3.0.0")
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:3.7.0")
