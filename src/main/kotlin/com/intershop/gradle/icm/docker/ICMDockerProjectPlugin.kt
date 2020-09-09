@@ -29,6 +29,7 @@ import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.START_
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.STOP_WEBSERVER
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_CONTAINER
 import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_MSSQL
+import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_WA
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -83,6 +84,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 serverTaskPreparer.createAppServerTasks()
                 serverTaskPreparer.createSolrServerTasks()
 
+                val startWA = project.tasks.named("start" + TASK_EXT_WA)
                 val startWS = project.tasks.named(START_WEBSERVER)
                 val stopWS = project.tasks.named(STOP_WEBSERVER)
                 val startAS = project.tasks.named("start${ServerTaskPreparer.TASK_EXT_AS}")
@@ -94,9 +96,9 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                     task.dependsOn(startWS)
                 }
 
-                if(startWS != null) {
-                    startWS.get().dependsOn(startAS)
-                }
+                startWS.get().dependsOn(startAS)
+                startWA.get().mustRunAfter(startAS)
+                startWA.get().dependsOn(startAS)
 
                 project.tasks.register(TASK_STOP_SERVER) { task ->
                     task.group = GROUP_SERVERBUILD

@@ -69,6 +69,8 @@ class ServerTaskPreparer(private val project: Project,
         const val TASK_CREATECONFIG = "createConfig"
         const val TASK_CREATECLUSTERID = "createClusterID"
         const val TASK_COPYLIBS = "copyLibs"
+
+        const val SERVER_READY_STRING = "Servlet engine successfully started"
     }
 
     private val taskPreparer : StandardTaskPreparer by lazy {
@@ -405,6 +407,7 @@ class ServerTaskPreparer(private val project: Project,
             }
 
             task.hostConfig.binds.set(getServerVolumes())
+            task.finishedCheck = SERVER_READY_STRING
 
             task.dependsOn(dirprep, prepareServer, imageASTask)
         }
