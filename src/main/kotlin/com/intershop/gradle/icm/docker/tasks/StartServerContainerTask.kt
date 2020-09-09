@@ -149,7 +149,6 @@ open class StartServerContainerTask
      * Milliseconds for waiting on the finish string.
      * Default is 600000.
      */
-    @get:Optional
     @get:Input
     var timeout: Long
         get() = timeoutProperty.get()
