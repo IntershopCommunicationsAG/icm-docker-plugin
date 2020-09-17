@@ -66,7 +66,7 @@ class TestTaskPreparer (private val project: Project,
     }
 
     private fun configureContainerTask(task: DockerCreateContainer, containerExt: String) {
-        task.group = "icm container ${containerExt}"
+        task.group = "icm container $containerExt"
         task.attachStderr.set(true)
         task.attachStdout.set(true)
         task.hostConfig.autoRemove.set(true)

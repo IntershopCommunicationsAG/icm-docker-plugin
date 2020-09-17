@@ -49,7 +49,6 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.util.ConfigureUtil
 import java.io.File
 import java.io.IOException
-import java.util.function.Consumer
 import javax.inject.Inject
 
 open class BuildImage
@@ -339,7 +338,7 @@ open class BuildImage
         }
 
         return object : BuildImageResultCallback() {
-            val collector = OutputCollector(Consumer<String> { s -> logger.quiet(s) })
+            val collector = OutputCollector { s -> logger.quiet(s) }
 
             override fun onNext(item: BuildResponseItem) {
                 try {
@@ -366,11 +365,6 @@ open class BuildImage
         val registration = registry.registrations.findByName(name)
             ?: throw GradleException ("Unable to find build service with name '$name'.")
 
-        val service = registration.getService()
-        if(service is Provider) {
-            return service as Provider<T>
-        } else {
-            throw GradleException("There is no correct Provider of a BuildServiceRegistry.")
-        }
+        return registration.getService() as Provider<T>
     }
 }

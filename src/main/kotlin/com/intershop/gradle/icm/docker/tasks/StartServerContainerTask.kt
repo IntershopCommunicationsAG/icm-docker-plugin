@@ -20,9 +20,6 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.github.dockerjava.api.async.ResultCallback
-import com.github.dockerjava.api.async.ResultCallbackTemplate
-import com.github.dockerjava.api.model.Frame
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
@@ -31,7 +28,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
-import java.io.IOException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.thread

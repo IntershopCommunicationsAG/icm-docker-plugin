@@ -26,7 +26,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    id("nebula.kotlin") version "1.3.72"
+    kotlin("jvm") version "1.3.72"
 
     // test coverage
     jacoco
@@ -64,36 +64,6 @@ group = "com.intershop.gradle.icm.docker"
 description = "Intershop Commerce Management Plugins for Docker Integration"
 version = scm.version.version
 
-gradlePlugin {
-    plugins {
-        create("icmDockerPlugin") {
-            id = "com.intershop.gradle.icm.docker"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerPlugin"
-            displayName = "icm-docker-plugin"
-            description = "This ICM plugin contains Docker ICM integration."
-        }
-        create("icmDockerTestProjectPlugin") {
-            id = "com.intershop.gradle.icm.docker.test"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerTestPlugin"
-            displayName = "icm-docker-test-plugin"
-            description = "This ICM plugin contains special Docker tasks for special test container."
-        }
-        create("icmDockerProjectPlugin") {
-            id = "com.intershop.gradle.icm.docker.project"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerProjectPlugin"
-            displayName = "icm-docker-project-plugin"
-            description = "This ICM plugin integrate Docker tasks to an ICM project."
-        }
-    }
-}
-
-pluginBundle {
-    val pluginURL = "https://github.com/IntershopCommunicationsAG/${project.name}"
-    website = pluginURL
-    vcsUrl = pluginURL
-    tags = listOf("intershop", "gradle", "plugin", "build", "icm", "docker")
-}
-
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -109,9 +79,19 @@ detekt {
     config = files("detekt.yml")
 }
 
+val shaded by configurations.creating
+val compileOnly = configurations.getByName("compileOnly")
+compileOnly.extendsFrom(shaded)
+
 tasks {
+    withType<KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "1.8"
+        }
+    }
+
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "6.5")
+        systemProperty("intershop.gradle.versions", "6.6")
 
         testLogging {
             showStandardStreams = true
@@ -153,17 +133,17 @@ tasks {
         }
 
         options = mapOf( "doctype" to "article",
-            "ruby"    to "erubis")
+                "ruby"    to "erubis")
         attributes = mapOf(
-            "latestRevision"        to  project.version,
-            "toc"                   to "left",
-            "toclevels"             to "2",
-            "source-highlighter"    to "coderay",
-            "icons"                 to "font",
-            "setanchors"            to "true",
-            "idprefix"              to "asciidoc",
-            "idseparator"           to "-",
-            "docinfo1"              to "true")
+                "latestRevision"        to  project.version,
+                "toc"                   to "left",
+                "toclevels"             to "2",
+                "source-highlighter"    to "coderay",
+                "icons"                 to "font",
+                "setanchors"            to "true",
+                "idprefix"              to "asciidoc",
+                "idseparator"           to "-",
+                "docinfo1"              to "true")
     }
 
     withType<JacocoReport> {
@@ -181,10 +161,6 @@ tasks {
     getByName("bintrayUpload").dependsOn("asciidoctor")
     getByName("jar").dependsOn("asciidoctor")
 
-    val compileKotlin by getting(KotlinCompile::class) {
-        kotlinOptions.jvmTarget = "1.8"
-    }
-
     val dokka by existing(DokkaTask::class) {
         outputFormat = "javadoc"
         outputDirectory = "$buildDir/javadoc"
@@ -195,7 +171,8 @@ tasks {
     }
 
     register<Jar>("sourceJar") {
-        description = "Creates a JAR that contains the source code."
+        description = "Creates a JAR that co" +
+                "ntains the source code."
 
         from(sourceSets.getByName("main").allSource)
         archiveClassifier.set("sources")
@@ -208,11 +185,47 @@ tasks {
     }
 }
 
+gradlePlugin {
+    plugins {
+        create("icmDockerPlugin") {
+            id = "com.intershop.gradle.icm.docker"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerPlugin"
+            displayName = "icm-docker-plugin"
+            description = "This ICM plugin contains Docker ICM integration."
+        }
+        create("icmDockerTestProjectPlugin") {
+            id = "com.intershop.gradle.icm.docker.test"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerTestPlugin"
+            displayName = "icm-docker-test-plugin"
+            description = "This ICM plugin contains special Docker tasks for special test container."
+        }
+        create("icmDockerProjectPlugin") {
+            id = "com.intershop.gradle.icm.docker.project"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerProjectPlugin"
+            displayName = "icm-docker-project-plugin"
+            description = "This ICM plugin integrate Docker tasks to an ICM project."
+        }
+        create("icmSolrCloudPlugin") {
+            id = "com.intershop.gradle.icm.docker.solrcloud"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMSolrCloudPlugin"
+            displayName = "icm-solrlcloud-plugin"
+            description = "This ICM plugin integrates tasks to maintain a ICM project."
+        }
+    }
+}
+
+pluginBundle {
+    val pluginURL = "https://github.com/IntershopCommunicationsAG/${project.name}"
+    website = pluginURL
+    vcsUrl = pluginURL
+    tags = listOf("intershop", "gradle", "plugin", "build", "icm", "docker")
+}
+
 publishing {
     publications {
         create("intershopMvn", MavenPublication::class.java) {
-
             from(components["java"])
+
             artifact(tasks.getByName("sourceJar"))
             artifact(tasks.getByName("javaDoc"))
 
@@ -284,8 +297,10 @@ dependencies {
     implementation(gradleKotlinDsl())
 
     implementation("com.bmuschko:gradle-docker-plugin:6.6.1")
+    implementation("org.apache.solr:solr-solrj:8.4.1")
+    implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.0")
 
-    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:3.0.0")
+    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:3.3.0")
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:3.7.0")
     testImplementation(gradleTestKit())
 }

@@ -59,7 +59,6 @@ object Configuration {
     const val AS_JMX_CONNECTOR_PORT = "intershop.as.jmx.connector.port"
     const val AS_JMX_CONNECTOR_PORT_VALUE = "7747"
 
-
     const val WS_HTTP_PORT = "webserver.http.port"
     const val WS_HTTPS_PORT = "webserver.https.port"
     const val WS_CONTAINER_HTTP_PORT = "webserver.container.http.port"
@@ -70,4 +69,12 @@ object Configuration {
     const val WS_CONTAINER_HTTP_PORT_VALUE = "8080"
     const val WS_CONTAINER_HTTPS_PORT_VALUE = "8443"
 
+    const val AS_ADMIN_USER_NAME = "intershop.smc.admin.user.name"
+    const val AS_ADMIN_USER_NAME_VALUE = "admin"
+    const val AS_ADMIN_USER_PASSWORD = "intershop.smc.admin.user.password"
+
+    const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
+    const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
+
+    const val DISABLE_SSL_VERIFICATION = "disable.ssl.verification"
 }
