@@ -26,7 +26,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.10"
 
     // test coverage
     jacoco
@@ -47,7 +47,7 @@ plugins {
     id("org.jetbrains.dokka") version "0.10.1"
 
     // code analysis for kotlin
-    id("io.gitlab.arturbosch.detekt") version "1.9.1"
+    id("io.gitlab.arturbosch.detekt") version "1.13.1"
 
     // plugin for publishing to Gradle Portal
     id("com.gradle.plugin-publish") version "0.12.0"

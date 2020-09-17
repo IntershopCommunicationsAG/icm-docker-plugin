@@ -69,7 +69,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
         disableSSLVerification.convention(false)
     }
 
-    val jobRunner: JobRunner by lazy {
+    private val jobRunner: JobRunner by lazy {
         val protocolObj = if(protocol.get().toLowerCase() == "https") {
             Protocol.HTTPS
         } else {
@@ -97,7 +97,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
         try {
             jobRunner.triggerJob(jobName)
         } catch(ex: JobRunnerException) {
-            throw GradleException(ex.message?: "There was a technical problem to run '" + jobName + "'")
+            throw GradleException(ex.message?: "There was a technical problem to run '$jobName'")
         }
     }
 }

@@ -35,9 +35,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
-import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
@@ -268,13 +266,16 @@ open class BuildImage
         buildImageCmd.withDockerfile(defaultDockerFile)
 
         val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
-        val buildImgResourceProvider: Provider<BuildImageRegistry> = getBuildService(serviceRegistry,
-            BUILD_IMG_REGISTRY)
+        val buildImgRegistry = getBuildService(serviceRegistry, BUILD_IMG_REGISTRY)
 
         if (images.orNull != null) {
             val tagListString = images.get().joinToString(separator = ",") { "'${it}'" }
             logger.quiet("Using images {}.", tagListString)
-            buildImgResourceProvider.get().addImages(images.get().toList())
+            if(buildImgRegistry != null) {
+                buildImgRegistry.addImages(images.get().toList())
+            } else {
+                throw GradleException("Buildservice registry is not correct configured.")
+            }
             buildImageCmd.withTags(images.get())
         }
 
@@ -361,10 +362,15 @@ open class BuildImage
         }
     }
 
-    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+    private fun getBuildService(registry: BuildServiceRegistry, name: String): BuildImageRegistry? {
         val registration = registry.registrations.findByName(name)
             ?: throw GradleException ("Unable to find build service with name '$name'.")
 
-        return registration.getService() as Provider<T>
+        val buildservice = registration.getService().get()
+        return if(buildservice is BuildImageRegistry) {
+            buildservice
+        } else {
+            null
+        }
     }
 }

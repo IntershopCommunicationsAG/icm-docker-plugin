@@ -24,8 +24,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Provider
-import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.OutputFile
@@ -73,19 +71,21 @@ open class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
         var counter = 1
 
         val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
-        val buildImgResourceProvider: Provider<BuildImageRegistry> = getBuildService(serviceRegistry,
-            ICMDockerPlugin.BUILD_IMG_REGISTRY
-        )
+        val buildService = getBuildService(serviceRegistry, ICMDockerPlugin.BUILD_IMG_REGISTRY)
 
-        buildImgResourceProvider.get().images.forEach {
-            props["image.${counter}"] = it
+        if(buildService != null) {
+            buildService.images.forEach {
+                props["image.${counter}"] = it
 
-            val imageName = it.split(":")
-            if(imageName.size > 1) {
-                props["image.${counter}.name"] = imageName[0]
-                props["image.tag"] = imageName[1]
+                val imageName = it.split(":")
+                if(imageName.size > 1) {
+                    props["image.${counter}.name"] = imageName[0]
+                    props["image.tag"] = imageName[1]
+                }
+                counter++
             }
-            counter++
+        } else {
+            throw GradleException("Buildservice registry is not correct configured.")
         }
 
         val comment = "Built images"
@@ -104,9 +104,15 @@ open class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
         }
     }
 
-    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+    private fun getBuildService(registry: BuildServiceRegistry, name: String): BuildImageRegistry? {
         val registration = registry.registrations.findByName(name)
             ?: throw GradleException ("Unable to find build service with name '$name'.")
-        return registration.getService() as Provider<T>
+
+        val buildservice = registration.getService().get()
+        return if(buildservice is BuildImageRegistry) {
+            buildservice
+        } else {
+            null
+        }
     }
 }
