@@ -21,7 +21,6 @@ import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.github.dockerjava.api.command.InspectExecResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
-import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import org.gradle.api.GradleException
@@ -82,18 +81,18 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
     override fun getSharedResources(): List<ResourceLock> {
         val locks = ArrayList(super.getSharedResources())
         val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
-        val testResourceProvider: Provider<ISHUnitTestRegistry> = getBuildService(serviceRegistry, ISHUNIT_REGISTRY)
+        val testResourceProvider = getBuildService(serviceRegistry, ISHUNIT_REGISTRY)
         val resource = serviceRegistry.forService(testResourceProvider)
         locks.add(resource.getResourceLock(1))
 
         return Collections.unmodifiableList(locks)
     }
 
-    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+    private fun getBuildService(registry: BuildServiceRegistry, name: String): Provider<out BuildService<*>> {
         val registration = registry.registrations.findByName(name)
                 ?: throw GradleException ("Unable to find build service with name '$name'.")
 
-        return registration.getService() as Provider<T>
+        return registration.getService()
     }
 
     /**

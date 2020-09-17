@@ -32,19 +32,19 @@ class StandardTaskPreparer(private val project: Project) {
         val pullImgTask = if(isAppSrv) PullImage::class.java else PullExtraImage::class.java
 
         project.tasks.register( "pull${taskext}", pullImgTask ) { task ->
-            task.group = "icm container ${containerext}"
+            task.group = "icm container $containerext"
             task.description = "Pull image from registry"
             task.image.set(imageProvider)
         }
 
         project.tasks.register( "stop${taskext}", StopExtraContainerTask::class.java ) { task ->
-            task.group = "icm container ${containerext}"
+            task.group = "icm container $containerext"
             task.description = "Stop running container"
             task.containerName.set(getContainerName(containerext))
         }
 
         val removeTask = project.tasks.register( "remove${taskext}", RemoveContainerByName::class.java ) { task ->
-            task.group = "icm container ${containerext}"
+            task.group = "icm container $containerext"
             task.description = "Remove container from Docker"
 
             task.containerName.set(getContainerName(containerext))

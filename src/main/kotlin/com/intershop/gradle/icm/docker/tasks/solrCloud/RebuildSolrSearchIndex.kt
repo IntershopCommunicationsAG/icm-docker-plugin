@@ -15,17 +15,22 @@
  *
  */
 
-package com.intershop.gradle.icm.docker.utils
+package com.intershop.gradle.icm.docker.tasks.solrCloud
 
-import org.gradle.api.services.BuildService
-import org.gradle.api.services.BuildServiceParameters
-import java.util.*
+import com.intershop.gradle.icm.docker.tasks.AbstractJobRunnerTask
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.tasks.TaskAction
+import javax.inject.Inject
 
-abstract class BuildImageRegistry : BuildService<BuildServiceParameters.None> {
+open class RebuildSolrSearchIndex
+        @Inject constructor(objectFactory: ObjectFactory) :
+        AbstractJobRunnerTask(objectFactory) {
 
-    val images: MutableCollection<String> = Collections.synchronizedSet(mutableSetOf<String>())
-
-    fun addImages(imgs: List<String>) {
-        images.addAll(imgs)
+    @TaskAction
+    fun runRebuild() {
+        project.logger.info("Start Complete Rebuild Search Indexes")
+        triggerJob("Rebuild Search Indexes")
+        triggerJob("Update Product Assignments")
+        triggerJob("Rebuild Search Indexes")
     }
 }

@@ -570,7 +570,7 @@ style:
     excludeReturnFromLambda: true
     excludeGuardClauses: false
   SafeCast:
-    active: true
+    active: false
   SerialVersionUIDInSerializableClass:
     active: false
   SpacingBetweenPackageAndImports:

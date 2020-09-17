@@ -26,7 +26,8 @@ import org.gradle.api.logging.Logger
  * Implementation of an Adapter of a ResultCallback. Used to
  * handle log output of a container.
  */
-open class LogContainerCallback(val logger: Logger, val finishedCheck: String): ResultCallback.Adapter<Frame>() {
+open class LogContainerCallback(val logger: Logger, private val finishedCheck: String):
+    ResultCallback.Adapter<Frame>() {
 
     var startSuccessful = false
 

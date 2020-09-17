@@ -32,7 +32,6 @@ import org.gradle.api.UnknownTaskException
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.extra
 import java.io.File
 
 class ServerTaskPreparer(private val project: Project,
@@ -414,7 +413,7 @@ class ServerTaskPreparer(private val project: Project,
     }
 
     private fun configureContainerTask(task: DockerCreateContainer, containerExt: String) {
-        task.group = "icm container ${containerExt}"
+        task.group = "icm container $containerExt"
         task.attachStderr.set(true)
         task.attachStdout.set(true)
         task.hostConfig.autoRemove.set(true)

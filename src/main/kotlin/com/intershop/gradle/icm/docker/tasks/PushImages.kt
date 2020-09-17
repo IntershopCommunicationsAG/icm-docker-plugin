@@ -20,15 +20,13 @@ import com.bmuschko.gradle.docker.DockerRegistryCredentials
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
 import com.github.dockerjava.api.model.PushResponseItem
-import com.github.dockerjava.core.command.PushImageResultCallback
 import com.intershop.gradle.icm.docker.ICMDockerPlugin
+import com.intershop.gradle.icm.docker.tasks.utils.PushImageCallback
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Provider
-import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.util.ConfigureUtil
@@ -76,23 +74,24 @@ open class PushImages
     override fun runRemoteCommand() {
 
         val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
-        val buildImgResourceProvider: Provider<BuildImageRegistry> = getBuildService(serviceRegistry,
-                ICMDockerPlugin.BUILD_IMG_REGISTRY
-        )
+        val buildService = getBuildService(serviceRegistry, ICMDockerPlugin.BUILD_IMG_REGISTRY)
 
-        buildImgResourceProvider.get().images.forEach { image ->
-
-            logger.quiet("Pushing image '${image}'.")
-            val pushImageCmd = dockerClient.pushImageCmd(image)
-            val authConfig = registryAuthLocator.lookupAuthConfig(image, registryCredentials)
-            pushImageCmd.withAuthConfig(authConfig)
-            val callback = createCallback(nextHandler)
-            pushImageCmd.exec(callback).awaitCompletion()
+        if(buildService != null) {
+            buildService.images.forEach { image ->
+                logger.quiet("Pushing image '${image}'.")
+                val pushImageCmd = dockerClient.pushImageCmd(image)
+                val authConfig = registryAuthLocator.lookupAuthConfig(image, registryCredentials)
+                pushImageCmd.withAuthConfig(authConfig)
+                val callback = createCallback(nextHandler)
+                pushImageCmd.exec(callback).awaitCompletion()
+            }
+        } else {
+            throw GradleException("Buildservice registry is not correct configured.")
         }
     }
 
-    private fun createCallback(nextHandler: Action<in PushResponseItem>?): PushImageResultCallback {
-        return object : PushImageResultCallback() {
+    private fun createCallback(nextHandler: Action<in PushResponseItem>?): PushImageCallback {
+        return object : PushImageCallback() {
             override fun onNext(item: PushResponseItem) {
                 if(nextHandler != null) {
                     try {
@@ -107,10 +106,15 @@ open class PushImages
         }
     }
 
-    private fun <T: BuildService<*>> getBuildService(registry: BuildServiceRegistry, name: String): Provider<T> {
+    private fun getBuildService(registry: BuildServiceRegistry, name: String): BuildImageRegistry? {
         val registration = registry.registrations.findByName(name)
                 ?: throw GradleException ("Unable to find build service with name '$name'.")
 
-        return registration.getService() as Provider<T>
+        val buildservice = registration.getService().get()
+        return if(buildservice is BuildImageRegistry) {
+            buildservice
+        } else {
+            null
+        }
     }
 }
