@@ -25,6 +25,7 @@ import javax.inject.Inject
 import org.apache.solr.client.solrj.SolrClient
 import org.apache.solr.client.solrj.impl.CloudSolrClient
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
 
 abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
@@ -32,6 +33,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
     @get:Input
     val solrConfiguration: Property<String> = objectFactory.property(String::class.java)
 
+    @Internal
     val solrClusterPrefixProperty: Property<String> = objectFactory.property(String::class.java)
 
     @set:Option(
@@ -50,6 +52,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
         connectionTimeout.convention(10000)
     }
 
+    @Internal
     protected fun getSolrClient(): SolrClient {
         if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
             val pathList = solrConfiguration.get().split("/")
