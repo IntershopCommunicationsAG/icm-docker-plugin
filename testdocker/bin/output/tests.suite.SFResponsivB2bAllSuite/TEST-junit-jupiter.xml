@@ -7,7 +7,7 @@
 <property name="file.encoding" value="UTF-8"/>
 <property name="file.encoding.pkg" value="sun.io"/>
 <property name="file.separator" value="/"/>
-<property name="intershop.LocalConfig" value="/intershop/conf/cluster.properties"/>
+<property name="intershop.LocalConfig" value="/intershop/conf/icm.properties"/>
 <property name="intershop.ServerConfig" value="/intershop/serverdir.properties"/>
 <property name="intershop.VersionInfo" value="/intershop/system-conf/cluster/version.properties"/>
 <property name="intershop.classloader.add.tests" value="true"/>
