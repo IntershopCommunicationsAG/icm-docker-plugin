@@ -57,7 +57,7 @@ open class DevelopmentConfiguration
         const val DEFAULT_CONFIG_PATH = "icm-default/conf"
 
         const val LICENSE_FILE_NAME = "license.xml"
-        const val CONFIG_FILE_NAME = "cluster.properties"
+        const val CONFIG_FILE_NAME = "icm.properties"
     }
 
     private val licenseDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
