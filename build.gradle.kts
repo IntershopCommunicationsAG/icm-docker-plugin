@@ -26,7 +26,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    kotlin("jvm") version "1.4.10"
+    kotlin("jvm") version "1.3.72"
 
     // test coverage
     jacoco

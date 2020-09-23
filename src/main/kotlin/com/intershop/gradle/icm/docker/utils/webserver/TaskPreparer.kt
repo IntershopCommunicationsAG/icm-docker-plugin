@@ -1,0 +1,107 @@
+/*
+ * Copyright 2020 Intershop Communications AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package com.intershop.gradle.icm.docker.utils.webserver
+
+import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.CreateVolumes
+import com.intershop.gradle.icm.docker.tasks.RemoveVolumes
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
+import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.getByType
+
+class TaskPreparer(val project: Project, val networkTasks: NetworkPreparer) {
+
+    companion object {
+        const val TASK_EXT_VOLUMES = "WebVolumes"
+        const val TASK_EXT_SERVER = "WebServer"
+
+    }
+
+    protected val extension = project.extensions.getByType<IntershopDockerExtension>()
+
+    init {
+        val volumes = mapOf(
+            "${extension.containerPrefix}-waproperties" to "/intershop/webadapter-conf",
+            "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
+            "${extension.containerPrefix}-walogs" to "/intershop/logs")
+
+        val createVolumes =
+            project.tasks.register("create${TASK_EXT_VOLUMES}", CreateVolumes::class.java) { task ->
+                configureWebServerTasks(task, "Creates volumes in Docker")
+                task.volumeNames.set( volumes.keys )
+            }
+
+        val removeVolumes =
+            project.tasks.register("remove${TASK_EXT_VOLUMES}", RemoveVolumes::class.java) { task ->
+                configureWebServerTasks(task, "Removes volumes from Docker")
+                task.volumeNames.set( volumes.keys )
+            }
+
+        val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes)
+        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes)
+
+        waTasks.startTask.configure {
+            it.dependsOn(createVolumes)
+        }
+        waTasks.removeTask.configure {
+            it.dependsOn(removeVolumes)
+        }
+
+        waaTasks.startTask.configure {
+            it.dependsOn(createVolumes, waTasks.startTask)
+        }
+        waaTasks.removeTask.configure {
+            it.dependsOn(removeVolumes, waTasks.removeTask)
+        }
+
+        project.tasks.register("start${TASK_EXT_SERVER}") { task ->
+            configureWebServerTasks(task, "Start all components for ICM WebServer")
+            task.dependsOn(waTasks.startTask, waaTasks.startTask, networkTasks.createNetworkTask)
+        }
+
+        project.tasks.register("stop${TASK_EXT_SERVER}") { task ->
+            configureWebServerTasks(task, "Stop all components for ICM WebServer")
+            task.dependsOn(waTasks.stopTask, waaTasks.stopTask)
+        }
+
+        project.tasks.register("remove${TASK_EXT_SERVER}") { task ->
+            configureWebServerTasks(task, "Removes all components for ICM WebServer")
+            task.dependsOn(waTasks.removeTask, waaTasks.removeTask, networkTasks.removeNetworkTask)
+        }
+
+    }
+
+    val startTask: TaskProvider<Task> by lazy {
+        project.tasks.named("start${TASK_EXT_SERVER}")
+    }
+
+    val stopTask: TaskProvider<Task> by lazy {
+        project.tasks.named("stop${TASK_EXT_SERVER}")
+    }
+
+    val removeTask: TaskProvider<Task> by lazy {
+        project.tasks.named("remove${TASK_EXT_SERVER}")
+    }
+
+    private fun configureWebServerTasks(task: Task, description: String) {
+        task.group = "icm container webserver"
+        task.description = description
+    }
+
+}

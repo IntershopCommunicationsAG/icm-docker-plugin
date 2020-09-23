@@ -20,14 +20,25 @@ import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguratio
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import org.gradle.util.ConfigureUtil
+import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
 /**
  * Main extension to configure Docker related tasks.
  */
-open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFactory) {
+open class IntershopDockerExtension @Inject constructor(project: Project,
+                                                        objectFactory: ObjectFactory) {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * Prefix for all containers, networks and volumes of this project.
+     */
+    val containerProjectPrefix: Property<String> = objectFactory.property(String::class.java)
 
     val developmentConfig: DevelopmentConfiguration = objectFactory.newInstance(DevelopmentConfiguration::class.java)
 
@@ -94,4 +105,37 @@ open class IntershopDockerExtension @Inject constructor(objectFactory: ObjectFac
 
     val ishUnitTests: NamedDomainObjectContainer<Suite> =
             objectFactory.domainObjectContainer(Suite::class.java)
+
+    val containerPrefix : String by lazy {
+        val containerPrefix = StringBuilder()
+
+        with(developmentConfig) {
+            val addPrefix = getConfigProperty(com.intershop.gradle.icm.docker.utils.Configuration.ADDITIONAL_CONTAINER_PREFIX, "")
+            val addPrefixTrim = trimString(addPrefix)
+            if(addPrefixTrim!= "") {
+                if(addPrefix != addPrefixTrim) {
+                    project.logger.quiet("Additional containerprefix {} is used.", addPrefixTrim)
+                }
+                containerPrefix.append(addPrefixTrim)
+                containerPrefix.append("-")
+            }
+        }
+        val prefixConfig = containerProjectPrefix.getOrElse("")
+        if(prefixConfig != "") {
+            val prefixConfigTrim = trimString(prefixConfig)
+            if(prefixConfig != prefixConfigTrim) {
+                project.logger.quiet("Configured prefix {} is used for all containers.", prefixConfigTrim)
+            }
+            containerPrefix.append(prefixConfigTrim)
+        } else {
+            val projectPrefix = trimString(project.name)
+            project.logger.quiet("Default project prefix {} is used for all containers.", projectPrefix)
+            containerPrefix.append(projectPrefix)
+        }
+        containerPrefix.toString()
+    }
+
+    private fun trimString(s: String): String
+            = s.replace("\\s+".toRegex(), "").replace("_", "-").toLowerCase()
+
 }

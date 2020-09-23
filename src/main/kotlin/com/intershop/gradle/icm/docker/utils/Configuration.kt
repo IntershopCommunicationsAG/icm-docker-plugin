@@ -37,6 +37,18 @@ object Configuration {
     const val DB_MSSQL_DBNAME = "intershop.db.mssql.dbname"
     const val DB_MSSQL_DBNAME_VALUE = "icmtestdb"
 
+    const val DB_ORACLE_LISTENERPORT = "intershop.db.oracle.listenerport"
+    const val DB_ORACLE_CONTAINER_LISTENERPORT = "intershop.db.container.oracle.listenerport"
+
+    const val DB_ORACLE_PORT = "intershop.db.oracle.port"
+    const val DB_ORACLE_CONTAINER_PORT = "intershop.db.container.oracle.port"
+
+    const val DB_ORACLE_LISTENERPORT_VALUE = "1521"
+    const val DB_ORACLE_CONTAINER_LISTENERPORT_VALUE = "1521"
+
+    const val DB_ORACLE_PORT_VALUE = "5500"
+    const val DB_ORACLE_CONTAINER_PORT_VALUE = "5500"
+
     const val DB_USER_NAME = "intershop.jdbc.user"
     const val DB_USER_PASSWORD = "intershop.jdbc.password"
 
@@ -77,4 +89,6 @@ object Configuration {
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
 
     const val DISABLE_SSL_VERIFICATION = "disable.ssl.verification"
+
+    const val ADDITIONAL_CONTAINER_PREFIX = "additional.container.prefix"
 }

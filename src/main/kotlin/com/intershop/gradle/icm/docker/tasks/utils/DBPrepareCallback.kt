@@ -49,7 +49,7 @@ class DBPrepareCallback (
                 when (frame.streamType) {
                     StreamType.STDOUT, StreamType.RAW -> {
                         val out = frame.payload.toString(Charsets.US_ASCII)
-                        out.split("\n").forEach {
+                        out.split("\\n").forEach {
                             val message = getMessageString(it)
                             logger.debug("Message is: {}.", message )
 
@@ -61,12 +61,12 @@ class DBPrepareCallback (
                             if (!showJson) {
                                 val outline = message ?: it
                                 if (outline.isNotEmpty()) {
-                                    stdout.write((outline + "\n").toByteArray(Charsets.US_ASCII))
+                                    stdout.write(outline.toByteArray(Charsets.US_ASCII))
                                 }
                             }
                         }
                         if (showJson) {
-                            stdout.write((out + "\n").toByteArray(Charsets.US_ASCII))
+                            stdout.write(out.toByteArray(Charsets.US_ASCII))
                         }
                         stdout.flush()
                     }

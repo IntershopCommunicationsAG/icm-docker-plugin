@@ -15,34 +15,33 @@
  *
  */
 
-package com.intershop.gradle.icm.docker.utils
+package com.intershop.gradle.icm.docker.utils.mail
 
-import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.APullImage
+import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 
-class TestTaskPreparer (private val project: Project,
-                        private val dockerExtension: IntershopDockerExtension) {
+class TestTaskPreparer(project: Project,
+                       networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
-        const val TASK_EXT_TESTMAIL = "TestMailSrv"
+        const val extName: String = "TestMailSrv"
     }
 
-    private val taskPreparer : StandardTaskPreparer by lazy {
-        StandardTaskPreparer(project)
-    }
+    override val image: Provider<String> = extension.images.testmailsrv
+    override val extensionName: String = extName
+    override val containerExt: String = extensionName.toLowerCase()
 
-    fun createTestMailServerTasks() {
-        val containerExt = TASK_EXT_TESTMAIL.toLowerCase()
-        taskPreparer.createBaseTasks(TASK_EXT_TESTMAIL, containerExt, dockerExtension.images.testmailsrv)
-        val imageTask = project.tasks.named("pull${TASK_EXT_TESTMAIL}", APullImage::class.java)
+    init {
+        initBaseTasks()
 
-        project.tasks.register ("start${TASK_EXT_TESTMAIL}", StartExtraContainerTask::class.java) { task ->
-            configureContainerTask(task, containerExt)
+        project.tasks.register ("start${extensionName}", StartExtraContainerTask::class.java) { task ->
+            configureContainerTask(task)
             task.description = "Starts an special test mail server for ISHUnitTests"
-            task.targetImageId( project.provider { imageTask.get().image.get() } )
+            task.targetImageId( project.provider { pullTask.get().image.get() } )
 
             task.entrypoint.set(listOf(
                 "bash", "-c",
@@ -61,15 +60,9 @@ class TestTaskPreparer (private val project: Project,
                 )
             })
 
-            task.dependsOn(imageTask)
-        }
-    }
+            task.hostConfig.network.set(networkId)
 
-    private fun configureContainerTask(task: DockerCreateContainer, containerExt: String) {
-        task.group = "icm container $containerExt"
-        task.attachStderr.set(true)
-        task.attachStdout.set(true)
-        task.hostConfig.autoRemove.set(true)
-        task.containerName.set(taskPreparer.getContainerName(containerExt))
+            task.dependsOn(pullTask, networkTask)
+        }
     }
 }

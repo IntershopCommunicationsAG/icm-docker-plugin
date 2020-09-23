@@ -41,6 +41,8 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val mssqldb: Property<String> = objectFactory.property(String::class.java)
 
+    val oracledb: Property<String> = objectFactory.property(String::class.java)
+
     val mailsrv: Property<String> = objectFactory.property(String::class.java)
 
     val testmailsrv: Property<String> = objectFactory.property(String::class.java)
@@ -56,6 +58,8 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         solr.convention("solr:latest")
         zookeeper.convention("zookeeper:latest")
         mssqldb.convention("mcr.microsoft.com/mssql/server:2019-latest")
+        oracledb.convention("docker.intershop.de/intershop/oracle-xe-server:18.4.0")
+
         mailsrv.convention("mailhog/mailhog:latest")
 
         testmailsrv.convention("docker-internal.rnd.intershop.de/icm-test/iste-mail:latest")

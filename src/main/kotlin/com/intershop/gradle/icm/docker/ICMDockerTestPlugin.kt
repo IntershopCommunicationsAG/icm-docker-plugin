@@ -18,7 +18,8 @@ package com.intershop.gradle.icm.docker
 
 import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.utils.TestTaskPreparer
+import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.utils.mail.TestTaskPreparer as MailSrvPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -32,14 +33,15 @@ class ICMDockerTestPlugin: Plugin<Project> {
     override fun apply(project: Project) {
         with(project.rootProject) {
             logger.info("ICM Test Docker plugin will be initialized")
-            val extension = extensions.findByType(
+            extensions.findByType(
                 IntershopDockerExtension::class.java
             ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
             plugins.apply(DockerRemoteApiPlugin::class.java)
 
-            val addTestPreparer = TestTaskPreparer(project, extension)
-            addTestPreparer.createTestMailServerTasks()
+            val prepareNetwork = tasks.named("prepareNetwork", PrepareNetwork::class.java)
+
+            MailSrvPreparer(this,  prepareNetwork)
         }
     }
 }
