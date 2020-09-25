@@ -16,29 +16,26 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
-/**
- * Task to remove a container by name.
- */
-open class RemoveContainerByName
-    @Inject constructor(objectFactory: ObjectFactory) : AbstractCommandByName(objectFactory) {
+abstract class AbstractNetworkTask @Inject constructor(objectFactory: ObjectFactory): AbstractDockerRemoteApiTask() {
 
-    /**
-     * Executes the remote Docker command.
-     */
-    override fun runRemoteCommand() {
-        val containerIDList = getContainerIDList()
+    @get:Input
+    val networkName: Property<String> = objectFactory.property(String::class.java)
 
-        containerIDList.forEach {
-            val removeContainerCmd = dockerClient.removeContainerCmd(it)
-            removeContainerCmd.withRemoveVolumes(true)
-            removeContainerCmd.withForce(true)
-
-            logger.quiet("Removing container with ID '${it}'('${containerName.get()}').")
-
-            removeContainerCmd.exec()
+    protected fun networkIDData(): String {
+        var returnValue = ""
+        val networkList = dockerClient.listNetworksCmd().withNameFilter(networkName.get()).exec()
+        networkList.forEach {
+            if(it.name == networkName.get()) {
+                returnValue = it.id
+            }
         }
+        return returnValue
     }
 }
+

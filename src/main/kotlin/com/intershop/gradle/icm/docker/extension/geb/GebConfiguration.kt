@@ -15,14 +15,21 @@
  *
  */
 
-package com.intershop.gradle.icm.docker.tasks
+package com.intershop.gradle.icm.docker.extension.geb
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import javax.inject.Inject
 
-open class ContainerCleanup: DefaultTask() {
-    @TaskAction
-    fun removeContainer() {
-        println("remove container")
+open class GebConfiguration @Inject constructor(objectFactory: ObjectFactory) {
+
+    val gebEnvironment: Property<String> = objectFactory.property(String::class.java)
+
+    val localDriver: NamedDomainObjectContainer<GebLocalDriver>
+            = objectFactory.domainObjectContainer(GebLocalDriver::class.java)
+
+    init {
+        gebEnvironment.set( "firefoxContainer" )
     }
 }

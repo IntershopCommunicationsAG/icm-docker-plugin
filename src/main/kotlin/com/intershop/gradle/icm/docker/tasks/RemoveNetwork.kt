@@ -20,25 +20,21 @@ import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
 /**
- * Task to remove a container by name.
+ * Removes the network for all containers of this project.
  */
-open class RemoveContainerByName
-    @Inject constructor(objectFactory: ObjectFactory) : AbstractCommandByName(objectFactory) {
+open class RemoveNetwork @Inject constructor(objectFactory: ObjectFactory): AbstractNetworkTask(objectFactory) {
 
-    /**
-     * Executes the remote Docker command.
-     */
     override fun runRemoteCommand() {
-        val containerIDList = getContainerIDList()
-
-        containerIDList.forEach {
-            val removeContainerCmd = dockerClient.removeContainerCmd(it)
-            removeContainerCmd.withRemoveVolumes(true)
-            removeContainerCmd.withForce(true)
-
-            logger.quiet("Removing container with ID '${it}'('${containerName.get()}').")
-
-            removeContainerCmd.exec()
+        val id = networkIDData()
+        if( id != "") {
+            try {
+                dockerClient.removeNetworkCmd(id).exec()
+                logger.quiet("Network '{}' with id '{}' removed.", networkName.get(), id)
+            } catch(ex: Exception) {
+                logger.error("It was not possible to remove network '" + networkName.get() + "'.(" + ex.message + ")")
+            }
+        } else {
+            logger.quiet("Network '{}' is not available.", networkName.get())
         }
     }
 }

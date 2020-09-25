@@ -26,7 +26,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    kotlin("jvm") version "1.4.10"
+    kotlin("jvm") version "1.3.72"
 
     // test coverage
     jacoco
@@ -210,6 +210,12 @@ gradlePlugin {
             implementationClass = "com.intershop.gradle.icm.docker.ICMSolrCloudPlugin"
             displayName = "icm-solrlcloud-plugin"
             description = "This ICM plugin integrates tasks to maintain a ICM project."
+        }
+        create("icmGebTestPlugin") {
+            id = "com.intershop.gradle.icm.docker.gebtest"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMGebTestPlugin"
+            displayName = "icm-gebtest-plugin"
+            description = "This ICM plugin integrates tasks to handle Geb Tests in a ICM project."
         }
     }
 }

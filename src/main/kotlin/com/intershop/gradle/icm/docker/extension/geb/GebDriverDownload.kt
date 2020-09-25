@@ -14,9 +14,21 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.tasks.utils
 
-/**
- * Result container of dbprepare.
- */
-data class DBPrepareResult(val cartriges: Int, val success: Int, val failure: Int)
+package com.intershop.gradle.icm.docker.extension.geb
+
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Internal
+import javax.inject.Inject
+
+open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
+                                                 @Internal val name: String) {
+
+    val url: Property<String> = objectFactory.property(String::class.java)
+
+    val archiveType: Property<String> = objectFactory.property(String::class.java)
+
+    val webDriverExecName: Property<String> = objectFactory.property(String::class.java)
+
+}

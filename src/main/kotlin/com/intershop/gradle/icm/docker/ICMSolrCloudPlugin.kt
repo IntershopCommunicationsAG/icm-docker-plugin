@@ -27,8 +27,8 @@ import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_NAME_VA
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_PASSWORD
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_CONTAINER_PORT
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
-import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_HOST
-import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_HOST_VALUE
+import com.intershop.gradle.icm.docker.utils.Configuration.LOCAL_CONNECTOR_HOST
+import com.intershop.gradle.icm.docker.utils.Configuration.LOCAL_CONNECTOR_HOST_VALUE
 import com.intershop.gradle.icm.docker.utils.Configuration.DISABLE_SSL_VERIFICATION
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_HOSTLIST
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_INDEXPREFIX
@@ -54,7 +54,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
             ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
             with(extension.developmentConfig) {
-                val host = getConfigProperty(AS_CONNECTOR_HOST, AS_CONNECTOR_HOST_VALUE)
+                val host = getConfigProperty(LOCAL_CONNECTOR_HOST, LOCAL_CONNECTOR_HOST_VALUE)
                 val websrvport = getConfigProperty(WS_HTTPS_PORT, WS_HTTPS_PORT_VALUE)
                 val assrvport = getConfigProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
 

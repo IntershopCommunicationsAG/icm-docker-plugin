@@ -23,9 +23,12 @@ import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguratio
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
-import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.ServerTaskPreparer.Companion.TASK_EXT_MSSQL
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
+import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
+import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailSrvPreparer
+import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
+import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
@@ -66,35 +69,63 @@ open class ICMDockerPlugin: Plugin<Project> {
             logger.info("ICM Docker build plugin will be initialized")
             val extension = extensions.findByType(
                     IntershopDockerExtension::class.java
-            ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
+            ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java, project)
 
             plugins.apply(DockerRemoteApiPlugin::class.java)
 
-            tasks.register("containerClean") {task ->
-                task.group = GROUP_CONTAINER
-                task.description = "Removes all available container from Docker"
-            }
+            val networkTasks = NetworkPreparer(project, extension)
 
-            val addServerPreparer = ServerTaskPreparer(project, extension)
-            addServerPreparer.createMSSQLServerTasks()
+            val mssqlTasks = MSSQLPreparer(project, networkTasks.createNetworkTask)
+            val oracleTasks = OraclePreparer(project, networkTasks.createNetworkTask)
+            val mailSrvTask = MailSrvPreparer(project, networkTasks.createNetworkTask)
 
-            val startMSSQL = tasks.named("start${TASK_EXT_MSSQL}")
+            val webServerTasks = WebServerPreparer(project, networkTasks)
+
             try {
                 tasks.named("dbPrepare").configure {
-                    it.mustRunAfter(startMSSQL)
+                    it.mustRunAfter(mssqlTasks.startTask)
+                    it.mustRunAfter(oracleTasks.startTask)
                 }
             } catch(ex: UnknownTaskException) {
                 project.logger.info("No dbPrepare task available!")
             }
 
-            addServerPreparer.createMailServerTasks()
-            addServerPreparer.createWebServerTasks()
+            tasks.register("containerClean") {task ->
+                task.group = GROUP_CONTAINER
+                task.description = "Removes all available container from Docker"
+
+                task.dependsOn( networkTasks.removeNetworkTask,
+                                mssqlTasks.removeTask,
+                                mailSrvTask.removeTask,
+                                webServerTasks.removeTask,
+                                oracleTasks.removeTask)
+            }
+
+            try {
+                project.tasks.named("clean").configure {
+                    it.dependsOn(   networkTasks.removeNetworkTask,
+                                    mssqlTasks.removeTask,
+                                    mailSrvTask.removeTask,
+                                    webServerTasks.removeTask,
+                                    oracleTasks.removeTask)
+                }
+
+                networkTasks.removeNetworkTask.configure {
+                    it.mustRunAfter(mssqlTasks.removeTask,
+                        mailSrvTask.removeTask,
+                        webServerTasks.removeTask,
+                        oracleTasks.removeTask)
+                }
+            } catch(ex: UnknownTaskException) {
+                project.logger.info("Task clean is not available.")
+            }
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
 
             createImageTasks(project, extension)
         }
     }
+
 
     private fun createImageTasks(project: Project, extension: IntershopDockerExtension) {
         with(extension) {

@@ -14,9 +14,18 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.tasks.utils
 
-/**
- * Result container of dbprepare.
- */
-data class DBPrepareResult(val cartriges: Int, val success: Int, val failure: Int)
+package com.intershop.gradle.icm.docker.extension.geb
+
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.tasks.Internal
+import javax.inject.Inject
+
+open class GebLocalDriver @Inject constructor(objectFactory: ObjectFactory,
+                                              @Internal val name: String) {
+
+    val osPackages: NamedDomainObjectContainer<GebDriverDownload>
+            = objectFactory.domainObjectContainer(GebDriverDownload::class.java)
+
+}

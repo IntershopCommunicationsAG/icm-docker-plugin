@@ -32,11 +32,6 @@ class DBPrepareCallback (
     private val stderr: OutputStream,
     private val showJson: Boolean = false): ResultCallbackTemplate<DBPrepareCallback, Frame>() {
 
-    companion object {
-        const val MESSAGELOG_START = "message"
-        const val MESSAGELOG_END = "logger_name"
-    }
-
     private val logger: Logger = LoggerFactory.getLogger(DBPrepareCallback::class.java)
     private var dbinfo: DBPrepareResult? = null
 
@@ -49,7 +44,7 @@ class DBPrepareCallback (
                 when (frame.streamType) {
                     StreamType.STDOUT, StreamType.RAW -> {
                         val out = frame.payload.toString(Charsets.US_ASCII)
-                        out.split("\n").forEach {
+                        out.split("\\n").forEach {
                             val message = getMessageString(it)
                             logger.debug("Message is: {}.", message )
 
@@ -61,12 +56,12 @@ class DBPrepareCallback (
                             if (!showJson) {
                                 val outline = message ?: it
                                 if (outline.isNotEmpty()) {
-                                    stdout.write((outline + "\n").toByteArray(Charsets.US_ASCII))
+                                    stdout.write(outline.toByteArray(Charsets.US_ASCII))
                                 }
                             }
                         }
                         if (showJson) {
-                            stdout.write((out + "\n").toByteArray(Charsets.US_ASCII))
+                            stdout.write(out.toByteArray(Charsets.US_ASCII))
                         }
                         stdout.flush()
                     }
@@ -91,17 +86,8 @@ class DBPrepareCallback (
     }
 
     private fun getMessageString(input: String): String? {
-        /**
-        val s1 = input.indexOf(MESSAGELOG_START)
-        val start = s1 + MESSAGELOG_START.length + 3
-        val substr = if(s1 > -1 && start < input.length) { input.substring(start) } else { input }
-
-        val e1 = substr.indexOf(MESSAGELOG_END)
-        val out = if(e1 > -1 && e1 - 3 < substr.length) { substr.substring(0, e1 - 3) } else { substr }
-        */
-        val out = input
-        return if(out.trim().isNotEmpty()) {
-            out.trim()
+        return if(input.trim().isNotEmpty()) {
+            input.trim()
         } else {
             null
         }
