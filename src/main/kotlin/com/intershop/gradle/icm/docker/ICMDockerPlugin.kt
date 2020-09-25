@@ -109,6 +109,13 @@ open class ICMDockerPlugin: Plugin<Project> {
                                     webServerTasks.removeTask,
                                     oracleTasks.removeTask)
                 }
+
+                networkTasks.removeNetworkTask.configure {
+                    it.mustRunAfter(mssqlTasks.removeTask,
+                        mailSrvTask.removeTask,
+                        webServerTasks.removeTask,
+                        oracleTasks.removeTask)
+                }
             } catch(ex: UnknownTaskException) {
                 project.logger.info("Task clean is not available.")
             }

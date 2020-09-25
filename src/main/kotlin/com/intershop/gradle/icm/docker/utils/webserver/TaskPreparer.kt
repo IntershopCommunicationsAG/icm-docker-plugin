@@ -59,15 +59,13 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         waTasks.startTask.configure {
             it.dependsOn(createVolumes)
         }
-        waTasks.removeTask.configure {
-            it.dependsOn(removeVolumes)
+
+        removeVolumes.configure {
+            it.dependsOn(waTasks.removeTask, waaTasks.removeTask, waTasks.removeTask)
         }
 
         waaTasks.startTask.configure {
             it.dependsOn(createVolumes, waTasks.startTask)
-        }
-        waaTasks.removeTask.configure {
-            it.dependsOn(removeVolumes, waTasks.removeTask)
         }
 
         project.tasks.register("start${TASK_EXT_SERVER}") { task ->
@@ -80,9 +78,13 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
             task.dependsOn(waTasks.stopTask, waaTasks.stopTask)
         }
 
+        networkTasks.removeNetworkTask.configure {
+            it.mustRunAfter(waTasks.removeTask, waaTasks.removeTask, removeVolumes)
+        }
+
         project.tasks.register("remove${TASK_EXT_SERVER}") { task ->
             configureWebServerTasks(task, "Removes all components for ICM WebServer")
-            task.dependsOn(waTasks.removeTask, waaTasks.removeTask, networkTasks.removeNetworkTask)
+            task.dependsOn(waTasks.removeTask, waaTasks.removeTask)
         }
 
     }

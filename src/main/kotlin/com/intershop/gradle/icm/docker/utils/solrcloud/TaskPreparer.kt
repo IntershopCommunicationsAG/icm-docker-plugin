@@ -57,6 +57,10 @@ class TaskPreparer(val project: Project,
             configureSolrCloudTasks(task, "Removes all components of a one note SolrCloud cluster")
             task.dependsOn(zkTasks.removeTask, solrTasks.removeTask, removeNetwork)
         }
+
+        removeNetwork.configure {
+            it.mustRunAfter(zkTasks.removeTask, solrTasks.removeTask)
+        }
     }
 
     val startTask: TaskProvider<Task> by lazy {

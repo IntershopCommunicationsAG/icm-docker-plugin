@@ -20,7 +20,7 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.RemoveNetwork
 import org.gradle.api.Project
-import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 
 class TaskPreparer(val project: Project,
                    val extension: IntershopDockerExtension) {
@@ -42,11 +42,11 @@ class TaskPreparer(val project: Project,
         }
     }
 
-    val createNetworkTask : Provider<PrepareNetwork> by lazy {
+    val createNetworkTask : TaskProvider<PrepareNetwork> by lazy {
             project.tasks.named(PREPARE_NETWORK, PrepareNetwork::class.java)
         }
 
-    val removeNetworkTask : Provider<RemoveNetwork> by lazy {
+    val removeNetworkTask : TaskProvider<RemoveNetwork> by lazy {
         project.tasks.named(REMOVE_NETWORK, RemoveNetwork::class.java)
     }
 
