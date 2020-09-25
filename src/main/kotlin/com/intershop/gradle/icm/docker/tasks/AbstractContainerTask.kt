@@ -24,11 +24,13 @@ import com.github.dockerjava.api.command.InspectExecResponse
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
 import java.util.concurrent.TimeUnit
 
 abstract class AbstractContainerTask : AbstractDockerRemoteApiTask() {
 
+    @Internal
     protected val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
 
     /**

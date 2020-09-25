@@ -20,6 +20,7 @@ import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import javax.inject.Inject
 
 abstract class AbstractCommandByName
@@ -28,6 +29,7 @@ abstract class AbstractCommandByName
     @get:Input
     val containerName: Property<String> = objectFactory.property(String::class.java)
 
+    @Internal
     protected fun getContainerIDList(): List<String> {
         val listContainerCmd = dockerClient.listContainersCmd().withNameFilter(listOf(containerName.get()))
         val listContainers = listContainerCmd.exec()
