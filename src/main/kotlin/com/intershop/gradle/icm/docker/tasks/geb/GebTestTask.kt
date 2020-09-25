@@ -14,7 +14,8 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.tasks
+
+package com.intershop.gradle.icm.docker.tasks.geb
 
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property

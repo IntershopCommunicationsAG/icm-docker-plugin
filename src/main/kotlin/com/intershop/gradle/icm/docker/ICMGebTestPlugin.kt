@@ -17,10 +17,10 @@
 
 package com.intershop.gradle.icm.docker
 
-import com.intershop.gradle.icm.docker.extension.GebConfiguration
+import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.GebDriverDownloadTask
-import com.intershop.gradle.icm.docker.tasks.GebTestTask
+import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownloadTask
+import com.intershop.gradle.icm.docker.tasks.geb.GebTestTask
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
 import com.intershop.gradle.icm.docker.utils.Configuration

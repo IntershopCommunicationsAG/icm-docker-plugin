@@ -14,21 +14,21 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.extension
 
-import org.gradle.api.NamedDomainObjectContainer
+package com.intershop.gradle.icm.docker.extension.geb
+
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Internal
 import javax.inject.Inject
 
-open class GebConfiguration @Inject constructor(objectFactory: ObjectFactory) {
+open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
+                                                 @Internal val name: String) {
 
-    val gebEnvironment: Property<String> = objectFactory.property(String::class.java)
+    val url: Property<String> = objectFactory.property(String::class.java)
 
-    val localDriver: NamedDomainObjectContainer<GebLocalDriver>
-            = objectFactory.domainObjectContainer(GebLocalDriver::class.java)
+    val archiveType: Property<String> = objectFactory.property(String::class.java)
 
-    init {
-        gebEnvironment.set( "firefoxContainer" )
-    }
+    val webDriverExecName: Property<String> = objectFactory.property(String::class.java)
+
 }

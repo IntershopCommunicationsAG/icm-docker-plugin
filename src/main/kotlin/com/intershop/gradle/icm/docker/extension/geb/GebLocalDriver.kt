@@ -15,20 +15,17 @@
  *
  */
 
-package com.intershop.gradle.icm.docker.extension
+package com.intershop.gradle.icm.docker.extension.geb
 
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
 import javax.inject.Inject
 
-open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
-                                                 @Internal val name: String) {
+open class GebLocalDriver @Inject constructor(objectFactory: ObjectFactory,
+                                              @Internal val name: String) {
 
-    val url: Property<String> = objectFactory.property(String::class.java)
-
-    val archiveType: Property<String> = objectFactory.property(String::class.java)
-
-    val webDriverExecName: Property<String> = objectFactory.property(String::class.java)
+    val osPackages: NamedDomainObjectContainer<GebDriverDownload>
+            = objectFactory.domainObjectContainer(GebDriverDownload::class.java)
 
 }

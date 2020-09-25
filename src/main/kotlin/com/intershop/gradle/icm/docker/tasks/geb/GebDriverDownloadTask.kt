@@ -15,7 +15,7 @@
  *
  */
 
-package com.intershop.gradle.icm.docker.tasks
+package com.intershop.gradle.icm.docker.tasks.geb
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -35,9 +35,10 @@ import java.net.URL
 import javax.inject.Inject
 
 open class GebDriverDownloadTask @Inject constructor(objectFactory: ObjectFactory,
-                                                projectLayout: ProjectLayout,
-                                                private val fsOps: FileSystemOperations,
-                                                private val archiveOps: ArchiveOperations) : DefaultTask() {
+                                                     projectLayout: ProjectLayout,
+                                                     private val fsOps: FileSystemOperations,
+                                                     private val archiveOps: ArchiveOperations
+) : DefaultTask() {
 
     @get:Input
     val url: Property<String> = objectFactory.property(String::class.java)
@@ -65,7 +66,7 @@ open class GebDriverDownloadTask @Inject constructor(objectFactory: ObjectFactor
                 }
             }
         } catch(ex: IOException) {
-            throw GradleException("It was not possible to download the driver '" + url + "'(" + ex.message+ ")" )
+            throw GradleException("It was not possible to download the driver '" + url + "'(" + ex.message + ")")
         }
 
         when {
