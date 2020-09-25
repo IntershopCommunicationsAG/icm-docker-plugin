@@ -16,10 +16,8 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import javax.inject.Inject
 

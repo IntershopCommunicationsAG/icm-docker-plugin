@@ -25,7 +25,7 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 
-class TaskPreparer(val project: Project, val networkTasks: NetworkPreparer) {
+class TaskPreparer(val project: Project, private val networkTasks: NetworkPreparer) {
 
     companion object {
         const val TASK_EXT_VOLUMES = "WebVolumes"
@@ -33,7 +33,7 @@ class TaskPreparer(val project: Project, val networkTasks: NetworkPreparer) {
 
     }
 
-    protected val extension = project.extensions.getByType<IntershopDockerExtension>()
+    private val extension = project.extensions.getByType<IntershopDockerExtension>()
 
     init {
         val volumes = mapOf(
@@ -103,5 +103,4 @@ class TaskPreparer(val project: Project, val networkTasks: NetworkPreparer) {
         task.group = "icm container webserver"
         task.description = description
     }
-
 }

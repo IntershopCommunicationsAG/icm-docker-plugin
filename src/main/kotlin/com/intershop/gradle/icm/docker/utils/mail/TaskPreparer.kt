@@ -22,7 +22,6 @@ import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.TaskProvider
 
 class TaskPreparer(project: Project,
                    networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {

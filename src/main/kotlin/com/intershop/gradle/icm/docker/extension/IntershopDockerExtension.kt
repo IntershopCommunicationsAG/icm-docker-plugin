@@ -17,6 +17,7 @@
 package com.intershop.gradle.icm.docker.extension
 
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
+import com.intershop.gradle.icm.docker.utils.Configuration
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
@@ -110,7 +111,7 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
         val containerPrefix = StringBuilder()
 
         with(developmentConfig) {
-            val addPrefix = getConfigProperty(com.intershop.gradle.icm.docker.utils.Configuration.ADDITIONAL_CONTAINER_PREFIX, "")
+            val addPrefix = getConfigProperty(Configuration.ADDITIONAL_CONTAINER_PREFIX, "")
             val addPrefixTrim = trimString(addPrefix)
             if(addPrefixTrim!= "") {
                 if(addPrefix != addPrefixTrim) {

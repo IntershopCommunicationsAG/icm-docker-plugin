@@ -17,7 +17,6 @@
 
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -25,7 +24,8 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import javax.inject.Inject
 
-open class StopExtraContainerTask @Inject constructor(objectFactory: ObjectFactory) :  AbstractDockerRemoteApiTask() {
+open class StopExtraContainerTask
+    @Inject constructor(objectFactory: ObjectFactory) :  AbstractCommandByName(objectFactory) {
 
     /**
      * Stop timeout in seconds.
@@ -33,9 +33,6 @@ open class StopExtraContainerTask @Inject constructor(objectFactory: ObjectFacto
     @get:Input
     @get:Optional
     val waitTime: Property<Int> = objectFactory.property(Int::class.java)
-
-    @get:Input
-    val containerName: Property<String> = objectFactory.property(String::class.java)
 
     @get:Option(option = "remove", description = "Container will be removed with a stop call.")
     @get:Input
@@ -46,15 +43,7 @@ open class StopExtraContainerTask @Inject constructor(objectFactory: ObjectFacto
     }
 
     override fun runRemoteCommand() {
-        val listContainerCmd = dockerClient.listContainersCmd().withNameFilter(listOf(containerName.get()))
-        val listContainers = listContainerCmd.exec()
-        val containerIDList = mutableListOf<String>()
-
-        listContainers.forEach { c ->
-            if (c.names.any { it.contains(containerName.get()) }) {
-                containerIDList.add(c.id)
-            }
-        }
+        val containerIDList = getContainerIDList()
 
         containerIDList.forEach {
             val stopContainer = dockerClient.stopContainerCmd(it)

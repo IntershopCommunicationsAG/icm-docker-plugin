@@ -14,9 +14,12 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.tasks.utils
 
-/**
- * Result container of dbprepare.
- */
-data class DBPrepareResult(val cartriges: Int, val success: Int, val failure: Int)
+package com.intershop.gradle.icm.docker.utils
+
+enum class OS(val value: String) {
+
+    WINDOWS("win"),
+    LINUX("linux"),
+    MAC("mac")
+}

@@ -93,8 +93,8 @@ class WATaskPreparer(project: Project,
                     "${extension.containerPrefix}-${ServerTaskPreparer.extName}"
                 } else {
                     getConfigProperty(
-                        Configuration.AS_CONNECTOR_HOST,
-                        Configuration.AS_CONNECTOR_HOST_VALUE
+                        Configuration.LOCAL_CONNECTOR_HOST,
+                        Configuration.LOCAL_CONNECTOR_HOST_VALUE
                     )
                 }
 

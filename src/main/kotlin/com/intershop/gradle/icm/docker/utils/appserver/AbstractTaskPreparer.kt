@@ -17,11 +17,7 @@
 package com.intershop.gradle.icm.docker.utils.appserver
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
-import com.intershop.gradle.icm.docker.tasks.StartServerContainerTask
-import com.intershop.gradle.icm.docker.tasks.StopExtraContainerTask
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
-import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -70,8 +66,6 @@ abstract class AbstractTaskPreparer(project: Project,
                 }
             }
         }
-
-
     }
 
 

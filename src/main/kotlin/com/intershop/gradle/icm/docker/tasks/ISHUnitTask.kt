@@ -16,10 +16,6 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.domain.ExecProbe
-import com.bmuschko.gradle.docker.internal.IOUtils
-import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
-import com.github.dockerjava.api.command.InspectExecResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
@@ -31,51 +27,25 @@ import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.options.Option
 import org.gradle.internal.resources.ResourceLock
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 
 /**
  * Task to run ishunit tests on a running container.
  */
-open class ISHUnitTask : AbstractDockerRemoteApiTask() {
-
-    private val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
+open class ISHUnitTask : AbstractContainerTask() {
 
     init {
         group = "icm container project"
         debugProperty.convention(false)
     }
 
-    /**
-     * The ID or name of container used to perform operation.
-     * The container for the provided ID has to be created first.
-     */
-    @get:Input
-    val containerId: Property<String> = project.objects.property(String::class.java)
-
     @get:Input
     val testCartridge: Property<String> = project.objects.property(String::class.java)
 
     @get:Input
     val testSuite: Property<String> = project.objects.property(String::class.java)
-
-    /**
-     * Enable debugging for the process. The process is started suspended and listening on port 5005.
-     * This can be configured also over the gradle parameter "debug-java".
-     *
-     * @property debug is the task property
-     */
-    @set:Option(
-        option = "debug-jvm",
-        description = "Enable debugging for the process. The process is started suspended and listening on port 5005."
-    )
-    @get:Input
-    var debug: Boolean
-        get() = debugProperty.get()
-        set(value) = debugProperty.set(value)
 
     @Internal
     override fun getSharedResources(): List<ResourceLock> {
@@ -116,48 +86,12 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                 buildDirName,
                 testCartridge.get(),
                 "-s=${testSuite.get()}").toTypedArray())
+
         val localExecId = execCmd.exec().id
 
         dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback).awaitCompletion()
 
-        // create progressLogger for pretty printing of terminal log progression.
-        val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
-        progressLogger.started()
-
-        // if no livenessProbe defined then create a default
-        val localProbe = ExecProbe(6000000, 50000)
-
-        var localPollTime = localProbe.pollTime
-        var pollTimes = 0
-        var isRunning = true
-
-        // 3.) poll for some amount of time until container is in a non-running state.
-        var lastExecResponse: InspectExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
-
-        while (isRunning && localPollTime > 0) {
-            pollTimes += 1
-
-            lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
-            isRunning = lastExecResponse.isRunning
-
-            if (isRunning) {
-                val totalMillis = pollTimes * localProbe.pollInterval
-                val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
-
-                progressLogger.progress("Executing for ${totalMinutes}m...")
-                try {
-                    localPollTime -= localProbe.pollInterval
-                    Thread.sleep(localProbe.pollInterval)
-                } catch (e: Exception) {
-                    throw e
-                }
-            } else {
-                break
-            }
-        }
-        progressLogger.completed()
-
-        val exitMsg = when (lastExecResponse.exitCodeLong) {
+        val exitMsg = when (waitForExit(localExecId)) {
             0L -> ISHUnitTestResult(0L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} finished successfully")
             1L -> ISHUnitTestResult(1L,
@@ -170,6 +104,7 @@ open class ISHUnitTask : AbstractDockerRemoteApiTask() {
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with unknown result code." +
                             "Please check your test configuration")
         }
+
         project.logger.info(exitMsg.message)
         if(exitMsg.returnValue > 0L) {
             throw GradleException(exitMsg.message)

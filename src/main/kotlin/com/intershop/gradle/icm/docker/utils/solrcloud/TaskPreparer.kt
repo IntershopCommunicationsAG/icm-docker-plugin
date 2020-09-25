@@ -17,26 +17,19 @@
 
 package com.intershop.gradle.icm.docker.utils.solrcloud
 
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.RemoveNetwork
-import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
-import com.intershop.gradle.icm.docker.utils.webserver.WAATaskPreparer
-import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.getByType
 
 class TaskPreparer(val project: Project,
                    val prepareNetwork: TaskProvider<PrepareNetwork>,
-                   val removeNetwork: TaskProvider<RemoveNetwork>) {
+                   private val removeNetwork: TaskProvider<RemoveNetwork>) {
 
     companion object {
         const val TASK_EXT_SERVER = "SolrCloud"
     }
-
-    protected val extension = project.extensions.getByType<IntershopDockerExtension>()
 
     init {
         val zkTasks = ZKPreparer(project, prepareNetwork)
@@ -77,7 +70,6 @@ class TaskPreparer(val project: Project,
     val removeTask: TaskProvider<Task> by lazy {
         project.tasks.named("remove${TASK_EXT_SERVER}")
     }
-
 
     private fun configureSolrCloudTasks(task: Task, description: String) {
         task.group = "icm container solrcloud"

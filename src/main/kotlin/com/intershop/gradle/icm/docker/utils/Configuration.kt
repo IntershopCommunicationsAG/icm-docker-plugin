@@ -58,8 +58,8 @@ object Configuration {
     const val AS_CONNECTOR_PORT = "intershop.servletEngine.connector.port"
     const val AS_CONNECTOR_PORT_VALUE = "7743"
 
-    const val AS_CONNECTOR_HOST = "intershop.as.hostname"
-    const val AS_CONNECTOR_HOST_VALUE = "localhost"
+    const val LOCAL_CONNECTOR_HOST = "intershop.local.hostname"
+    const val LOCAL_CONNECTOR_HOST_VALUE = "localhost"
 
     const val AS_CONNECTOR_CONTAINER_PORT = "intershop.servletEngine.connector.container.port"
     const val AS_CONNECTOR_CONTAINER_PORT_VALUE = "7743"
@@ -91,4 +91,7 @@ object Configuration {
     const val DISABLE_SSL_VERIFICATION = "disable.ssl.verification"
 
     const val ADDITIONAL_CONTAINER_PREFIX = "additional.container.prefix"
+
+    const val GEB_LOCAL_DRIVER = "geb.local.driver"
+    const val GEB_LOCAL_ENVIRONMENT = "geb.local.environment"
 }

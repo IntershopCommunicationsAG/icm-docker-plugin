@@ -19,17 +19,14 @@ package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.APullImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullExtraImage
-import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainerTask
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 
 abstract class AbstractTaskPreparer(protected val project: Project,

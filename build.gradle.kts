@@ -211,6 +211,12 @@ gradlePlugin {
             displayName = "icm-solrlcloud-plugin"
             description = "This ICM plugin integrates tasks to maintain a ICM project."
         }
+        create("icmGebTestPlugin") {
+            id = "com.intershop.gradle.icm.docker.gebtest"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMGebTestPlugin"
+            displayName = "icm-gebtest-plugin"
+            description = "This ICM plugin integrates tasks to handle Geb Tests in a ICM project."
+        }
     }
 }
 

@@ -15,14 +15,20 @@
  *
  */
 
-package com.intershop.gradle.icm.docker.tasks
+package com.intershop.gradle.icm.docker.extension
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Internal
+import javax.inject.Inject
 
-open class ContainerCleanup: DefaultTask() {
-    @TaskAction
-    fun removeContainer() {
-        println("remove container")
-    }
+open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
+                                                 @Internal val name: String) {
+
+    val url: Property<String> = objectFactory.property(String::class.java)
+
+    val archiveType: Property<String> = objectFactory.property(String::class.java)
+
+    val webDriverExecName: Property<String> = objectFactory.property(String::class.java)
+
 }

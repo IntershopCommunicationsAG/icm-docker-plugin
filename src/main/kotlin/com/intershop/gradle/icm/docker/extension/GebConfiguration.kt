@@ -14,9 +14,21 @@
  * limitations under the License.
  *
  */
-package com.intershop.gradle.icm.docker.tasks.utils
+package com.intershop.gradle.icm.docker.extension
 
-/**
- * Result container of dbprepare.
- */
-data class DBPrepareResult(val cartriges: Int, val success: Int, val failure: Int)
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import javax.inject.Inject
+
+open class GebConfiguration @Inject constructor(objectFactory: ObjectFactory) {
+
+    val gebEnvironment: Property<String> = objectFactory.property(String::class.java)
+
+    val localDriver: NamedDomainObjectContainer<GebLocalDriver>
+            = objectFactory.domainObjectContainer(GebLocalDriver::class.java)
+
+    init {
+        gebEnvironment.set( "firefoxContainer" )
+    }
+}

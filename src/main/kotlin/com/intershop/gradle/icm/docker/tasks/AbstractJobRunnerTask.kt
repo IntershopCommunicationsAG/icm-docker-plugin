@@ -61,7 +61,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
 
     init {
         protocol.convention("https")
-        hostAddress.convention(Configuration.AS_CONNECTOR_HOST_VALUE)
+        hostAddress.convention(Configuration.LOCAL_CONNECTOR_HOST_VALUE)
         webServerPort.convention(Configuration.WS_HTTPS_PORT_VALUE)
         maxWait.convention(600000)
         domain.convention("SLDSystem")

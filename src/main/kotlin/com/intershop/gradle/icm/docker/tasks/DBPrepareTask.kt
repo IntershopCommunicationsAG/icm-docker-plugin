@@ -16,29 +16,16 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.domain.ExecProbe
-import com.bmuschko.gradle.docker.internal.IOUtils
-import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
-import com.github.dockerjava.api.command.InspectExecResponse
 import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareCallback
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
-import java.lang.Thread.sleep
-import java.util.concurrent.TimeUnit
 
 /**
  * Task to run dbinit on a running container.
  */
-open class DBPrepareTask: AbstractDockerRemoteApiTask() {
-
-    /**
-     * The ID or name of container used to perform operation.
-     * The container for the provided ID has to be created first.
-     */
-    @get:Input
-    val containerId: Property<String> = project.objects.property(String::class.java)
+open class DBPrepareTask: AbstractContainerTask() {
 
     @get:Option(option = "mode", description = "Mode in which dbprepare runs: 'init', 'migrate' or 'auto'. " +
             "The default is 'auto'.")
@@ -60,23 +47,6 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
             "This is an optional parameter.")
     @get:Input
     val propertyKeys: Property<String> = project.objects.property(String::class.java)
-
-    private val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
-    /**
-     * Enable debugging for the process. The process is started suspended and listening on port 5005.
-     * This can be configured also over the gradle parameter "debug-java".
-     *
-     * @property debug is the task property
-     */
-    @set:Option(
-        option = "debug-jvm",
-        description = "Enable debugging for the process. The process is started suspended and listening on port 5005."
-    )
-    @get:Input
-    var debug: Boolean
-        get() = debugProperty.get()
-        set(value) = debugProperty.set(value)
-
 
     init {
         mode.convention("auto")
@@ -119,49 +89,7 @@ open class DBPrepareTask: AbstractDockerRemoteApiTask() {
 
         dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback).awaitCompletion()
 
-        // create progressLogger for pretty printing of terminal log progression.
-        val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
-        progressLogger.started()
-
-        // if no livenessProbe defined then create a default
-        val localProbe = ExecProbe(6000000, 50000)
-
-        var localPollTime = localProbe.pollTime
-        var pollTimes = 0
-        var isRunning = true
-
-        // 3.) poll for some amount of time until container is in a non-running state.
-        var lastExecResponse: InspectExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
-
-        while (isRunning && localPollTime > 0) {
-            pollTimes += 1
-
-            lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
-            isRunning = lastExecResponse.isRunning
-
-            if (isRunning) {
-                val totalMillis = pollTimes * localProbe.pollInterval
-                val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
-
-                progressLogger.progress("Executing for ${totalMinutes}m...")
-                try {
-                    localPollTime -= localProbe.pollInterval
-                    sleep(localProbe.pollInterval)
-                } catch (e: Exception) {
-                    throw e
-                }
-            } else {
-                break
-            }
-        }
-        progressLogger.completed()
-
-        // if still running then throw an exception otherwise check the exitCode
-        if (isRunning) {
-            throw GradleException("DBPrepare command did not finish in a timely fashion: $localProbe")
-        }
-
-        if(lastExecResponse.exitCodeLong > 0) {
+        if(waitForExit(localExecId) > 0) {
             throw GradleException("DBPrepare failed! Please check your log files")
         }
 
