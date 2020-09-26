@@ -30,6 +30,7 @@ import com.intershop.gradle.icm.docker.utils.OS
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.plugins.GroovyPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
@@ -93,6 +94,16 @@ class ICMGebTestPlugin : Plugin<Project> {
                 } else {
                     it.gebEnvironment.set(gebExtension.gebEnvironment)
                 }
+
+                it.mustRunAfter(startWebSrv)
+            }
+
+            try {
+                tasks.named("check").configure {
+                    it.dependsOn(gebTest)
+                }
+            } catch(ex: UnknownTaskException) {
+                logger.quiet("There is no check task available.")
             }
 
             if(localDriverConfig.isNotBlank()) {

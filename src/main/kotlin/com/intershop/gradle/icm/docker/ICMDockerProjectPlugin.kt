@@ -27,6 +27,7 @@ import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
@@ -86,6 +87,13 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 val solrcloudPreparer = SolrCloudPreparer(project, prepareNetwork, removeNetwork)
                 val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
                 val appServerPreparer = ServerTaskPreparer(project, prepareNetwork)
+
+                val mailSrvTask = tasks.named("start${MailPreparer.extName}")
+
+                appServerPreparer.startTask.configure {
+                    it.mustRunAfter(solrcloudPreparer.startTask)
+                    it.mustRunAfter(mailSrvTask)
+                }
 
                 try {
                     tasks.named("clean").configure {
@@ -177,7 +185,11 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
             it.maxParallelUsages.set(1)
         }
 
-        val ishUnitTest = project.tasks.register(TASK_ISHUNIT_REPORT, ISHUnitHTMLTestReportTask::class.java)
+        val ishUnitTest = project.tasks.register(TASK_ISHUNIT_REPORT,
+            ISHUnitHTMLTestReportTask::class.java) { task ->
+            task.group = GROUP_SERVERBUILD
+            task.description = "Generates report for ISHUnitTest execution"
+        }
 
         extension.ishUnitTests.all {
             val ishunitTest = project.tasks.register(it.name + ISHUNIT_TEST, ISHUnitTask::class.java) { task ->
