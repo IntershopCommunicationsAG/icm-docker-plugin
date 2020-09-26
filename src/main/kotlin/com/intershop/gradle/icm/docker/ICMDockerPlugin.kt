@@ -90,7 +90,7 @@ open class ICMDockerPlugin: Plugin<Project> {
                 project.logger.info("No dbPrepare task available!")
             }
 
-            tasks.register("containerClean") {task ->
+            val ccTask = tasks.register("containerClean") {task ->
                 task.group = GROUP_CONTAINER
                 task.description = "Removes all available container from Docker"
 
@@ -117,12 +117,20 @@ open class ICMDockerPlugin: Plugin<Project> {
                         oracleTasks.removeTask)
                 }
             } catch(ex: UnknownTaskException) {
-                project.logger.info("Task clean is not available.")
+                project.logger.quiet("Task clean is not available.")
             }
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
 
             createImageTasks(project, extension)
+
+            try {
+                tasks.named("publish").configure {
+                    it.finalizedBy(ccTask)
+                }
+            } catch(ex: UnknownTaskException) {
+                logger.quiet("Publish task is not available.")
+            }
         }
     }
 
