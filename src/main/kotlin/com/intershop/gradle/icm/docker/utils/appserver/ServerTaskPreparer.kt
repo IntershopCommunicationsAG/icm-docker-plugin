@@ -39,7 +39,9 @@ class ServerTaskPreparer(project: Project,
         project.tasks.register("start${extensionName}", StartServerContainerTask::class.java) { task ->
             configureContainerTask(task)
             task.description = "Start container Application server of ICM"
+
             task.targetImageId(project.provider { pullTask.get().image.get() })
+            task.image.set(pullTask.get().image)
 
             with(extension.developmentConfig) {
 
@@ -52,23 +54,8 @@ class ServerTaskPreparer(project: Project,
                     Configuration.AS_EXT_CONNECTOR_PORT_VALUE
                 )
 
-                val httpJMXContainerPort = getConfigProperty(
-                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT,
-                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
-                )
-                val httpJMXPort = getConfigProperty(
-                    Configuration.AS_JMX_CONNECTOR_PORT,
-                    Configuration.AS_JMX_CONNECTOR_PORT_VALUE
-                )
-
                 task.envVars.put("INTERSHOP_SERVLETENGINE_CONNECTOR_PORT", httpASContainerPort)
-                task.hostConfig.portBindings.set(
-                    listOf(
-                        "5005:7746",
-                        "${httpASPort}:${httpASContainerPort}",
-                        "${httpJMXPort}:${httpJMXContainerPort}"
-                    )
-                )
+                task.hostConfig.portBindings.add("${httpASPort}:${httpASContainerPort}")
 
                 task.hostConfig.network.set(networkId)
             }
@@ -76,7 +63,7 @@ class ServerTaskPreparer(project: Project,
             task.hostConfig.binds.set(getServerVolumes())
             task.finishedCheck = SERVER_READY_STRING
 
-            task.dependsOn(dirPreparer, prepareServer, prepareServer, networkTask)
+            task.dependsOn(pullTask, dirPreparer, prepareServer, prepareServer, networkTask)
         }
     }
 }

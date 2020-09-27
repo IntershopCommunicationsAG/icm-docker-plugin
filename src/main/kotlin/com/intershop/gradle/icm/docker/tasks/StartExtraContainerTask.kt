@@ -18,6 +18,7 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
@@ -25,10 +26,41 @@ open class StartExtraContainerTask
     @Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
 
     override fun runRemoteCommand() {
-        super.runRemoteCommand()
+        var containerCreated = false
+        var containerRunning = false
 
-        logger.quiet("Starting container with ID '${containerId.get()}'.")
-        val startCommand = dockerClient.startContainerCmd(containerId.get())
-        startCommand.exec()
+        val iterator = dockerClient.listContainersCmd().withShowAll(true).
+                            withNameFilter(listOf("/${containerName.get()}")).exec().iterator()
+
+        while (iterator.hasNext()) {
+            val container = iterator.next()
+            if(container.names.contains("/${containerName.get()}")) {
+                if (container.image != image.get()) {
+                    throw GradleException(
+                        "The running container was started with image '" + container.image +
+                                "', but the configured image is '" + image.get() +
+                                "'. Please remove running containers!"
+                    )
+                }
+
+                containerId.set(container.id)
+                containerCreated = true
+                containerRunning = (container.state == "running")
+            }
+        }
+
+        if(! containerRunning) {
+            if (!containerCreated) {
+                super.runRemoteCommand()
+            } else {
+                logger.quiet("Container '{}' still exists.", "/${containerName.get()}")
+            }
+
+            logger.quiet("Starting container with ID '${containerId.get()}'.")
+            val startCommand = dockerClient.startContainerCmd(containerId.get())
+            startCommand.exec()
+        } else {
+            logger.quiet("Container '{}' is still running.", "/${containerName.get()}")
+        }
     }
 }

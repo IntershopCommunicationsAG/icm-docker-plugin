@@ -20,7 +20,9 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
+import com.intershop.gradle.icm.docker.utils.Configuration
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
@@ -28,6 +30,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
+import org.gradle.kotlin.dsl.getByType
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.thread
@@ -162,14 +165,28 @@ open class StartServerContainerTask
     }
 
     override fun runRemoteCommand() {
+        val extension = project.extensions.getByType<IntershopDockerExtension>()
+
         if(debugProperty.get()) {
             this.envVars.put("ENABLE_DEBUG", "true")
+            hostConfig.portBindings.add("5005:7746")
         }
         if(gclogProperty.get()) {
             this.envVars.put("ENABLE_GCLOG", "true")
         }
         if(jmxProperty.get()) {
             this.envVars.put("ENABLE_JMX", "")
+
+            val httpJMXContainerPort = extension.developmentConfig.getConfigProperty(
+                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT,
+                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
+            )
+            val httpJMXPort = extension.developmentConfig.getConfigProperty(
+                Configuration.AS_JMX_CONNECTOR_PORT,
+                Configuration.AS_JMX_CONNECTOR_PORT_VALUE
+            )
+
+            hostConfig.portBindings.add("${httpJMXPort}:${httpJMXContainerPort}")
         }
         if(heapdumpProperty.get()) {
             this.envVars.put("ENABLE_HEAPDUMP", "")
@@ -188,19 +205,50 @@ open class StartServerContainerTask
             }
         }
 
-        super.runRemoteCommand()
+        var containerCreated = false
+        var containerRunning = false
 
-        logger.quiet("Starting container with ID '${containerId.get()}'.")
-        val startCommand = dockerClient.startContainerCmd(containerId.get())
-        startCommand.exec()
+        val iterator = dockerClient.listContainersCmd().withShowAll(true).
+                        withNameFilter(listOf("/${containerName.get()}")).exec().iterator()
 
-        try {
-            Thread.sleep(5000)
-        } catch (e: Exception) {
-            throw e
+        while (iterator.hasNext()) {
+            val container = iterator.next()
+
+            if(container.image != image.get()) {
+                throw GradleException("The running container was started with image '" + container.image +
+                        "', but the configured image is '" + image.get() + "'. Please remove running containers!")
+            }
+
+            containerId.set(container.id)
+            containerCreated = true
+            containerRunning = (container.state == "running")
         }
 
-        if(finishedCheckProperty.isPresent && finishedCheckProperty.get().isNotEmpty()) {
+        if(! containerRunning) {
+            if(! containerCreated) {
+                super.runRemoteCommand()
+            } else {
+                logger.quiet("Container '{}' still exists.", "/${containerName.get()}")
+            }
+
+            logger.quiet("Starting container Id '{}' and name '{}'.", containerId.get(), containerName.get())
+            val startCommand = dockerClient.startContainerCmd(containerId.get())
+            startCommand.exec()
+
+            try {
+                Thread.sleep(5000)
+            } catch (e: Exception) {
+                throw e
+            }
+
+            waitForLogout()
+        } else {
+            logger.quiet("Container '{}' is still running.", "/${containerName.get()}")
+        }
+    }
+
+    private fun waitForLogout() {
+        if (finishedCheckProperty.isPresent && finishedCheckProperty.get().isNotEmpty()) {
             logger.quiet("Starting logging for container with ID '${containerId.get()}'.")
             val logCommand = dockerClient.logContainerCmd(containerId.get())
             logCommand.withStdErr(true)

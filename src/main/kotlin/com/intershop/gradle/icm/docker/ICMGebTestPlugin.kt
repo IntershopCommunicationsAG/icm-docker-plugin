@@ -17,6 +17,7 @@
 
 package com.intershop.gradle.icm.docker
 
+import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
 import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownloadTask
@@ -70,6 +71,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                 "start" + WATaskPreparer.extName,
                 StartExtraContainerTask::class.java
             )
+            val startSrv = rootProject.tasks.named(TASK_START_SERVER)
             val networkTask = rootProject.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
 
             val os = getOS()
@@ -95,6 +97,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                     it.gebEnvironment.set(gebExtension.gebEnvironment)
                 }
 
+                it.dependsOn(startSrv)
                 it.mustRunAfter(startWebSrv)
             }
 
@@ -144,7 +147,7 @@ class ICMGebTestPlugin : Plugin<Project> {
         }
     }
 
-    fun getOS(): OS? {
+    private fun getOS(): OS? {
         val os = System.getProperty("os.name").toLowerCase()
 
         return when {

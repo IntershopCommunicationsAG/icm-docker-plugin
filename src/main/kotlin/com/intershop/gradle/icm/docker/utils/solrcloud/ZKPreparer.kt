@@ -50,7 +50,9 @@ class ZKPreparer(project: Project,
             configureContainerTask(task)
             task.group = "icm container solrcloud"
             task.description = "Start Zookeeper component of SolrCloud"
+
             task.targetImageId(project.provider { pullTask.get().image.get() })
+            task.image.set(pullTask.get().image)
 
             task.hostConfig.portBindings.set(
                 listOf("2181:2181")
