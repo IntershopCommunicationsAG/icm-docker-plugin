@@ -20,7 +20,6 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.github.dockerjava.api.model.Container
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
 import com.intershop.gradle.icm.docker.utils.Configuration
@@ -32,7 +31,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.getByType
-import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.thread

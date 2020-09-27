@@ -147,7 +147,7 @@ class ICMGebTestPlugin : Plugin<Project> {
         }
     }
 
-    fun getOS(): OS? {
+    private fun getOS(): OS? {
         val os = System.getProperty("os.name").toLowerCase()
 
         return when {
