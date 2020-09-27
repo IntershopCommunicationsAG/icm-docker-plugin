@@ -53,6 +53,7 @@ class WAATaskPreparer(project: Project,
             task.description = "Start ICM WebAdapterAgent"
 
             task.targetImageId(project.provider { pullTask.get().image.get() })
+            task.image.set(pullTask.get().image)
 
             task.hostConfig.binds.set( volumes )
             task.hostConfig.network.set(networkId)

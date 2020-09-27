@@ -50,7 +50,9 @@ class SolrPreparer(project: Project,
             configureContainerTask(task)
             task.group = "icm container solrcloud"
             task.description = "Start Solr component of SolrCloud"
+
             task.targetImageId(project.provider { pullTask.get().image.get() })
+            task.image.set(pullTask.get().image)
 
             task.hostConfig.portBindings.set(
                 listOf("8983:8983")

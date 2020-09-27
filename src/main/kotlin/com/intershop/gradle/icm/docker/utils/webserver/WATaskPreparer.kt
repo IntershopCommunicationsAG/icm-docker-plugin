@@ -56,6 +56,7 @@ class WATaskPreparer(project: Project,
             task.description = "Start ICM WebServer with WebAdapter"
 
             task.targetImageId(project.provider { pullTask.get().image.get() })
+            task.image.set(pullTask.get().image)
 
             with(extension.developmentConfig) {
                 val httpPort = getConfigProperty(

@@ -40,7 +40,9 @@ class TaskPreparer(project: Project,
         project.tasks.register ("start${extensionName}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task)
             task.description = "Starts an local mail server for testing"
+
             task.targetImageId( project.provider { pullTask.get().image.get() } )
+            task.image.set(pullTask.get().image)
 
             task.envVars.set(mutableMapOf(
                 "MH_STORAGE" to "maildir",

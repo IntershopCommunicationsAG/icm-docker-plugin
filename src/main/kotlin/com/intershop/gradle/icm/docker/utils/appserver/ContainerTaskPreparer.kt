@@ -39,7 +39,10 @@ class ContainerTaskPreparer(project: Project,
             configureContainerTask(task)
 
             task.description = "Start container without any special command (sleep)"
+
             task.targetImageId(project.provider { pullTask.get().image.get() })
+            task.image.set(pullTask.get().image)
+
             task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
 
             task.hostConfig.portBindings.set(listOf("5005:7746"))

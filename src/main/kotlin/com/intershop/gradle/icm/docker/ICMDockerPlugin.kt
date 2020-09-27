@@ -99,16 +99,6 @@ open class ICMDockerPlugin: Plugin<Project> {
                                 mailSrvTask.removeTask,
                                 webServerTasks.removeTask,
                                 oracleTasks.removeTask)
-            }
-
-            try {
-                project.tasks.named("clean").configure {
-                    it.dependsOn(   networkTasks.removeNetworkTask,
-                                    mssqlTasks.removeTask,
-                                    mailSrvTask.removeTask,
-                                    webServerTasks.removeTask,
-                                    oracleTasks.removeTask)
-                }
 
                 networkTasks.removeNetworkTask.configure {
                     it.mustRunAfter(mssqlTasks.removeTask,
@@ -116,8 +106,6 @@ open class ICMDockerPlugin: Plugin<Project> {
                         webServerTasks.removeTask,
                         oracleTasks.removeTask)
                 }
-            } catch(ex: UnknownTaskException) {
-                project.logger.quiet("Task clean is not available.")
             }
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }

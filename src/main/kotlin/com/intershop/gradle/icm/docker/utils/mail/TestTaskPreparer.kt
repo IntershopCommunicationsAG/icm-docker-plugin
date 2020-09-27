@@ -41,7 +41,9 @@ class TestTaskPreparer(project: Project,
         project.tasks.register ("start${extensionName}", StartExtraContainerTask::class.java) { task ->
             configureContainerTask(task)
             task.description = "Starts an special test mail server for ISHUnitTests"
+
             task.targetImageId( project.provider { pullTask.get().image.get() } )
+            task.image.set(pullTask.get().image)
 
             task.entrypoint.set(listOf(
                 "bash", "-c",

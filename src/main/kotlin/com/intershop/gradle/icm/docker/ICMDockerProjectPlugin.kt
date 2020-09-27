@@ -96,14 +96,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 }
 
                 try {
-                    tasks.named("clean").configure {
-                        it.dependsOn(
-                            solrcloudPreparer.removeTask,
-                            containerPreparer.removeTask,
-                            appServerPreparer.removeTask
-                        )
-                    }
-                    tasks.named("clean").configure {
+                    tasks.named("containerClean").configure {
                         it.dependsOn(
                             solrcloudPreparer.removeTask,
                             containerPreparer.removeTask,
@@ -111,7 +104,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                         )
                     }
                 } catch (ex: UnknownTaskException) {
-                    logger.info("Task clean is not available.")
+                    logger.info("Task containerClean is not available.")
                 }
 
                 val startWA = tasks.named("start${WATaskPreparer.extName}")
