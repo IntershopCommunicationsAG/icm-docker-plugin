@@ -221,6 +221,7 @@ open class StartServerContainerTask
                         "', but the configured image is '" + image.get() + "'. Please remove running containers!")
             }
 
+            containerId.set(container.id)
             containerCreated = true
             containerRunning = (container.state == "running")
         }
@@ -232,7 +233,7 @@ open class StartServerContainerTask
                 logger.quiet("Container '{}' still exists.", "/${containerName.get()}")
             }
 
-            logger.quiet("Starting container with ID '${containerId.get()}'.")
+            logger.quiet("Starting container Id '{}' and name '{}'.", containerId.get(), containerName.get())
             val startCommand = dockerClient.startContainerCmd(containerId.get())
             startCommand.exec()
 
@@ -242,64 +243,68 @@ open class StartServerContainerTask
                 throw e
             }
 
-            if (finishedCheckProperty.isPresent && finishedCheckProperty.get().isNotEmpty()) {
-                logger.quiet("Starting logging for container with ID '${containerId.get()}'.")
-                val logCommand = dockerClient.logContainerCmd(containerId.get())
-                logCommand.withStdErr(true)
-                logCommand.withStdOut(true)
-                logCommand.withTailAll()
-                logCommand.withFollowStream(true)
-
-                val localProbe = ExecProbe(timeoutProperty.get(), 5000)
-
-                // create progressLogger for pretty printing of terminal log progression.
-                val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
-                try {
-                    var localPollTime = localProbe.pollTime
-                    var pollTimes = 0
-
-                    progressLogger.started()
-                    val containerCallback = LogContainerCallback(project.logger, finishedCheckProperty.get())
-
-                    thread(start = true) {
-                        try {
-                            logCommand.exec(containerCallback).awaitCompletion()
-                        } catch (ex: Exception) {
-                            logger.quiet("Log command finished.")
-                        }
-                    }
-
-                    while (localPollTime > 0) {
-                        pollTimes += 1
-                        val totalMillis = pollTimes * localProbe.pollInterval
-                        val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
-
-                        progressLogger.progress("Executing for ${totalMinutes}m...")
-                        if (containerCallback.startSuccessful) {
-                            logger.quiet("Container startet successfully in a expected time.")
-                            containerCallback.close()
-                            localPollTime = -1
-                        } else {
-                            try {
-                                localPollTime -= localProbe.pollInterval
-                                Thread.sleep(localProbe.pollInterval)
-                            } catch (e: Exception) {
-                                logger.error("It is not possible to wait for logging.")
-                            }
-                        }
-                    }
-
-                    if (!containerCallback.startSuccessful) {
-                        logger.error("Container not startet successfully in a expected time.")
-                        containerCallback.close()
-                        throw GradleException("Container not startet successfully in a expected time.")
-                    }
-                } finally {
-                    progressLogger.completed()
-                }
-            }
+            waitForLogout()
         } else {
             logger.quiet("Container '{}' is still running.", "/${containerName.get()}")
+        }
+    }
+
+    private fun waitForLogout() {
+        if (finishedCheckProperty.isPresent && finishedCheckProperty.get().isNotEmpty()) {
+            logger.quiet("Starting logging for container with ID '${containerId.get()}'.")
+            val logCommand = dockerClient.logContainerCmd(containerId.get())
+            logCommand.withStdErr(true)
+            logCommand.withStdOut(true)
+            logCommand.withTailAll()
+            logCommand.withFollowStream(true)
+
+            val localProbe = ExecProbe(timeoutProperty.get(), 5000)
+
+            // create progressLogger for pretty printing of terminal log progression.
+            val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
+            try {
+                var localPollTime = localProbe.pollTime
+                var pollTimes = 0
+
+                progressLogger.started()
+                val containerCallback = LogContainerCallback(project.logger, finishedCheckProperty.get())
+
+                thread(start = true) {
+                    try {
+                        logCommand.exec(containerCallback).awaitCompletion()
+                    } catch (ex: Exception) {
+                        logger.quiet("Log command finished.")
+                    }
+                }
+
+                while (localPollTime > 0) {
+                    pollTimes += 1
+                    val totalMillis = pollTimes * localProbe.pollInterval
+                    val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
+
+                    progressLogger.progress("Executing for ${totalMinutes}m...")
+                    if (containerCallback.startSuccessful) {
+                        logger.quiet("Container startet successfully in a expected time.")
+                        containerCallback.close()
+                        localPollTime = -1
+                    } else {
+                        try {
+                            localPollTime -= localProbe.pollInterval
+                            Thread.sleep(localProbe.pollInterval)
+                        } catch (e: Exception) {
+                            logger.error("It is not possible to wait for logging.")
+                        }
+                    }
+                }
+
+                if (!containerCallback.startSuccessful) {
+                    logger.error("Container not startet successfully in a expected time.")
+                    containerCallback.close()
+                    throw GradleException("Container not startet successfully in a expected time.")
+                }
+            } finally {
+                progressLogger.completed()
+            }
         }
     }
 }

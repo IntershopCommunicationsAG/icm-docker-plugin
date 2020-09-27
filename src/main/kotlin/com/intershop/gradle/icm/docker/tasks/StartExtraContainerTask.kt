@@ -38,10 +38,12 @@ open class StartExtraContainerTask
                 if (container.image != image.get()) {
                     throw GradleException(
                         "The running container was started with image '" + container.image +
-                                "', but the configured image is '" + image.get() + "'. Please remove running containers!"
+                                "', but the configured image is '" + image.get() +
+                                "'. Please remove running containers!"
                     )
                 }
 
+                containerId.set(container.id)
                 containerCreated = true
                 containerRunning = (container.state == "running")
             }

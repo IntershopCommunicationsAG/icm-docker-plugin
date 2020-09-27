@@ -99,13 +99,13 @@ open class ICMDockerPlugin: Plugin<Project> {
                                 mailSrvTask.removeTask,
                                 webServerTasks.removeTask,
                                 oracleTasks.removeTask)
+            }
 
-                networkTasks.removeNetworkTask.configure {
-                    it.mustRunAfter(mssqlTasks.removeTask,
-                        mailSrvTask.removeTask,
-                        webServerTasks.removeTask,
-                        oracleTasks.removeTask)
-                }
+            networkTasks.removeNetworkTask.configure {
+                it.mustRunAfter(mssqlTasks.removeTask,
+                    mailSrvTask.removeTask,
+                    webServerTasks.removeTask,
+                    oracleTasks.removeTask)
             }
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
