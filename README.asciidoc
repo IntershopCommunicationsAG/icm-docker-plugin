@@ -1,20 +1,22 @@
-= Intershop Commerce Management Container Project Plugins
+= Intershop Commerce Management - Docker Plugins
 :latestRevision: 1.0.0
 :toc:
 :icons: font
 
 == Summary
 This plugin collection contains plugins for building container images and
-starting container of Intershop Commerce Management. For some configuration it is necessary
-that the ICM Gradle plugin (https://github.com/IntershopCommunicationsAG/icm-gradle-plugin) was
-applied to the project. Version 2.2.0 of this plugin is the minimum version.
+starting container of and for Intershop Commerce Management. It is necessary
+that the link:https://github.com/IntershopCommunicationsAG/icm-gradle-plugin['ICM Gradle plugin'] was
+applied to the project. Version 3.4.0 of this plugin is the minimum version.
 
-This plugin is based on https://github.com/bmuschko/gradle-docker-plugin.
+This plugin is based on link:https://github.com/bmuschko/gradle-docker-plugin['Gradle Docker plugin'] and
+the link:https://github.com/docker-java/docker-java['Docker-Java Framework'].
 
 == Intershop Commerce Management Docker Plugin
-This plugin configures the basics for an Intershop Commerce Management product project.
+This plugin configures the basics of an Intershop Commerce Management product project.
 
 === Plugin Configuration
+The plugins must be applied to the root project.
 
 ++++
 <details open>
@@ -24,16 +26,75 @@ This plugin configures the basics for an Intershop Commerce Management product p
 [source,groovy]
 ----
 plugins {
-    id 'com.intershop.gradle.icm.base' version '2.2.0'
+    id 'com.intershop.gradle.icm.base' version '3.4.0'
     id 'com.intershop.gradle.icm.docker' version '{latestRevision}'
 }
 
+docker {
+    registryCredentials {
+        url = "https://<registry hostname>"
+        username = "<registry user name>"
+        password = "<registry user password>"
+        email = "<registry user email>"
+    }
+}
+
 intershop {
-    ...
+    // see https://github.com/IntershopCommunicationsAG/icm-gradle-plugin
+    projectInfo {}
+    projectConfig {}
 }
 
 intershop_docker {
+    images {
+        icmsetup = 'registry.intershop.de/intershop/icm-base:1.9.2'
 
+        webadapter = 'registry.intershop.de/intershop/icm-webadapter:2.0.6'
+        webadapteragent = 'registry.intershop.de/intershop/icm-webadapteragent:3.0.4'
+
+        mssql = '<image with an prepares installation for Intershop>'
+        oracle = '<image with an prepares installation for Intershop>'
+
+        mailsrv = 'mailhog/mailhog:latest'
+    }
+
+    imageBuild {
+        license = 'Intershop Communications AG'
+        maintainer = 'Intershop Communications AG "www.intershop.de"'
+        baseDescription = 'Intershop Commerce Management'
+
+        baseImageName = '${dockerRegHostName}/intershop/icm'
+        images {
+            mainImage {
+                dockerfile = file('docker/main/Dockerfile')
+                addFiles(tasks.createMainPkg.outputs.files)
+                dockerBuildDir = 'main'
+                description = 'AppServer Container'
+                enabled = true
+            }
+            initImage {
+                dockerfile = file('docker/init/Dockerfile')
+                addFiles(tasks.createInitPkg.outputs.files)
+                dockerBuildDir = 'init'
+                description = 'Init Container'
+                enabled = true
+            }
+            testImage {
+                dockerfile = file('docker/test/Dockerfile')
+                addFiles(tasks.createTestPkg.outputs.files)
+                dockerBuildDir = 'test'
+                description = 'AppServer Test Container'
+                enabled = true
+            }
+            initTestImage {
+                dockerfile = file('docker/initTest/Dockerfile')
+                addFiles(tasks.createInitTestPkg.outputs.files)
+                dockerBuildDir = 'inittest'
+                description = 'Test Init Conainer'
+                enabled = true
+            }
+        }
+    }
 }
 ----
 ++++
@@ -48,27 +109,100 @@ intershop_docker {
 [source,kotlin]
 ----
 plugins {
-    id("com.intershop.gradle.icm.base") version '2.2.0'
+    id("com.intershop.gradle.icm.base") version "2.2.0"
     id("com.intershop.gradle.icm.docker") version "{latestRevision}"
 }
 
+docker {
+    registryCredentials {
+        url.set("https://<registry hostname>")
+        username.set("<registry user name>")
+        password.set("<registry user password>")
+        email.set("<registry user email>")
+    }
+}
+
 intershop {
-    ...
+    // see https://github.com/IntershopCommunicationsAG/icm-gradle-plugin
+    projectInfo {}
+    projectConfig {}
 }
 
 intershop_docker {
+    images {
+        icmsetup.set("docker-public.rnd.intershop.de/intershop/icm-base:1.9.2")
 
+        webadapter.set("docker-public.rnd.intershop.de/intershop/icm-webadapter:2.0.6")
+        webadapteragent.set("docker-public.rnd.intershop.de/intershop/icm-webadapteragent:3.0.4")
+
+        mssqldb.set("<image with an prepares installation for Intershop>")
+        oracle.set("<image with an prepares installation for Intershop>")
+
+        mailsrv.set("mailhog/mailhog:latest")
+    }
+
+imageBuild {
+        license.set("Intershop Communications AG")
+        maintainer.set("Intershop Communications AG 'www.intershop.de'")
+        baseDescription.set("Intershop Commerce Management")
+
+        baseImageName.set("${dockerRegHostName}/intershop/icm")
+        images {
+            mainImage {
+                dockerfile.set(file("docker/main/Dockerfile"))
+                addFiles(tasks.createMainPkg.get().outputs.files)
+                dockerBuildDir.set("main")
+                description.set("AppServer Container")
+                enabled.set(true)
+            }
+            initImage {
+                dockerfile.set(file("docker/init/Dockerfile"))
+                addFiles(tasks.createInitPkg.get().outputs.files)
+                dockerBuildDir.set("init")
+                description.set("Init Container")
+                enabled.set(true)
+            }
+            testImage {
+                dockerfile.set(file("docker/test/Dockerfile"))
+                addFiles(tasks.createTestPkg.get().outputs.files)
+                dockerBuildDir.set("test")
+                description.set("AppServer Test Container")
+                enabled.set(true)
+            }
+            initTestImage {
+                dockerfile.set(file("docker/initTest/Dockerfile"))
+                addFiles(tasks.createInitTestPkg.get().outputs.files)
+                dockerBuildDir.set("inittest")
+                description.set("Test Init Conainer")
+                enabled.set(true)
+            }
+        }
+    }
 }
 ----
 ++++
 </details>
 ++++
 
-== Intershop Commerce Management Docker Project Plugin
-This plugin add tasks and configurations for an project based on Intershop Commerce Management. It applies
-the Intershop Commerce Management Docker Plugin.
+== Intershop Commerce Management Project Docker Plugin
+This plugin configures additional tasks of an Intershop Commerce Management customer project. It uses the same Gradle
+configuration like the Docker Plugin. With this plugin additional task will be configured and the task dependencies are
+adapted for the development process.
+
+The plugins must be applied to the root project.
+
+== Intershop Commerce Management Test Docker Plugin
+Additional test tasks of an Intershop Commerce Management project will be added by this plugin. It uses the same Gradle
+configuration like the Docker Plugin. One additional task is added by this plugin.
+
+The plugins must be applied to the root project.
+
+== Intershop Commerce Management GebTest Docker Plugin
+This plugin adds test tasks for link:https://gebish.org[Geb].
 
 === Plugin Configuration
+The plugin must be applied to the project with included Geb tests. It requires an applied ICM Docker plugin.
+Furthermore it depends on the configuration of Geb self (`GebConfig.groovy`).
 
 ++++
 <details open>
@@ -78,21 +212,54 @@ the Intershop Commerce Management Docker Plugin.
 [source,groovy]
 ----
 plugins {
-    id 'com.intershop.gradle.icm.project' version '2.2.0'
-    id 'com.intershop.gradle.icm.docker.project' version '{latestRevision}'
+    id 'com.intershop.gradle.icm.docker.gebtest' version '3.4.0'
 }
 
-intershop {
-    ...
-}
-
-intershop_docker {
-
+gebConfiguration {
+    localDriver {
+        geckoDriver {
+            osPackages {
+                linux {
+                    url = 'https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz'
+                    archiveType = 'tar.gz'
+                    webDriverExecName = 'geckodriver'
+                }
+                win {
+                    url = 'https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-win32.zip'
+                    archiveType = 'zip'
+                    webDriverExecName = 'geckodriver.exe'
+                }
+                mac {
+                    url = 'https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-macos.tar.gz'
+                    archiveType = 'tar.gz'
+                    webDriverExecName = 'geckodriver'
+                }
+            }
+        }
+        chromeDriver {
+            osPackages {
+                linux {
+                    url = 'https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_linux64.zip'
+                    archiveType = 'zip'
+                    webDriverExecName = 'chromedriver'
+                }
+                win {
+                    url = 'https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_win32.zip'
+                    archiveType = 'zip'
+                    webDriverExecName = 'chromedriver.exe'
+                }
+                mac {
+                    url = 'https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_mac64.zip'
+                    archiveType = 'zip'
+                    webDriverExecName = 'chromedriver'
+                }
+            }
+        }
+    }
 }
 ----
 ++++
 </details>
-++++
 
 ++++
 <details>
@@ -102,18 +269,113 @@ intershop_docker {
 [source,kotlin]
 ----
 plugins {
-    id("com.intershop.gradle.icm.project") version '2.2.0'
-    id("com.intershop.gradle.icm.docker.project") version "{latestRevision}"
+    id("com.intershop.gradle.icm.docker.gebtest") version "3.4.0"
 }
 
-intershop {
-    ...
-}
-
-intershop_docker {
-
+extensions.getByType(GebConfiguration::class.java).apply {
+    localDriver {
+        register("geckoDriver") {
+            osPackages {
+                register("linux") {
+                    url.set("https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz")
+                    archiveType.set("tar.gz")
+                    webDriverExecName.set("geckodriver")
+                }
+                register("win") {
+                    url.set("https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-win32.zip")
+                    archiveType.set("zip")
+                    webDriverExecName.set("geckodriver.exe")
+                }
+                register("mac") {
+                    url.set("https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-macos.tar.gz")
+                    archiveType.set("tar.gz")
+                    webDriverExecName.set("geckodriver")
+                }
+            }
+        }
+        register("chromeDriver") {
+            osPackages {
+                register("linux") {
+                    url.set("https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_linux64.zip")
+                    archiveType.set("zip")
+                    webDriverExecName.set("chromedriver")
+                }
+                register("win") {
+                    url.set("https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_win32.zip")
+                    archiveType.set("zip")
+                    webDriverExecName.set("chromedriver.exe")
+                }
+                register("mac") {
+                    url.set("https://chromedriver.storage.googleapis.com/86.0.4240.22/chromedriver_mac64.zip")
+                    archiveType.set("zip")
+                    webDriverExecName.set("chromedriver")
+                }
+            }
+        }
+    }
 }
 ----
 ++++
 </details>
 ++++
+
+== Intershop Commerce Management SolrCloud Plugin
+If the project includes SolrCloud as a search engine, this plugin provides some necessary tasks for the
+management of search indexes. It uses the same configuration like the ICM Docker plugin.
+
+== Configuration properties file
+For the configuration on a special local maschine it is necessary to provide an Intershop licence file and a
+`imc.properties` file in file structure. It is possible to configure the location with environment properties.
+This is a minimum set of properties.
+
+icm.properties
+[source, properties]
+----
+# database connection configuration
+intershop.databaseType = oracle|mssql
+intershop.jdbc.url = jdbc:oracle:thin:@host:1521:XE | jdbc:sqlserver://host:1433;databaseName=dbname
+intershop.jdbc.user = user
+intershop.jdbc.password = password
+
+# webserver configuration of the appserver
+intershop.WebServerURL=http://host:8080
+intershop.WebServerSecureURL=https://host:8443
+
+# webserver configuration
+webserver.http.port = 8080
+webserver.https.port = 8080
+
+# database container configuration
+intershop.db.mssql.dbname = dbname
+
+# server configuration
+intershop.servletEngine.connector.port = 7743
+
+# local host configuration
+# this is not always 'localhost'.
+intershop.local.hostname = 192.168.2.205
+
+# solr  configuiration
+solr.zooKeeperHostList = jengsolr1.intershop.de:2181;jengsolr2.intershop.de:2181;jengsolr3.intershop.de:2181/solr8
+solr.clusterIndexPrefix = devhost
+
+intershop.smc.admin.user.name = admin
+intershop.smc.admin.user.password = password
+
+# disable the ssl verification of the webserver
+disable.ssl.verification = true
+
+# geb.local.environment = chromePC
+# geb.local.driver = chromeDriver
+
+----
+
+== License
+
+Copyright 2014-2020 Intershop Communications.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
