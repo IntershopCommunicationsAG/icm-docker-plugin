@@ -88,7 +88,7 @@ open class ProjectConfiguration @Inject constructor(objectFactory: ObjectFactory
     val created: Property<String> = objectFactory.property(String::class.java)
 
     /**
-     * Provider for the creation time of images in one project.
+     * Provider for the base image of the project project.
      */
     val baseImageNameProvider: Provider<String>
         get() = baseImageName

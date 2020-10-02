@@ -49,7 +49,7 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
      * @param closure closure with project information configuration
      */
     @Suppress("unused")
-    fun developmentConfig(closure: Closure<Any>) {
+    fun developmentConfig(closure: Closure<DevelopmentConfiguration>) {
         ConfigureUtil.configure(closure, developmentConfig)
     }
 

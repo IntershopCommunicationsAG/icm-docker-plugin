@@ -184,6 +184,138 @@ imageBuild {
 </details>
 ++++
 
+=== Extension 'intershop_docker'
+
+==== Properties
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`containerProjectPrefix` | `Property<String>`  | <project name> | Underscores will be replaced with dashes. This property is used for container names, volumes and network in Docker.
+|`developmentConfig`      | `DevelopmentConfiguration` | | This extension handles the access to a local property file, to adapt the configuration to a local environment. See <<PropertiesFile>>.
+|`images`       | `Images`  | | This extension contains the configuration of all supported and necessary images.
+|`imageBuild`   | `ProjectConfiguration`  | | This part contains the configuration for all image artifacts of a build project.
+|===
+
+==== Methods
+
+[cols="17%,17%,66%", width="99%, options="header"]
+|===
+|Method | Parameter | Description
+
+|`developmentConfig` | `Closure<DevelopmentConfiguration>` | Configures the development configuration of this project in a Groovy context.
+|`developmentConfig` | `Action<in DevelopmentConfiguration>` | Configures the development configuration of this project in a Kotlin script context.
+|`images` | `Closure<Images>` | Configures the images' configuration of this project in a Groovy context.
+|`images` | `Action<in Images>` | Configures the images' configuration of this project in a Kotlin script context.
+|`imageBuild` | `Closure<ProjectConfiguration>` | Configures the image build configuration of this project in a Groovy context.
+|`imageBuild` | `Action<in ProjectConfiguration>` | Configures the image build configuration of this project in a Kotlin script context.
+|===
+
+===== Development Configuration `DevelopmentConfiguration`
+
+====== Properties
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`appserverAsContainer` | `Boolean` | `false`       | If the appserver runs as a container this value must be true. This is used for customer projects.
+|`licenseDirectory`     | `String` | `<GRADLE_USER_HOME>/icm-default/lic` | The directory with a valid license file for the running project.
+|`configDirectory`     | `String` | `<GRADLE_USER_HOME>/icm-default/conf` | This directory contains the environment specific development configuration for ICM. See <<PropertiesFile>>.
+|`licenseFilePath`      | `String` | `<licenseDirectory>/license.xml` | The file path of the license file (read only).
+|`configFilePath`      | `String` | `<configDirectory>/icm.properties` | The path of the configuration file (read only).
+
+|===
+
+====== Methods
+
+[cols="17%,17%,66%", width="99%, options="header"]
+|===
+|Method | Parameter | Description
+|`getConfigProperty` | `String` | Get a property from the configuration file. If the property key is not available the return value is empty.
+|`getConfigProperty` | `String`, `String` | Get a property from the configuration file. If the property key is not available the return value is specified by the second parameter.
+
+|===
+
+===== Image Configuration `Images`
+
+====== Properties
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`icmsetup`   | `Property<String>` | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the most ICM images.
+|`webadapter` | `Property<String>` | `docker.intershop.de/intershop/icm-webadapter:latest`       | The image contains the web server of the Intershop Commerce Management application with a special Intershop Apache module.
+|`webadapteragent`  | `Property<String>` | `docker.intershop.de/intershop/icm-webadapteragent:latest`       | The web adapter agent image of the Intershop Commerce Management application.
+|`mssqldb`  | `Property<String>` | `mcr.microsoft.com/mssql/server:2019-latest`       | The Microsoft SQL  server image. There will be also a build file available.
+|`oracledb` | `Property<String>` | `docker.intershop.de/intershop/oracle-xe-server:18.4.0`       | This image is only available internally. The build files will be provided.
+|`mailsrv`  | `Property<String>` | `mailhog/mailhog:latest`       | A mail server for testing the mail feature of the application.
+|===
+
+===== Image Build Configuration `ProjectConfiguration`[[ProjectConfiguration]]
+
+====== Properties
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`license` | `Property<String>` | "Intershop Communications AG" | The license of image artifacts created by this build.
+|`maintainer` | `Property<String>` | "Intershop Communications AG \"www.intershop.de\"" | The maintainer of image artifacts created by this build.
+|`baseDescription` | `Property<String>` | "Intershop Commerce Management" | The base description for all image artifacts created by this build.
+|`version` | `Property<String>` | | The version of image artifacts created by this build.
+|`created` | `Property<String>` | <build time> | The build time of image artifacts created by this build. The machine time is used for the default value.
+|`baseImageName` | `Property<String>` | "server/intershop/icm" | The base image name for all image artifacts created by this build.
+|`images` | `Images` | | The detailed configuration of all image builds.
+
+|===
+
+====== Image Build Configuration `Images`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`mainImage` | `ImageConfiguration` | | The configuration of the main server image build.
+|`testImage` | `ImageConfiguration` | | The configuration of the test server image build. This image uses the main image as a base image.
+|`initImage` | `ImageConfiguration` | | The configuration of the init image for the ICM application server.
+|`initTestImage` | `ImageConfiguration` | | The configuration of the test init image. This image uses the init image as a base image.
+
+|===
+
+For all properties configurations methods with a closure or an action are available.
+
+====== Detailed Image Build Configuration `ImageConfiguration`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`nameExtension` | `Property<String>` | | Image name extension of the special image. The base is used from the <<ProjectConfiguration>>.
+|`description` | `Property<String>` | | Extended description of the image.
+|`srcFiles` | `ConfigurableFileCollection` | | Source files for the build (start scripts etc.). This files are referenced by the Dockerfile.
+|`pkgTaskName` | `Property<String>` | | Files will be packaged by the build for an installation in a docker image. This is the name of the package task.
+|`dockerfile` | `RegularFileProperty` | | The docker file for the image build.
+|`dockerBuildDir` | `Property<String>` | | The working director for the image build.
+|`enabled` | `Property<Boolean>` | | The build of the image can be disabled for the project.
+
+|===
+
+=== Tasks
+[cols="26%,33%,40%", width="99%, options="header"]
+|===
+| Task name                  | Class                              |Description
+
+| **    | `` |
+|===
+
+
 == Intershop Commerce Management Project Docker Plugin
 This plugin configures additional tasks of an Intershop Commerce Management customer project. It uses the same Gradle
 configuration like the Docker Plugin. With this plugin additional task will be configured and the task dependencies are
@@ -191,14 +323,48 @@ adapted for the development process.
 
 The plugins must be applied to the root project.
 
+=== Extension 'intershop_docker'
+
+==== Properties
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+|`ishUnitTests` | `NamedDomainObjectContainer<Suite>`  | | This is a configuration for special Intershop server unit tests. This configuration is used only in a project.
+|===
+
+=== Tasks
+[cols="26%,33%,40%", width="99%, options="header"]
+|===
+| Task name                  | Class                              |Description
+
+| **    | `` |
+|===
+
 == Intershop Commerce Management Test Docker Plugin
 Additional test tasks of an Intershop Commerce Management project will be added by this plugin. It uses the same Gradle
 configuration like the Docker Plugin. One additional task is added by this plugin.
 
 The plugins must be applied to the root project.
 
+=== Tasks
+[cols="26%,33%,40%", width="99%, options="header"]
+|===
+| Task name                  | Class                              |Description
+
+| **    | `` |
+|===
+
 == Intershop Commerce Management GebTest Docker Plugin
 This plugin adds test tasks for link:https://gebish.org[Geb].
+
+=== Tasks
+[cols="26%,33%,40%", width="99%, options="header"]
+|===
+| Task name                  | Class                              |Description
+
+| **    | `` |
+|===
 
 === Plugin Configuration
 The plugin must be applied to the project with included Geb tests. It requires an applied ICM Docker plugin.
@@ -320,11 +486,27 @@ extensions.getByType(GebConfiguration::class.java).apply {
 </details>
 ++++
 
+=== Tasks
+[cols="26%,33%,40%", width="99%, options="header"]
+|===
+| Task name                  | Class                              |Description
+
+| **    | `` |
+|===
+
 == Intershop Commerce Management SolrCloud Plugin
 If the project includes SolrCloud as a search engine, this plugin provides some necessary tasks for the
 management of search indexes. It uses the same configuration like the ICM Docker plugin.
 
-== Configuration properties file
+=== Tasks
+[cols="26%,33%,40%", width="99%, options="header"]
+|===
+| Task name                  | Class                              |Description
+
+| **    | `` |
+|===
+
+== Configuration properties file [[PropertiesFile]]
 For the configuration on a special local maschine it is necessary to provide an Intershop licence file and a
 `imc.properties` file in file structure. It is possible to configure the location with environment properties.
 This is a minimum set of properties.
