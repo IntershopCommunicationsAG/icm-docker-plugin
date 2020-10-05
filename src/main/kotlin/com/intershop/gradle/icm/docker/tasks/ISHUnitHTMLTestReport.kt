@@ -32,8 +32,8 @@ import javax.inject.Inject
 /**
  * Generates a HTML report from JUnit xml report files.
  */
-open class ISHUnitHTMLTestReportTask @Inject constructor(projectLayout: ProjectLayout,
-                                                    objectFactory: ObjectFactory) : DefaultTask() {
+open class ISHUnitHTMLTestReport @Inject constructor(projectLayout: ProjectLayout,
+                                                     objectFactory: ObjectFactory) : DefaultTask() {
     @get:InputDirectory
     val testResultDirectory: DirectoryProperty = objectFactory.directoryProperty()
 

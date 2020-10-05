@@ -22,7 +22,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
-open class StartExtraContainerTask
+open class StartExtraContainer
     @Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
 
     override fun runRemoteCommand() {

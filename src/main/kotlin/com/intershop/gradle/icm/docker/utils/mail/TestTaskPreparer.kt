@@ -18,7 +18,7 @@
 package com.intershop.gradle.icm.docker.utils.mail
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.Project
@@ -38,7 +38,7 @@ class TestTaskPreparer(project: Project,
     init {
         initBaseTasks()
 
-        project.tasks.register ("start${extensionName}", StartExtraContainerTask::class.java) { task ->
+        project.tasks.register ("start${extensionName}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.description = "Starts an special test mail server for ISHUnitTests"
 

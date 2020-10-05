@@ -30,6 +30,6 @@ open class GebConfiguration @Inject constructor(objectFactory: ObjectFactory) {
             = objectFactory.domainObjectContainer(GebLocalDriver::class.java)
 
     init {
-        gebEnvironment.set( "firefoxContainer" )
+        gebEnvironment.convention( "firefoxContainer" )
     }
 }

@@ -19,8 +19,8 @@ package com.intershop.gradle.icm.docker
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.WaitForServer
-import com.intershop.gradle.icm.docker.tasks.solrCloud.CleanUpSolrTask
-import com.intershop.gradle.icm.docker.tasks.solrCloud.ListSolrTask
+import com.intershop.gradle.icm.docker.tasks.solrCloud.CleanUpSolr
+import com.intershop.gradle.icm.docker.tasks.solrCloud.ListSolr
 import com.intershop.gradle.icm.docker.tasks.solrCloud.RebuildSolrSearchIndex
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_NAME
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_NAME_VALUE
@@ -64,7 +64,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     wfs.hostAddress.set(host)
                 }
 
-                val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolrTask::class.java ) { cus ->
+                val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolr::class.java ) { cus ->
                     cus.group = "Solr Cloud Support"
                     cus.description = "Removes all collections and configuration for the specified prefix"
 
@@ -72,7 +72,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     cus.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX))
                 }
 
-                val solrList = project.tasks.register("listSolr", ListSolrTask::class.java ) { lst ->
+                val solrList = project.tasks.register("listSolr", ListSolr::class.java ) { lst ->
                     lst.group = "Solr Cloud Support"
                     lst.description = "List all collections and configuration for the specified prefix"
 

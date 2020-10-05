@@ -18,7 +18,7 @@
 package com.intershop.gradle.icm.docker.utils.appserver
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartServerContainerTask
+import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -35,7 +35,7 @@ class ContainerTaskPreparer(project: Project,
     init {
         initBaseTasks()
 
-        project.tasks.register("start${extensionName}", StartServerContainerTask::class.java) { task ->
+        project.tasks.register("start${extensionName}", StartServerContainer::class.java) { task ->
             configureContainerTask(task)
 
             task.description = "Start container without any special command (sleep)"

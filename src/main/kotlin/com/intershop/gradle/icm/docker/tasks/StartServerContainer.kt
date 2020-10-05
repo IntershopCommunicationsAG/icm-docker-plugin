@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.thread
 
-open class StartServerContainerTask
+open class StartServerContainer
     @Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
 
     private val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)

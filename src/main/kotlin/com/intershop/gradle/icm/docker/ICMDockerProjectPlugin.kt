@@ -19,8 +19,8 @@ package com.intershop.gradle.icm.docker
 import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.GROUP_SERVERBUILD
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
-import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReportTask
-import com.intershop.gradle.icm.docker.tasks.ISHUnitTask
+import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
+import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.RemoveNetwork
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
@@ -179,13 +179,13 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
         }
 
         val ishUnitTest = project.tasks.register(TASK_ISHUNIT_REPORT,
-            ISHUnitHTMLTestReportTask::class.java) { task ->
+            ISHUnitHTMLTestReport::class.java) { task ->
             task.group = GROUP_SERVERBUILD
             task.description = "Generates report for ISHUnitTest execution"
         }
 
         extension.ishUnitTests.all {
-            val ishunitTest = project.tasks.register(it.name + ISHUNIT_TEST, ISHUnitTask::class.java) { task ->
+            val ishunitTest = project.tasks.register(it.name + ISHUNIT_TEST, ISHUnitTest::class.java) { task ->
                 task.group = GROUP_SERVERBUILD
                 task.description = "Starts ISHUnitTest suite '" + it.name + "' in an existing ICM base container."
 

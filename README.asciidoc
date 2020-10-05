@@ -1,5 +1,5 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 1.0.0
+:latestRevision: 1.2.0
 :toc:
 :icons: font
 
@@ -184,9 +184,9 @@ imageBuild {
 </details>
 ++++
 
-=== Extension 'intershop_docker'
+==== Extension 'intershop_docker'
 
-==== Properties
+*Properties*
 
 [cols="25%,10%,10%,55%", width="99%, options="header"]
 |===
@@ -198,7 +198,7 @@ imageBuild {
 |`imageBuild`   | `ProjectConfiguration`  | | This part contains the configuration for all image artifacts of a build project.
 |===
 
-==== Methods
+*Methods*
 
 [cols="17%,17%,66%", width="99%, options="header"]
 |===
@@ -214,7 +214,7 @@ imageBuild {
 
 ===== Development Configuration `DevelopmentConfiguration`
 
-====== Properties
+*Properties*
 
 [cols="25%,10%,10%,55%", width="99%, options="header"]
 |===
@@ -228,11 +228,12 @@ imageBuild {
 
 |===
 
-====== Methods
+*Methods*
 
 [cols="17%,17%,66%", width="99%, options="header"]
 |===
 |Method | Parameter | Description
+
 |`getConfigProperty` | `String` | Get a property from the configuration file. If the property key is not available the return value is empty.
 |`getConfigProperty` | `String`, `String` | Get a property from the configuration file. If the property key is not available the return value is specified by the second parameter.
 
@@ -240,13 +241,13 @@ imageBuild {
 
 ===== Image Configuration `Images`
 
-====== Properties
+*Properties*
 
 [cols="25%,10%,10%,55%", width="99%, options="header"]
 |===
 |Property               | Type      | Default value | Description
 
-|`icmsetup`   | `Property<String>` | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the most ICM images.
+|`icmsetup`   | `Property<String>` | `docker.intershop.de/intershop/icm-base:latest`       | This image is used as a base image for the most ICM images.
 |`webadapter` | `Property<String>` | `docker.intershop.de/intershop/icm-webadapter:latest`       | The image contains the web server of the Intershop Commerce Management application with a special Intershop Apache module.
 |`webadapteragent`  | `Property<String>` | `docker.intershop.de/intershop/icm-webadapteragent:latest`       | The web adapter agent image of the Intershop Commerce Management application.
 |`mssqldb`  | `Property<String>` | `mcr.microsoft.com/mssql/server:2019-latest`       | The Microsoft SQL  server image. There will be also a build file available.
@@ -256,7 +257,7 @@ imageBuild {
 
 ===== Image Build Configuration `ProjectConfiguration`[[ProjectConfiguration]]
 
-====== Properties
+*Properties*
 
 [cols="25%,10%,10%,55%", width="99%, options="header"]
 |===
@@ -272,7 +273,7 @@ imageBuild {
 
 |===
 
-====== Image Build Configuration `Images`
+===== Image Build Configuration `Images`
 
 *Properties*
 
@@ -289,7 +290,7 @@ imageBuild {
 
 For all properties configurations methods with a closure or an action are available.
 
-====== Detailed Image Build Configuration `ImageConfiguration`
+===== Detailed Image Build Configuration `ImageConfiguration`
 
 *Properties*
 
@@ -327,15 +328,16 @@ For all properties configurations methods with a closure or an action are availa
 
 |===
 
-`The package of all tasks is `com.intershop.gradle.icm.docker.tasks`.`
+[[TaskClasses]]
+The package of all tasks is `com.intershop.gradle.icm.docker.tasks`.
 
 [cols="26%,33%,40%", width="99%, options="header"]
 |===
 | Task name                  | Class                              |Description
 
 | *pull** | `AbstractPullImage` | These task pull the image or a set of images.
-| *start** | `StartExtraContainerTask` | Start image with the necessary configuration.
-| *stop** | `StopExtraContainerTask` | Stop image by name.
+| *start** | `StartExtraContainer` | Start image with the necessary configuration.
+| *stop** | `StopExtraContainer` | Stop image by name.
 | *remove** | `RemoveContainerByName` | Removes image from Docker by name.
 
 |===
@@ -359,9 +361,9 @@ in the build directory `mailoutput`.
 .2+| Oracle | `intershop.db.oracle.listenerport` | Exposed listener port of the database.
 |`intershop.db.oracle.port` | Exposed enterprise manager port of the oracle db.
 
-.2+| WA | `webserver.http.port` | Exposed http port of the webserver.
+.3+| WA | `webserver.http.port` | Exposed http port of the webserver.
 | `webserver.https.port` | Exposed https port of the webserver.
-
+| `intershop.local.hostname` | Hostname or IP of the local host. This is used for the connection between WA and AS on the local host.
 |===
 
 == Intershop Commerce Management Project Docker Plugin
@@ -371,23 +373,68 @@ adapted for the development process.
 
 The plugins must be applied to the root project.
 
-=== Extension 'intershop_docker'
+=== Plugin Configuration
 
-==== Properties
+==== Extension 'intershop_docker'
+
+*Properties*
 
 [cols="25%,10%,10%,55%", width="99%, options="header"]
 |===
 |Property               | Type      | Default value | Description
-|`ishUnitTests` | `NamedDomainObjectContainer<Suite>`  | | This is a configuration for special Intershop server unit tests. This configuration is used only in a project.
+
+|`ishUnitTests` | `NamedDomainObjectContainer<Suite>`  | | This is a configuration for special Intershop server unit tests. This configuration is used only in a customer project.
+|===
+
+===== Object `Suite`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`cartridge` | `Property<String>`  | | This is the name of a cartridge that also contains ishUnitTests.
+|`testSuite` | `Property<String>`  | | The name of the test suite.
+
+|===
+
+===== Additional Image Configuration `Images`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`icmbase`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the ICM application server image.
+|`icminit`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as-init:latest`  | This image is used as a base image for ICM application server initialization image.
+|`solr`   | `Property<String>`      | `solr/latest`       | This image is used for the Solr Cloud configuration with a single node.
+|`zookeeper`   | `Property<String>` | `zookeeper:latest`  | This image is used for the Solr Cloud configuration with a single node.
+
 |===
 
 === Tasks
-[cols="26%,33%,40%", width="99%, options="header"]
-|===
-| Task name                  | Class                              |Description
 
-| **    | `` |
+[cols="25%,75%", width="99%, options="header"]
 |===
+| Task name           |Description
+
+| **SolrCloud*      | These tasks orchestrate all Solr Cloud related tasks.
+| **ZK*             | These tasks pull, start, stop and remove the Zookeeper image.
+| **Solr*           | These tasks pull, start, stop and remove the Solr image.
+| **Container*      | These tasks pull, start, stop and remove the ICM application server image with a special command. There is no running process inside, but it uses the same configuration like the appserver container.
+| **AS*             | These tasks pull, start, stop and remove the ICM application server image.
+| **Server*         | These tasks orchestrate all ICM server related tasks (web server and app server)
+| *dbPrepare*       | This task starts dbPrepare inside the running "Container" docker container.
+| *ishUnitTestReport*  | This task starts the creation of a report for all ISHUnit test executions.
+| **ISHUnitTest*    | These tasks starts ishUnit tests inside the running "Container" docker container.
+
+|===
+
+For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
+The task *startContainer* and *startAs* uses `StartServerContainer`. *pullContainer* and *pullAS* uses `PullImage`.
+With this task it is possible to use an alternative image for these tasks with a command line parameter `--altImage`.
 
 == Intershop Commerce Management Test Docker Plugin
 Additional test tasks of an Intershop Commerce Management project will be added by this plugin. It uses the same Gradle
@@ -406,13 +453,27 @@ The plugins must be applied to the root project.
 == Intershop Commerce Management GebTest Docker Plugin
 This plugin adds test tasks for link:https://gebish.org[Geb].
 
+=== Plugin Configuration
+==== Additional Image Configuration `Images`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`testmailsrv`   | `Property<String>`   | `docker-internal.rnd.intershop.de/icm-test/iste-mail:latest`       | This image is used for ICM HTMLUnitTests.
+|===
+
 === Tasks
 [cols="26%,33%,40%", width="99%, options="header"]
 |===
-| Task name                  | Class                              |Description
+| Task name       | Description
 
-| **    | `` |
+| **TestMailSrv*  | These tasks pull, start, stop and remove the Test mail server image.
 |===
+
+For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
 
 === Plugin Configuration
 The plugin must be applied to the project with included Geb tests. It requires an applied ICM Docker plugin.
@@ -534,12 +595,230 @@ extensions.getByType(GebConfiguration::class.java).apply {
 </details>
 ++++
 
+This plugin adds also a source set configuration for gebTests:
+
+- source directory is `"src/gebTest/groovy"`
+- resource directory is `"src/gebTest/resources"`
+
+The plugin is based on the following GebTest configuration:
+
+.resources/GebConfig.groovy
+[source,groovy]
+----
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
+import org.openqa.selenium.Dimension
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.firefox.FirefoxDriver
+import org.openqa.selenium.firefox.FirefoxOptions
+import org.openqa.selenium.firefox.FirefoxDriverLogLevel
+import org.testcontainers.DockerClientFactory
+import org.testcontainers.containers.BrowserWebDriverContainer
+import org.testcontainers.containers.Network
+
+def webDriverExec = System.getProperty('webdriverExec')
+def containerNetwork = System.getProperty('container.network')
+
+waiting {
+    // max request time in seconds
+    timeout = 90
+    // http://gebish.org/manual/current/#failure-causes
+    includeCauseInMessage = true
+}
+
+environments {
+    firefoxContainer {
+        driver = {
+            def networkId = findNetworkIdForName(containerNetwork)
+            BrowserWebDriverContainer webdriverContainer = addFirefoxContainerToNetwork(networkId)
+            webdriverContainer.start()
+            driver = webdriverContainer.getWebDriver()
+            driver
+        }
+    }
+
+    chromeContainer {
+        driver = {
+            def networkId = findNetworkIdForName(containerNetwork)
+            BrowserWebDriverContainer webdriverContainer = addFirefoxContainerToNetwork(networkId)
+            webdriverContainer.start()
+            driver = webdriverContainer.getWebDriver()
+            driver
+        }
+    }
+
+    chromeTablet {
+        driver = {
+            def driver = createChromeDriverInstance(webDriverExec)
+            driver.manage().window().setSize(new Dimension(1024, 768))
+            driver
+        }
+    }
+
+    chromePC {
+        driver = {
+            def driver = createChromeDriverInstance(webDriverExec)
+            driver.manage().window().setSize(new Dimension(1920, 1200))
+            driver
+        }
+    }
+
+    geckoPC {
+        driver = {
+            def driver = createGeckoDriverInstance(webDriverExec)
+            driver.manage().window().setSize(new Dimension(1920, 1200))
+            driver
+        }
+    }
+
+    geckoTablet {
+        driver = {
+            def driver = createGeckoDriverInstance(webDriverExec)
+            driver.manage().window().setSize(new Dimension(1024, 768))
+            driver
+        }
+    }
+}
+
+private def createGeckoDriverInstance(String webDriverExec) {
+    System.setProperty("webdriver.gecko.driver", webDriverExec)
+    FirefoxOptions options = new FirefoxOptions()
+    //options.setHeadless(true)
+    options.setLogLevel(FirefoxDriverLogLevel.ERROR)
+    driverInstance = new FirefoxDriver(options)
+    driverInstance
+}
+
+private def createChromeDriverInstance(String webDriverExec) {
+    System.setProperty("webdriver.chrome.driver", webDriverExec)
+    driverInstance = new ChromeDriver()
+    driverInstance
+}
+
+private BrowserWebDriverContainer addFirefoxContainerToNetwork(String networkId){
+    Network tcNet = createNetwork(networkId)
+
+    FirefoxOptions options = new FirefoxOptions()
+    options.setHeadless(true)
+    BrowserWebDriverContainer webdriverContainer = new BrowserWebDriverContainer<>()
+            .withCapabilities(options)
+            .withNetwork(tcNet)
+
+    return webdriverContainer
+}
+
+private BrowserWebDriverContainer addChromeContainerToNetwork(String networkId){
+    Network tcNet = createNetwork(networkId)
+
+    ChromeOptions options = new ChromeOptions()
+    options.setHeadless(true)
+    BrowserWebDriverContainer webdriverContainer = new BrowserWebDriverContainer<>()
+            .withCapabilities(options)
+            .withNetwork(tcNet)
+
+    return webdriverContainer
+}
+
+private String findNetworkIdForName(String name) {
+    def client = DockerClientFactory.instance().client()
+    def rv = client.inspectNetworkCmd().withNetworkId(name).exec().id
+    return rv
+}
+
+private createNetwork(networkId) {
+    Network tcNet = new Network() {
+        @Override
+        String getId() {
+            return networkId
+        }
+
+        @Override
+        void close() throws Exception {}
+
+        @Override
+        Statement apply(Statement base, Description description) {
+            return null
+        }
+    }
+    return tcNet
+}
+----
+
+The plugin set the following system properties for the test:
+
+[cols="30%,70%", width="99%"]
+|===
+| `webdriverExec`     | Executable name for local drivers from the extension configuration.
+| `container.network` | Network for the test containers framework.
+| `geb.build.baseUrl` | The url will be calculated from the base configuration of the web server image. If the container framework is used, the internal network name is used.
+|===
+
+Furthermore the host
+
+==== Extension 'gebConfiguration'
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`gebEnvironment` | `Property<String>`  | "firefoxContainer" | Name of the configured in the Geb configuration file `GebConfig.groovy`.
+|`localDriver` | `NamedDomainObjectContainer<GebLocalDriver>` | | Container with local driver configurations.
+|===
+
+==== Object `GebLocalDriver`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`osPackages` | `NamedDomainObjectContainer<GebDriverDownload>` | | Container with a configuration to download the necessary driver download.
+|===
+
+==== Object `GebDriverDownload`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`url` | `Property<String>` | | Container with a configuration to download the necessary driver download.
+|`archiveType` | `Property<String>` | | Container with a configuration to download the necessary driver download.
+|`webDriverExecName` | `Property<String>` | | Container with a configuration to download the necessary driver download.
+
+|===
+
 === Tasks
 [cols="26%,33%,40%", width="99%, options="header"]
 |===
-| Task name                  | Class                              |Description
+| Task name    | Class  |Description
 
-| **    | `` |
+| *gebTest*    | `Test` +
+`GebTest` | Starts the Geb Test form the gebTest source set.
+| *downloadDriver* | `GebDriverDownload` | Downloads and unpack the configured local driver if necessary.
+|===
+
+<<PropertiesFile>> and Image Properties
+
+It is possible to switch to a local driver for development purposes.
+[cols="10%,45%,45%", width="99%, options="header"]
+|===
+| Task | Property Key | Property Value
+
+.2+| `gebTest` | `geb.local.driver` | The name of the local driver.
+| `geb.local.environment` | The name of the local environment.
+3+| For container configuration
+.2+| *** | `webserver.container.http.port`  | The exposed http port of the webserver. Default: 808
+| `webserver.container.https.port` | The exposed https port of the webserver. Default: 8443
+3+| For local configuration
+.3+| *** | `intershop.local.hostname` | The hostname or the IP of the local machine.
+| `webserver.http.port`  | The exposed http port of the webserver.
+| `webserver.https.port` | The exposed https port of the webserver.
 |===
 
 == Intershop Commerce Management SolrCloud Plugin
@@ -551,8 +830,30 @@ management of search indexes. It uses the same configuration like the ICM Docker
 |===
 | Task name                  | Class                              |Description
 
-| **    | `` |
+| *cleanUpSolr*    | `CleanUpSolr` | Removes all search configurations and collections with a specified prefix.
+| *listSolr*    | `ListSolr` | List all search configurations and collections with a specified prefix.
+| *rebuildSearchIndex*    | `RebuildSolrSearchIndex` | Starts an ICM job over the ICM Rest interface to rebuild all search indexes.
+
 |===
+
+<<PropertiesFile>> and Image Properties
+
+[cols="10%,45%,45%", width="99%, options="header"]
+|===
+| Task | Property Key | Property Value
+
+.2+| cleanUpSolr +
+listSolr| `solr.zooKeeperHostList` | A list of all Zookeeper hosts with port and the Solr server prefix. +
+e.g. zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/solr
+| `solr.clusterIndexPrefix` | A simple installation specific prefix for the Solr search configuration, e.g. the hostname.
+.3+| rebuildSearchIndex | `intershop.smc.admin.user.name` | This is the ICM SMC admin user. Default: admin.
+| `intershop.smc.admin.user.password` | This is the password of the SMC admin user.
+| `disable.ssl.verification` | If no public SSL certificate is installed on the webserver, it is possible to disable the verification with the value `true`.
+.3+| *** | `intershop.local.hostname` | The hostname or the IP of the local machine.
+| `webserver.http.port`  | The exposed http port of the webserver.
+| `webserver.https.port` | The exposed https port of the webserver.
+|===
+
 
 == Configuration properties file [[PropertiesFile]]
 For the configuration on a special local maschine it is necessary to provide an Intershop licence file and a
