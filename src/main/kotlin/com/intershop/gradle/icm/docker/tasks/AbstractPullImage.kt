@@ -30,7 +30,7 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
 
-abstract class APullImage
+abstract class AbstractPullImage
     @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
 
     private val registryCredentials: DockerRegistryCredentials =

@@ -26,7 +26,7 @@ import javax.inject.Inject
  * Task to pull an image.
  */
 open class PullImage
-    @Inject constructor(objectFactory: ObjectFactory) : APullImage(objectFactory) {
+    @Inject constructor(objectFactory: ObjectFactory) : AbstractPullImage(objectFactory) {
 
     @get:Option(option= "altImage", description = "Use an other image independent from the build configuration")
     @get:Input
