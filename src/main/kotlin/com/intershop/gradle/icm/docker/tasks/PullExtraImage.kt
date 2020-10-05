@@ -23,7 +23,7 @@ import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
 open class PullExtraImage
-    @Inject constructor(objectFactory: ObjectFactory) : APullImage(objectFactory) {
+    @Inject constructor(objectFactory: ObjectFactory) : AbstractPullImage(objectFactory) {
 
     @get:Input
     override val image: Property<String> = objectFactory.property(String::class.java)

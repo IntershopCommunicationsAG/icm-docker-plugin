@@ -19,7 +19,7 @@ package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.APullImage
+import com.intershop.gradle.icm.docker.tasks.AbstractPullImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
@@ -60,8 +60,8 @@ abstract class AbstractTaskPreparer(protected val project: Project,
         }
     }
 
-    val pullTask: TaskProvider<APullImage> by lazy {
-        project.tasks.named("pull${extensionName}", APullImage::class.java) }
+    val pullTask: TaskProvider<AbstractPullImage> by lazy {
+        project.tasks.named("pull${extensionName}", AbstractPullImage::class.java) }
 
     val stopTask: TaskProvider<StopExtraContainerTask> by lazy {
         project.tasks.named("stop${extensionName}", StopExtraContainerTask::class.java)

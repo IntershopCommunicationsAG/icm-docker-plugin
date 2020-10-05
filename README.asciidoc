@@ -308,13 +308,61 @@ For all properties configurations methods with a closure or an action are availa
 |===
 
 === Tasks
+
+[cols="25%,75%", width="99%, options="header"]
+|===
+| Task name           |Description
+
+| *prepareNetwork*   | Creates a network with the specified name <extension name>-network. All start tasks are dependend on this task.
+| *removeNetwork*    | Removes the network from the Docker configuration.
+| **MSSQL*        | These tasks pull, start, stop and remove the MSSQL image.
+| **Oracle*       | These tasks pull, start, stop and remove the Oracle DB image.
+| **MailSrv*      | These tasks pull, start, stop and remove the Mail server image.
+| *createWebVolumes* | Creates necessary volumes for the ICM web server with WebAdapter Agent.
+| *removeWebVolumes* | Removes web server volumes from the Docker configuration.
+| **WAA* | These tasks pull, start, stop and remove the ICM Web Adapter Agent image.
+| **WA* | These tasks pull, start, stop and remove the ICM Web Adapter image. This image contains a Apache webserver with the ICM WA module.
+| **WebServer* | These tasks orchestrate all web server related tasks.
+| *containerClean* | This task starts the remove tasks for all available objects.
+
+|===
+
+`The package of all tasks is `com.intershop.gradle.icm.docker.tasks`.`
+
 [cols="26%,33%,40%", width="99%, options="header"]
 |===
 | Task name                  | Class                              |Description
 
-| **    | `` |
+| *pull** | `AbstractPullImage` | These task pull the image or a set of images.
+| *start** | `StartExtraContainerTask` | Start image with the necessary configuration.
+| *stop** | `StopExtraContainerTask` | Stop image by name.
+| *remove** | `RemoveContainerByName` | Removes image from Docker by name.
+
 |===
 
+<<PropertiesFile>> and Image Properties
+
+There are no special configuration properties for the mail server.
+The SMTP port is 25 and the web interface listened on 8025. Mails are stored
+in the build directory `mailoutput`.
+
+[cols="10%,45%,45%", width="99%, options="header"]
+|===
+| Task | Property Key | Property Value
+
+.5+| MSSQL |`intershop.db.mssql.hostport` | Exposed port of the database +
+|`intershop.db.mssql.sa.password` | Name of the admin password. Default value is "1ntershop5A".
+|`intershop.db.mssql.recreatedb` | The db will be recreated after a restart if the value is true. Default value is "false".
+|`intershop.db.mssql.recreateuser` | The db will be recreated after a restart if the value is true. Default value is "false".
+|`intershop.db.mssql.dbname` | The name of the database. Default is "icmtestdb"
+
+.2+| Oracle | `intershop.db.oracle.listenerport` | Exposed listener port of the database.
+|`intershop.db.oracle.port` | Exposed enterprise manager port of the oracle db.
+
+.2+| WA | `webserver.http.port` | Exposed http port of the webserver.
+| `webserver.https.port` | Exposed https port of the webserver.
+
+|===
 
 == Intershop Commerce Management Project Docker Plugin
 This plugin configures additional tasks of an Intershop Commerce Management customer project. It uses the same Gradle
