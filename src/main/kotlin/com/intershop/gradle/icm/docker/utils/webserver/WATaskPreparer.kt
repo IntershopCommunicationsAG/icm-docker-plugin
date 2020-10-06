@@ -18,7 +18,7 @@
 package com.intershop.gradle.icm.docker.utils.webserver
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
@@ -50,7 +50,7 @@ class WATaskPreparer(project: Project,
             it.group = "icm container webserver"
         }
 
-        project.tasks.register("start${extensionName}", StartExtraContainerTask::class.java) { task ->
+        project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.group = "icm container webserver"
             task.description = "Start ICM WebServer with WebAdapter"

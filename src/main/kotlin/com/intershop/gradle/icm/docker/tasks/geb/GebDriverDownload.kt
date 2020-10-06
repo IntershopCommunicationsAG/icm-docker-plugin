@@ -34,10 +34,10 @@ import java.io.IOException
 import java.net.URL
 import javax.inject.Inject
 
-open class GebDriverDownloadTask @Inject constructor(objectFactory: ObjectFactory,
-                                                     projectLayout: ProjectLayout,
-                                                     private val fsOps: FileSystemOperations,
-                                                     private val archiveOps: ArchiveOperations
+open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
+                                                 projectLayout: ProjectLayout,
+                                                 private val fsOps: FileSystemOperations,
+                                                 private val archiveOps: ArchiveOperations
 ) : DefaultTask() {
 
     @get:Input

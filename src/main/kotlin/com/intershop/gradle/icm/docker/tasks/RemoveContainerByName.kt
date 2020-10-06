@@ -23,7 +23,7 @@ import javax.inject.Inject
  * Task to remove a container by name.
  */
 open class RemoveContainerByName
-    @Inject constructor(objectFactory: ObjectFactory) : AbstractCommandByName(objectFactory) {
+    @Inject constructor(objectFactory: ObjectFactory) : AbstractCommandByNameTask(objectFactory) {
 
     /**
      * Executes the remote Docker command.

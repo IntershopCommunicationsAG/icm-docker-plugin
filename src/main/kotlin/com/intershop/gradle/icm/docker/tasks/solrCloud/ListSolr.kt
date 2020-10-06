@@ -24,7 +24,7 @@ import org.gradle.api.tasks.TaskAction
 import javax.inject.Inject
 
 
-open class ListSolrTask @Inject constructor(objectFactory: ObjectFactory) : AbstractSolrAdminTask(objectFactory) {
+open class ListSolr @Inject constructor(objectFactory: ObjectFactory) : AbstractSolrAdminTask(objectFactory) {
 
     @TaskAction
     fun listSolrCollectionConfig() {

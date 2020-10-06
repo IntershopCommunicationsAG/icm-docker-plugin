@@ -19,7 +19,7 @@ package com.intershop.gradle.icm.docker.utils.appserver
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
-import com.intershop.gradle.icm.docker.tasks.StopExtraContainerTask
+import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.GradleException
@@ -62,7 +62,7 @@ abstract class AbstractTaskPreparer(project: Project,
             task.image.set(image)
         }
 
-        project.tasks.register("stop${extensionName}", StopExtraContainerTask::class.java) { task ->
+        project.tasks.register("stop${extensionName}", StopExtraContainer::class.java) { task ->
             task.group = "icm container $containerExt"
             task.description = "Stop running container"
             task.containerName.set("${extension.containerPrefix}-${containerExt}")

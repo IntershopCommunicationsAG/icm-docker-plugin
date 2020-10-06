@@ -20,10 +20,10 @@ package com.intershop.gradle.icm.docker
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
 import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownloadTask
-import com.intershop.gradle.icm.docker.tasks.geb.GebTestTask
+import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownload
+import com.intershop.gradle.icm.docker.tasks.geb.GebTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainerTask
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_DRIVER
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_ENVIRONMENT
@@ -69,7 +69,7 @@ class ICMGebTestPlugin : Plugin<Project> {
 
             val startWebSrv = rootProject.tasks.named(
                 "start" + WATaskPreparer.extName,
-                StartExtraContainerTask::class.java
+                StartExtraContainer::class.java
             )
             val startSrv = rootProject.tasks.named(TASK_START_SERVER)
             val networkTask = rootProject.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
@@ -83,7 +83,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                 Configuration.WS_CONTAINER_HTTP_PORT_VALUE
             )
 
-            val gebTest = tasks.register("gebTest", GebTestTask::class.java) {
+            val gebTest = tasks.register("gebTest", GebTest::class.java) {
                 it.testClassesDirs = sourcesets.output.classesDirs
                 it.classpath = sourcesets.runtimeClasspath
 
@@ -124,7 +124,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                         localDriver.osPackages.all { driverDownLoad ->
                             if (driverDownLoad.name == os.value && localDriverConfig == localDriver.name) {
                                 val download =
-                                    tasks.register("downloadDriver", GebDriverDownloadTask::class.java) { task ->
+                                    tasks.register("downloadDriver", GebDriverDownload::class.java) { task ->
                                         task.extension.set(driverDownLoad.archiveType)
                                         task.url.set(driverDownLoad.url)
                                     }

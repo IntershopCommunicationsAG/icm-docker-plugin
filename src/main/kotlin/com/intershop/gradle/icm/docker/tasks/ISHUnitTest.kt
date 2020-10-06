@@ -34,7 +34,7 @@ import java.util.*
 /**
  * Task to run ishunit tests on a running container.
  */
-open class ISHUnitTask : AbstractContainerTask() {
+open class ISHUnitTest : AbstractContainerTask() {
 
     init {
         group = "icm container project"

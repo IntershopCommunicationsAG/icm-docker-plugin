@@ -24,8 +24,8 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import javax.inject.Inject
 
-open class StopExtraContainerTask
-    @Inject constructor(objectFactory: ObjectFactory) :  AbstractCommandByName(objectFactory) {
+open class StopExtraContainer
+    @Inject constructor(objectFactory: ObjectFactory) :  AbstractCommandByNameTask(objectFactory) {
 
     /**
      * Stop timeout in seconds.

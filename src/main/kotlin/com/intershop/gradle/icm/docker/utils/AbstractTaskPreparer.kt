@@ -23,7 +23,7 @@ import com.intershop.gradle.icm.docker.tasks.AbstractPullImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
-import com.intershop.gradle.icm.docker.tasks.StopExtraContainerTask
+import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -46,7 +46,7 @@ abstract class AbstractTaskPreparer(protected val project: Project,
             task.image.set(image)
         }
 
-        project.tasks.register("stop${extensionName}", StopExtraContainerTask::class.java) { task ->
+        project.tasks.register("stop${extensionName}", StopExtraContainer::class.java) { task ->
             task.group = "icm container $containerExt"
             task.description = "Stop running container"
             task.containerName.set("${extension.containerPrefix}-${containerExt}")
@@ -63,8 +63,8 @@ abstract class AbstractTaskPreparer(protected val project: Project,
     val pullTask: TaskProvider<AbstractPullImage> by lazy {
         project.tasks.named("pull${extensionName}", AbstractPullImage::class.java) }
 
-    val stopTask: TaskProvider<StopExtraContainerTask> by lazy {
-        project.tasks.named("stop${extensionName}", StopExtraContainerTask::class.java)
+    val stopTask: TaskProvider<StopExtraContainer> by lazy {
+        project.tasks.named("stop${extensionName}", StopExtraContainer::class.java)
     }
 
     val removeTask: TaskProvider<RemoveContainerByName> by lazy {

@@ -25,7 +25,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 
-open class GebTestTask : Test() {
+open class GebTest : Test() {
 
     @get:Input
     val containerNetwork: Property<String> = objectFactory.property(String::class.java)
