@@ -1,5 +1,5 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 1.2.0
+:latestRevision: 1.2.1
 :toc:
 :icons: font
 
@@ -442,17 +442,6 @@ configuration like the Docker Plugin. One additional task is added by this plugi
 
 The plugins must be applied to the root project.
 
-=== Tasks
-[cols="26%,33%,40%", width="99%, options="header"]
-|===
-| Task name                  | Class                              |Description
-
-| **    | `` |
-|===
-
-== Intershop Commerce Management GebTest Docker Plugin
-This plugin adds test tasks for link:https://gebish.org[Geb].
-
 === Plugin Configuration
 ==== Additional Image Configuration `Images`
 
@@ -466,7 +455,7 @@ This plugin adds test tasks for link:https://gebish.org[Geb].
 |===
 
 === Tasks
-[cols="26%,33%,40%", width="99%, options="header"]
+[cols="25%,75%", width="99%, options="header"]
 |===
 | Task name       | Description
 
@@ -474,6 +463,9 @@ This plugin adds test tasks for link:https://gebish.org[Geb].
 |===
 
 For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
+
+== Intershop Commerce Management GebTest Docker Plugin
+This plugin adds test tasks for link:https://gebish.org[Geb].
 
 === Plugin Configuration
 The plugin must be applied to the project with included Geb tests. It requires an applied ICM Docker plugin.
