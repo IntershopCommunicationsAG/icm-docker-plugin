@@ -46,15 +46,18 @@ open class DevelopmentConfiguration
 
         const val LICENSE_DIR_ENV = "LICENSEDIR"
         const val CONFIG_DIR_ENV = "CONFIGDIR"
+        const val CONFIG_DIR_SEC_ENV = "CONFIGDIR"
 
         const val LICENSE_DIR_SYS = "licenseDir"
         const val CONFIG_DIR_SYS = "configDir"
+        const val CONFIG_DIR_SEC_SYS = "configDir"
 
         const val APPSRV_AS_CONTAINER_ENV = "APPSRVASCONTAINER"
         const val APPSRV_AS_CONTAINER_SYS = "appSrvAsContainer"
 
         const val DEFAULT_LIC_PATH = "icm-default/lic"
         const val DEFAULT_CONFIG_PATH = "icm-default/conf"
+        const val DEFAULT_CONFIGSEC_PATH = "icm-default/confSec"
 
         const val LICENSE_FILE_NAME = "license.xml"
         const val CONFIG_FILE_NAME = "icm.properties"
@@ -62,60 +65,91 @@ open class DevelopmentConfiguration
 
     private val licenseDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
     private val configDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
+    private val configDirectorySecProperty: Property<String> = objectFactory.property(String::class.java)
     private val appserverAsContainerProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
     private val configProperties: Properties = Properties()
+    private val configPropertiesSec: Properties = Properties()
 
     init {
         // read environment
         val gradleUserHomePath = GradleUserHomeLookup.gradleUserHome().absolutePath
 
-        var licDirPath = providerFactory.environmentVariable(LICENSE_DIR_ENV).forUseAtConfigurationTime().orNull
-        var configDirPath = providerFactory.environmentVariable(CONFIG_DIR_ENV).forUseAtConfigurationTime().orNull
+        with(providerFactory) {
+            var licDirPath = environmentVariable(LICENSE_DIR_ENV).forUseAtConfigurationTime().orNull
+            var configDirPath = environmentVariable(CONFIG_DIR_ENV).forUseAtConfigurationTime().orNull
+            var configDirSecPath = environmentVariable(CONFIG_DIR_SEC_ENV).forUseAtConfigurationTime().orNull
 
-        // read system if necessary
-        if(licDirPath == null) {
-            licDirPath = providerFactory.systemProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
-        }
-
-        if(configDirPath == null) {
-            configDirPath = providerFactory.systemProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
-        }
-
-        if(licDirPath == null) {
-            try {
-                licDirPath = providerFactory.gradleProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
-            } catch ( ise: IllegalStateException ) {
-                log.error(ise.message)
+            // read system if necessary
+            if (licDirPath == null) {
+                licDirPath = systemProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
             }
-        }
 
-        if(configDirPath == null) {
-            try {
-                configDirPath = providerFactory.gradleProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
-            } catch ( ise: IllegalStateException ) {
-                log.error(ise.message)
+            if (configDirPath == null) {
+                configDirPath = systemProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
             }
+            if (configDirSecPath == null) {
+                configDirSecPath = systemProperty(CONFIG_DIR_SEC_SYS).forUseAtConfigurationTime().orNull
+            }
+
+            if (licDirPath == null) {
+                try {
+                    licDirPath = gradleProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
+                } catch (ise: IllegalStateException) {
+                    log.error(ise.message)
+                }
+            }
+
+            if (configDirPath == null) {
+                try {
+                    configDirPath = gradleProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
+                } catch (ise: IllegalStateException) {
+                    log.error(ise.message)
+                }
+            }
+            if (configDirSecPath == null) {
+                try {
+                    configDirSecPath = gradleProperty(CONFIG_DIR_SEC_SYS).forUseAtConfigurationTime().orNull
+                } catch (ise: IllegalStateException) {
+                    log.info(ise.message)
+                }
+            }
+
+            if (licDirPath == null) {
+                licDirPath = File(File(gradleUserHomePath), DEFAULT_LIC_PATH).absolutePath
+            }
+
+            if (configDirPath == null) {
+                configDirPath = File(File(gradleUserHomePath), DEFAULT_CONFIG_PATH).absolutePath
+            }
+            if (configDirSecPath == null) {
+                val tempConfigDirSecPath = File(File(gradleUserHomePath), DEFAULT_CONFIGSEC_PATH).absolutePath
+                configDirSecPath = if(File(tempConfigDirSecPath, CONFIG_FILE_NAME).exists()) {
+                    tempConfigDirSecPath } else { null }
+            }
+
+            licenseDirectoryProperty.set(licDirPath)
+            configDirectoryProperty.set(configDirPath)
+
+            if (configDirSecPath != null) {
+                configDirectorySecProperty.set(configDirSecPath)
+
+                val configFile = File(configDirectorySec, CONFIG_FILE_NAME)
+                if (configFile.exists() && configFile.canRead()) {
+                    configPropertiesSec.load(configFile.inputStream())
+                } else {
+                    logger.warn("File for second configuration '{}' does not exists!", configFile.absolutePath)
+                }
+            }
+
+            val configFile = File(configDirectory, CONFIG_FILE_NAME)
+            if (configFile.exists() && configFile.canRead()) {
+                configProperties.load(configFile.inputStream())
+            } else {
+                logger.warn("File '{}' does not exists!", configFile.absolutePath)
+            }
+
+            appserverAsContainerProperty.convention(false)
         }
-
-        if(licDirPath == null) {
-            licDirPath = File(File(gradleUserHomePath), DEFAULT_LIC_PATH).absolutePath
-        }
-
-        if(configDirPath == null) {
-            configDirPath = File(File(gradleUserHomePath), DEFAULT_CONFIG_PATH).absolutePath
-        }
-
-        licenseDirectoryProperty.set(licDirPath)
-        configDirectoryProperty.set(configDirPath)
-
-        val configFile = File(configDirectory, CONFIG_FILE_NAME)
-        if(configFile.exists() && configFile.canRead()) {
-            configProperties.load(configFile.inputStream())
-        } else {
-            logger.warn("File '{}' does not exists!", configFile.absolutePath)
-        }
-
-        appserverAsContainerProperty.convention(false)
     }
 
     /**
@@ -140,8 +174,20 @@ open class DevelopmentConfiguration
     val configDirectory: String
         get() = configDirectoryProperty.get()
 
+    /**
+     * Local configuration path of the project.
+     */
+    val configDirectorySec: String?
+        get() = configDirectorySecProperty.orNull
+
     val configFilePath: String
         get() = File(configDirectory, CONFIG_FILE_NAME).absolutePath
+
+    /**
+     * Get file path for configuration property.
+     */
+    val configFilePathSec: String?
+        get() = configDirectorySecProperty.orNull
 
     fun getConfigProperty(property: String): String {
         return configProperties.getProperty(property, "")

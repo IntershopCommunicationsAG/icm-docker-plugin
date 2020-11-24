@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.utils.webserver
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.CreateVolumes
 import com.intershop.gradle.icm.docker.tasks.RemoveVolumes
+import com.intershop.gradle.icm.docker.utils.Configuration.ADDITIONAL_CONTAINER_PREFIX
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -36,6 +37,11 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
     private val extension = project.extensions.getByType<IntershopDockerExtension>()
 
     init {
+        val addContainerPrefix = trimString(
+            extension.developmentConfig.getConfigProperty(ADDITIONAL_CONTAINER_PREFIX)).capitalize()
+
+        val secInstance = (extension.developmentConfig.configDirectorySec != null && addContainerPrefix.isNotBlank())
+
         val volumes = mapOf(
             "${extension.containerPrefix}-waproperties" to "/intershop/webadapter-conf",
             "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
@@ -52,6 +58,27 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
                 configureWebServerTasks(task, "Removes volumes from Docker")
                 task.volumeNames.set( volumes.keys )
             }
+
+        if(secInstance == true) {
+            val volumesSec = mapOf(
+                "${extension.containerPrefix}-waproperties" to "/intershop/webadapter-conf",
+                "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
+                "${extension.containerPrefix}-walogs" to "/intershop/logs")
+
+            val createVolumesSec =
+                project.tasks.register(
+                    "create${TASK_EXT_VOLUMES}${addContainerPrefix}", CreateVolumes::class.java) { task ->
+                    configureWebServerTasks(task, "Creates volumes in Docker for second instance")
+                    task.volumeNames.set( volumes.keys )
+                }
+
+            val removeVolumesSec =
+                project.tasks.register(
+                    "remove${TASK_EXT_VOLUMES}${addContainerPrefix}", RemoveVolumes::class.java) { task ->
+                    configureWebServerTasks(task, "Removes volumes from Docker for second instance")
+                    task.volumeNames.set( volumes.keys )
+                }
+        }
 
         val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes)
         val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes)
@@ -105,4 +132,9 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         task.group = "icm container webserver"
         task.description = description
     }
+
+    private fun trimString(s: String): String
+            = s.replace("\\s+".toRegex(), "").
+                replace("_", "").
+                replace("-", "").toLowerCase()
 }
