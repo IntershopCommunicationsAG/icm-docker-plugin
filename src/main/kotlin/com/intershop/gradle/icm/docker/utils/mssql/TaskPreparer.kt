@@ -100,6 +100,8 @@ class TaskPreparer(project: Project,
                 )
             }
 
+            task.finishedCheck = "Parallel redo is shutdown for database"
+
             task.dependsOn(pullTask, networkTask)
         }
     }

@@ -36,16 +36,14 @@ import javax.inject.Inject
 import kotlin.concurrent.thread
 
 open class StartServerContainer
-    @Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
+    @Inject constructor(objectFactory: ObjectFactory) : StartExtraContainer(objectFactory) {
 
-    private val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
-    private val jmxProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
-    private val gclogProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
-    private val heapdumpProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
-    private val appserverProperty: Property<String> = project.objects.property(String::class.java)
-    private val envpropsProperty: ListProperty<String> = project.objects.listProperty(String::class.java)
-    private val finishedCheckProperty: Property<String> = project.objects.property(String::class.java)
-    private val timeoutProperty: Property<Long> = project.objects.property(Long::class.java)
+    private val debugProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    private val jmxProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    private val gclogProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    private val heapdumpProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    private val appserverProperty: Property<String> = objectFactory.property(String::class.java)
+    private val envpropsProperty: ListProperty<String> = objectFactory.listProperty(String::class.java)
 
     /**
      * Enable debugging for the process. The process is started suspended and listening on port 5005.
@@ -134,33 +132,12 @@ open class StartServerContainer
         get() = envpropsProperty.get()
         set(value) = envpropsProperty.set(value)
 
-    /**
-     * Set an string for log file check. Log is displayed as long
-     * the string was not part of the output.
-     */
-    @get:Optional
-    @get:Input
-    var finishedCheck: String
-        get() = finishedCheckProperty.get()
-        set(value) = finishedCheckProperty.set(value)
-
-    /**
-     * Milliseconds for waiting on the finish string.
-     * Default is 600000.
-     */
-    @get:Input
-    var timeout: Long
-        get() = timeoutProperty.get()
-        set(value) = timeoutProperty.set(value)
-
     init {
         debugProperty.convention(false)
         jmxProperty.convention(false)
         gclogProperty.convention(false)
         heapdumpProperty.convention(false)
         appserverProperty.convention("")
-        finishedCheckProperty.convention("")
-        timeoutProperty.convention(900000)
         envpropsProperty.empty()
     }
 
@@ -205,104 +182,6 @@ open class StartServerContainer
             }
         }
 
-        var containerCreated = false
-        var containerRunning = false
-
-        val iterator = dockerClient.listContainersCmd().withShowAll(true).
-                        withNameFilter(listOf("/${containerName.get()}")).exec().iterator()
-
-        while (iterator.hasNext()) {
-            val container = iterator.next()
-
-            if(container.image != image.get()) {
-                throw GradleException("The running container was started with image '" + container.image +
-                        "', but the configured image is '" + image.get() + "'. Please remove running containers!")
-            }
-
-            containerId.set(container.id)
-            containerCreated = true
-            containerRunning = (container.state == "running")
-        }
-
-        if(! containerRunning) {
-            if(! containerCreated) {
-                super.runRemoteCommand()
-            } else {
-                logger.quiet("Container '{}' still exists.", "/${containerName.get()}")
-            }
-
-            logger.quiet("Starting container Id '{}' and name '{}'.", containerId.get(), containerName.get())
-            val startCommand = dockerClient.startContainerCmd(containerId.get())
-            startCommand.exec()
-
-            try {
-                Thread.sleep(5000)
-            } catch (e: Exception) {
-                throw e
-            }
-
-            waitForLogout()
-        } else {
-            logger.quiet("Container '{}' is still running.", "/${containerName.get()}")
-        }
-    }
-
-    private fun waitForLogout() {
-        if (finishedCheckProperty.isPresent && finishedCheckProperty.get().isNotEmpty()) {
-            logger.quiet("Starting logging for container with ID '${containerId.get()}'.")
-            val logCommand = dockerClient.logContainerCmd(containerId.get())
-            logCommand.withStdErr(true)
-            logCommand.withStdOut(true)
-            logCommand.withTailAll()
-            logCommand.withFollowStream(true)
-
-            val localProbe = ExecProbe(timeoutProperty.get(), 5000)
-
-            // create progressLogger for pretty printing of terminal log progression.
-            val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
-            try {
-                var localPollTime = localProbe.pollTime
-                var pollTimes = 0
-
-                progressLogger.started()
-                val containerCallback = LogContainerCallback(project.logger, finishedCheckProperty.get())
-
-                thread(start = true) {
-                    try {
-                        logCommand.exec(containerCallback).awaitCompletion()
-                    } catch (ex: Exception) {
-                        logger.quiet("Log command finished.")
-                    }
-                }
-
-                while (localPollTime > 0) {
-                    pollTimes += 1
-                    val totalMillis = pollTimes * localProbe.pollInterval
-                    val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
-
-                    progressLogger.progress("Executing for ${totalMinutes}m...")
-                    if (containerCallback.startSuccessful) {
-                        logger.quiet("Container startet successfully in a expected time.")
-                        containerCallback.close()
-                        localPollTime = -1
-                    } else {
-                        try {
-                            localPollTime -= localProbe.pollInterval
-                            Thread.sleep(localProbe.pollInterval)
-                        } catch (e: Exception) {
-                            logger.error("It is not possible to wait for logging.")
-                        }
-                    }
-                }
-
-                if (!containerCallback.startSuccessful) {
-                    logger.error("Container not startet successfully in a expected time.")
-                    containerCallback.close()
-                    throw GradleException("Container not startet successfully in a expected time.")
-                }
-            } finally {
-                progressLogger.completed()
-            }
-        }
+        super.runRemoteCommand()
     }
 }
