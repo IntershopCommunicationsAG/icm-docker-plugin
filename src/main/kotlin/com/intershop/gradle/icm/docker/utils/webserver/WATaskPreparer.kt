@@ -27,10 +27,12 @@ import org.gradle.api.provider.Provider
 
 class WATaskPreparer(project: Project,
                      networkTask: Provider<PrepareNetwork>,
-                     volumes: Map<String,String>) : AbstractTaskPreparer(project, networkTask) {
+                     volumes: Map<String,String>,
+                     volumesSec: Map<String,String>) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
         const val extName: String = "WA"
+        const val taskGroup: String = "icm container webserver"
     }
 
     override val image: Provider<String> = extension.images.webadapter
@@ -41,18 +43,44 @@ class WATaskPreparer(project: Project,
         initBaseTasks()
 
         pullTask.configure {
-            it.group = "icm container webserver"
+            it.group = taskGroup
         }
         stopTask.configure {
-            it.group = "icm container webserver"
+            it.group = taskGroup
         }
         removeTask.configure {
-            it.group = "icm container webserver"
+            it.group = taskGroup
         }
 
-        project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
-            task.group = "icm container webserver"
+        configureStartTask(
+            "start${extensionName}",
+            taskGroup,
+            volumes,
+            networkTask)
+
+        if(secInstance) {
+            stopTask.configure {
+                it.group = "icm container webserver for $addContainerPrefix"
+            }
+            removeTask.configure {
+                it.group = "icm container webserver for $addContainerPrefix"
+            }
+
+            configureStartTask(
+                "start${extensionName}${addContainerPrefix}",
+                "${WAATaskPreparer.taskGroup} for ${addContainerPrefix}",
+                volumesSec,
+                networkTask)
+        }
+    }
+
+    private fun configureStartTask(taskName: String,
+                                   taskGroupName: String,
+                                   pVolumes: Map<String,String>,
+                                   pNetworkTask: Provider<PrepareNetwork>) {
+        project.tasks.register(taskName, StartExtraContainer::class.java) { task ->
+            configureContainerTask(task, secInstance)
+            task.group = taskGroupName
             task.description = "Start ICM WebServer with WebAdapter"
 
             task.targetImageId(project.provider { pullTask.get().image.get() })
@@ -103,9 +131,9 @@ class WATaskPreparer(project: Project,
                     "ICM_ICMSERVLETURLS",
                     "cs.url.0=http://${asHostname}:${asHTTPPort}/servlet/ConfigurationServlet")
             }
-            task.hostConfig.binds.set( volumes )
+            task.hostConfig.binds.set( pVolumes )
 
-            task.dependsOn(pullTask, networkTask)
+            task.dependsOn(pullTask, pNetworkTask)
         }
     }
 }

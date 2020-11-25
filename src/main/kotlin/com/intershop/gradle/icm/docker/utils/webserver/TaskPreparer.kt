@@ -31,7 +31,6 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
     companion object {
         const val TASK_EXT_VOLUMES = "WebVolumes"
         const val TASK_EXT_SERVER = "WebServer"
-
     }
 
     private val extension = project.extensions.getByType<IntershopDockerExtension>()
@@ -47,6 +46,11 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
             "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
             "${extension.containerPrefix}-walogs" to "/intershop/logs")
 
+        val volumesSec = mapOf(
+            "${extension.containerPrefixSec}-waproperties" to "/intershop/webadapter-conf",
+            "${extension.containerPrefixSec}-pagecache" to "/intershop/pagecache",
+            "${extension.containerPrefixSec}-walogs" to "/intershop/logs")
+
         val createVolumes =
             project.tasks.register("create${TASK_EXT_VOLUMES}", CreateVolumes::class.java) { task ->
                 configureWebServerTasks(task, "Creates volumes in Docker")
@@ -60,28 +64,26 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
             }
 
         if(secInstance == true) {
-            val volumesSec = mapOf(
-                "${extension.containerPrefix}-waproperties" to "/intershop/webadapter-conf",
-                "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
-                "${extension.containerPrefix}-walogs" to "/intershop/logs")
 
             val createVolumesSec =
                 project.tasks.register(
-                    "create${TASK_EXT_VOLUMES}${addContainerPrefix}", CreateVolumes::class.java) { task ->
+                    "create${TASK_EXT_VOLUMES}${addContainerPrefix}", CreateVolumes::class.java
+                ) { task ->
                     configureWebServerTasks(task, "Creates volumes in Docker for second instance")
-                    task.volumeNames.set( volumes.keys )
+                    task.volumeNames.set(volumesSec.keys)
                 }
 
             val removeVolumesSec =
                 project.tasks.register(
-                    "remove${TASK_EXT_VOLUMES}${addContainerPrefix}", RemoveVolumes::class.java) { task ->
+                    "remove${TASK_EXT_VOLUMES}${addContainerPrefix}", RemoveVolumes::class.java
+                ) { task ->
                     configureWebServerTasks(task, "Removes volumes from Docker for second instance")
-                    task.volumeNames.set( volumes.keys )
+                    task.volumeNames.set(volumesSec.keys)
                 }
         }
 
-        val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes)
-        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes)
+        val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes, volumesSec)
+        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes, volumesSec)
 
         waTasks.startTask.configure {
             it.dependsOn(createVolumes)

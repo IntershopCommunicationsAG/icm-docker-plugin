@@ -197,5 +197,11 @@ open class DevelopmentConfiguration
         return configProperties.getProperty(property, defaultValue)
     }
 
+    fun getConfigPropertySec(property: String): String {
+        return configPropertiesSec.getProperty(property, "")
+    }
 
+    fun getConfigPropertySec(property: String, defaultValue: String): String {
+        return configPropertiesSec.getProperty(property, defaultValue)
+    }
 }

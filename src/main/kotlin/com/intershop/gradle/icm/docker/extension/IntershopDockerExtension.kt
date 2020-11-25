@@ -136,6 +136,35 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
         containerPrefix.toString()
     }
 
+    val containerPrefixSec : String by lazy {
+        val containerPrefix = StringBuilder()
+
+        with(developmentConfig) {
+            val addPrefix = getConfigPropertySec(Configuration.ADDITIONAL_CONTAINER_PREFIX, "")
+            val addPrefixTrim = trimString(addPrefix)
+            if(addPrefixTrim!= "") {
+                if(addPrefix != addPrefixTrim) {
+                    project.logger.quiet("Additional containerprefix {} is used.", addPrefixTrim)
+                }
+                containerPrefix.append(addPrefixTrim)
+                containerPrefix.append("-")
+            }
+        }
+        val prefixConfig = containerProjectPrefix.getOrElse("")
+        if(prefixConfig != "") {
+            val prefixConfigTrim = trimString(prefixConfig)
+            if(prefixConfig != prefixConfigTrim) {
+                project.logger.quiet("Configured prefix {} is used for all containers.", prefixConfigTrim)
+            }
+            containerPrefix.append(prefixConfigTrim)
+        } else {
+            val projectPrefix = trimString(project.name)
+            project.logger.quiet("Default project prefix {} is used for all containers.", projectPrefix)
+            containerPrefix.append(projectPrefix)
+        }
+        containerPrefix.toString()
+    }
+
     private fun trimString(s: String): String
             = s.replace("\\s+".toRegex(), "").replace("_", "-").toLowerCase()
 
