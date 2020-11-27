@@ -25,7 +25,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
 class TestTaskPreparer(project: Project,
-                       networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
+                       networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask, true) {
 
     companion object {
         const val extName: String = "TestMailSrv"
@@ -39,7 +39,7 @@ class TestTaskPreparer(project: Project,
         initBaseTasks()
 
         project.tasks.register ("start${extensionName}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
+            configureContainerTask(task, secInstance)
             task.description = "Starts an special test mail server for ISHUnitTests"
 
             task.targetImageId( project.provider { pullTask.get().image.get() } )

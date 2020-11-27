@@ -24,7 +24,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
 class TaskPreparer(project: Project,
-                   networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask){
+                   networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask, false){
 
     companion object {
         const val extName: String = "MSSQL"
@@ -38,7 +38,7 @@ class TaskPreparer(project: Project,
         initBaseTasks()
 
         project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
+            configureContainerTask(task, false)
             task.description = "Starts an MSSQL server"
 
             task.targetImageId(project.provider { pullTask.get().image.get() })

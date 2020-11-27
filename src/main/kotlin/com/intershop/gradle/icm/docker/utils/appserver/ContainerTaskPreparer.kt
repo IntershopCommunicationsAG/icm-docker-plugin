@@ -36,7 +36,7 @@ class ContainerTaskPreparer(project: Project,
         initBaseTasks()
 
         project.tasks.register("start${extensionName}", StartServerContainer::class.java) { task ->
-            configureContainerTask(task)
+            configureContainerTask(task, secInstance)
 
             task.description = "Start container without any special command (sleep)"
 

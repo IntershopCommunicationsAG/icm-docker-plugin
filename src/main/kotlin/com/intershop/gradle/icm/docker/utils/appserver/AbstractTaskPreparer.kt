@@ -32,7 +32,7 @@ import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
 abstract class AbstractTaskPreparer(project: Project,
-                           networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
+                           networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask, true) {
 
     companion object {
         const val SERVER_READY_STRING = "Servlet engine successfully started"

@@ -23,7 +23,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
 class SolrPreparer(project: Project,
-                   networkTask: Provider<PrepareNetwork>): AbstractTaskPreparer(project, networkTask) {
+                   networkTask: Provider<PrepareNetwork>): AbstractTaskPreparer(project, networkTask, false) {
 
     companion object {
         const val extName: String = "Solr"
@@ -47,7 +47,7 @@ class SolrPreparer(project: Project,
         }
 
         project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
+            configureContainerTask(task, false)
             task.group = "icm container solrcloud"
             task.description = "Start Solr component of SolrCloud"
 

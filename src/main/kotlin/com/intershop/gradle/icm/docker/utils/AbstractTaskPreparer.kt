@@ -33,7 +33,8 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 
 abstract class AbstractTaskPreparer(protected val project: Project,
-                                    networkTask: Provider<PrepareNetwork>) {
+                                    networkTask: Provider<PrepareNetwork>,
+                                    protected val addSecInstance: Boolean) {
 
     abstract val extensionName: String
     abstract val image: Provider<String>
@@ -41,9 +42,12 @@ abstract class AbstractTaskPreparer(protected val project: Project,
 
     protected val extension = project.extensions.getByType<IntershopDockerExtension>()
     protected val devConfiguration = extension.developmentConfig
-    protected val addContainerPrefix = trimString(
-        devConfiguration.getConfigProperty(ADDITIONAL_CONTAINER_PREFIX)).capitalize()
-    protected val secInstance = (devConfiguration.configDirectorySec != null && addContainerPrefix.isNotBlank())
+
+    protected val addContainerPrefixSec = trimString(
+        devConfiguration.getConfigPropertySec(ADDITIONAL_CONTAINER_PREFIX)).capitalize()
+
+    protected val secInstance = (devConfiguration.configDirectorySec != null && addContainerPrefixSec.isNotBlank())
+
 
     protected fun initBaseTasks() {
         project.tasks.register("pull${extensionName}", PullExtraImage::class.java) { task ->
@@ -65,15 +69,15 @@ abstract class AbstractTaskPreparer(protected val project: Project,
             task.containerName.set("${extension.containerPrefix}-${containerExt}")
         }
 
-        if(secInstance) {
-            project.tasks.register("stop${extensionName}${addContainerPrefix}", StopExtraContainer::class.java) { task ->
-                task.group = "icm container $containerExt for $addContainerPrefix"
+        if(secInstance && addSecInstance) {
+            project.tasks.register("stop${extensionName}${addContainerPrefixSec}", StopExtraContainer::class.java) { task ->
+                task.group = "icm container $containerExt"
                 task.description = "Stop running container"
                 task.containerName.set("${extension.containerPrefix}-${containerExt}")
             }
 
-            project.tasks.register("remove${extensionName}${addContainerPrefix}", RemoveContainerByName::class.java) { task ->
-                task.group = "icm container $containerExt for $addContainerPrefix"
+            project.tasks.register("remove${extensionName}${addContainerPrefixSec}", RemoveContainerByName::class.java) { task ->
+                task.group = "icm container $containerExt"
                 task.description = "Remove container from Docker"
 
                 task.containerName.set("${extension.containerPrefix}-${containerExt}")
@@ -96,16 +100,16 @@ abstract class AbstractTaskPreparer(protected val project: Project,
         project.tasks.named("start${extensionName}", DockerCreateContainer::class.java)
     }
 
-    val stopTaskSec: TaskProvider<StopExtraContainer>? by lazy {
-        project.tasks.named("stop${extensionName}${addContainerPrefix}", StopExtraContainer::class.java)
+    val stopTaskSec: TaskProvider<StopExtraContainer> by lazy {
+        project.tasks.named("stop${extensionName}${addContainerPrefixSec}", StopExtraContainer::class.java)
     }
 
-    val removeTaskSec: TaskProvider<RemoveContainerByName>? by lazy {
-        project.tasks.named("remove${extensionName}${addContainerPrefix}", RemoveContainerByName::class.java)
+    val removeTaskSec: TaskProvider<RemoveContainerByName> by lazy {
+        project.tasks.named("remove${extensionName}${addContainerPrefixSec}", RemoveContainerByName::class.java)
     }
 
-    val startTaskSec: TaskProvider<DockerCreateContainer>? by lazy {
-        project.tasks.named("start${extensionName}${addContainerPrefix}", DockerCreateContainer::class.java)
+    val startTaskSec: TaskProvider<DockerCreateContainer> by lazy {
+        project.tasks.named("start${extensionName}${addContainerPrefixSec}", DockerCreateContainer::class.java)
     }
 
     protected val networkId: Property<String> = networkTask.get().networkId

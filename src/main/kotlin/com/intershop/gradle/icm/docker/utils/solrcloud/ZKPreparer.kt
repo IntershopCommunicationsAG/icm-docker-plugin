@@ -23,7 +23,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
 class ZKPreparer(project: Project,
-                 networkTask: Provider<PrepareNetwork>): AbstractTaskPreparer(project, networkTask) {
+                 networkTask: Provider<PrepareNetwork>): AbstractTaskPreparer(project, networkTask, false) {
 
     companion object {
         const val extName: String = "ZK"
@@ -47,7 +47,7 @@ class ZKPreparer(project: Project,
         }
 
         project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
+            configureContainerTask(task, false)
             task.group = "icm container solrcloud"
             task.description = "Start Zookeeper component of SolrCloud"
 

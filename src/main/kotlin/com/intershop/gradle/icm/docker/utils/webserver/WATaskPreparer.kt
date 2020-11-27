@@ -28,7 +28,7 @@ import org.gradle.api.provider.Provider
 class WATaskPreparer(project: Project,
                      networkTask: Provider<PrepareNetwork>,
                      volumes: Map<String,String>,
-                     volumesSec: Map<String,String>) : AbstractTaskPreparer(project, networkTask) {
+                     volumesSec: Map<String,String>) : AbstractTaskPreparer(project, networkTask, true) {
 
     companion object {
         const val extName: String = "WA"
@@ -59,16 +59,16 @@ class WATaskPreparer(project: Project,
             networkTask)
 
         if(secInstance) {
-            stopTask.configure {
-                it.group = "icm container webserver for $addContainerPrefix"
+            stopTaskSec.configure {
+                it.group = taskGroup
             }
-            removeTask.configure {
-                it.group = "icm container webserver for $addContainerPrefix"
+            removeTaskSec.configure {
+                it.group = taskGroup
             }
 
             configureStartTask(
-                "start${extensionName}${addContainerPrefix}",
-                "${WAATaskPreparer.taskGroup} for ${addContainerPrefix}",
+                "start${extensionName}${addContainerPrefixSec}",
+                taskGroup,
                 volumesSec,
                 networkTask)
         }

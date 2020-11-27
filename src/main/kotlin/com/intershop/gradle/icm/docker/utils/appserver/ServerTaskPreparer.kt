@@ -37,7 +37,7 @@ class ServerTaskPreparer(project: Project,
         initAppTasks()
 
         project.tasks.register("start${extensionName}", StartServerContainer::class.java) { task ->
-            configureContainerTask(task)
+            configureContainerTask(task, secInstance)
             task.description = "Start container Application server of ICM"
 
             task.targetImageId(project.provider { pullTask.get().image.get() })

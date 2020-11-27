@@ -36,10 +36,10 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
     private val extension = project.extensions.getByType<IntershopDockerExtension>()
 
     init {
-        val addContainerPrefix = trimString(
-            extension.developmentConfig.getConfigProperty(ADDITIONAL_CONTAINER_PREFIX)).capitalize()
+        val addContainerPrefixSec = trimString(
+            extension.developmentConfig.getConfigPropertySec(ADDITIONAL_CONTAINER_PREFIX)).capitalize()
 
-        val secInstance = (extension.developmentConfig.configDirectorySec != null && addContainerPrefix.isNotBlank())
+        val secInstance = (extension.developmentConfig.configDirectorySec != null && addContainerPrefixSec.isNotBlank())
 
         val volumes = mapOf(
             "${extension.containerPrefix}-waproperties" to "/intershop/webadapter-conf",
@@ -50,6 +50,9 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
             "${extension.containerPrefixSec}-waproperties" to "/intershop/webadapter-conf",
             "${extension.containerPrefixSec}-pagecache" to "/intershop/pagecache",
             "${extension.containerPrefixSec}-walogs" to "/intershop/logs")
+
+        val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes, volumesSec)
+        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes, volumesSec)
 
         val createVolumes =
             project.tasks.register("create${TASK_EXT_VOLUMES}", CreateVolumes::class.java) { task ->
@@ -63,11 +66,22 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
                 task.volumeNames.set( volumes.keys )
             }
 
-        if(secInstance == true) {
+        waTasks.startTask.configure {
+            it.dependsOn(createVolumes)
+        }
 
+        waaTasks.startTask.configure {
+            it.dependsOn(createVolumes, waTasks.startTask)
+        }
+
+        removeVolumes.configure {
+            it.dependsOn(waTasks.removeTask, waaTasks.removeTask)
+        }
+
+        if(secInstance == true) {
             val createVolumesSec =
                 project.tasks.register(
-                    "create${TASK_EXT_VOLUMES}${addContainerPrefix}", CreateVolumes::class.java
+                    "create${TASK_EXT_VOLUMES}${addContainerPrefixSec}", CreateVolumes::class.java
                 ) { task ->
                     configureWebServerTasks(task, "Creates volumes in Docker for second instance")
                     task.volumeNames.set(volumesSec.keys)
@@ -75,45 +89,58 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
 
             val removeVolumesSec =
                 project.tasks.register(
-                    "remove${TASK_EXT_VOLUMES}${addContainerPrefix}", RemoveVolumes::class.java
+                    "remove${TASK_EXT_VOLUMES}${addContainerPrefixSec}", RemoveVolumes::class.java
                 ) { task ->
                     configureWebServerTasks(task, "Removes volumes from Docker for second instance")
                     task.volumeNames.set(volumesSec.keys)
                 }
-        }
 
-        val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes, volumesSec)
-        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes, volumesSec)
+            waTasks.startTaskSec.configure {
+                it.dependsOn(createVolumesSec)
+            }
 
-        waTasks.startTask.configure {
-            it.dependsOn(createVolumes)
-        }
+            waaTasks.startTaskSec.configure {
+                it.dependsOn(createVolumesSec, waTasks.startTaskSec)
+            }
 
-        removeVolumes.configure {
-            it.dependsOn(waTasks.removeTask, waaTasks.removeTask, waTasks.removeTask)
-        }
-
-        waaTasks.startTask.configure {
-            it.dependsOn(createVolumes, waTasks.startTask)
+            removeVolumesSec.configure {
+                it.dependsOn(waTasks.removeTaskSec, waaTasks.removeTaskSec)
+            }
         }
 
         project.tasks.register("start${TASK_EXT_SERVER}") { task ->
             configureWebServerTasks(task, "Start all components for ICM WebServer")
             task.dependsOn(waTasks.startTask, waaTasks.startTask, networkTasks.createNetworkTask)
+
+            if(secInstance) {
+                task.dependsOn(waTasks.startTaskSec, waaTasks.startTaskSec)
+            }
         }
 
         project.tasks.register("stop${TASK_EXT_SERVER}") { task ->
             configureWebServerTasks(task, "Stop all components for ICM WebServer")
             task.dependsOn(waTasks.stopTask, waaTasks.stopTask)
+
+            if(secInstance) {
+                task.dependsOn(waTasks.stopTaskSec, waaTasks.stopTaskSec)
+            }
         }
 
         networkTasks.removeNetworkTask.configure {
             it.mustRunAfter(waTasks.removeTask, waaTasks.removeTask, removeVolumes)
+
+            if(secInstance) {
+                it.mustRunAfter(waTasks.removeTaskSec, waaTasks.removeTaskSec)
+            }
         }
 
         project.tasks.register("remove${TASK_EXT_SERVER}") { task ->
             configureWebServerTasks(task, "Removes all components for ICM WebServer")
             task.dependsOn(waTasks.removeTask, waaTasks.removeTask)
+
+            if(secInstance) {
+                task.dependsOn(waTasks.removeTaskSec, waaTasks.removeTaskSec)
+            }
         }
 
     }
