@@ -70,13 +70,19 @@ abstract class AbstractTaskPreparer(protected val project: Project,
         }
 
         if(secInstance && addSecInstance) {
-            project.tasks.register("stop${extensionName}${addContainerPrefixSec}", StopExtraContainer::class.java) { task ->
+            project.tasks.register(
+                "stop${extensionName}${addContainerPrefixSec}",
+                StopExtraContainer::class.java) { task ->
+
                 task.group = "icm container $containerExt"
                 task.description = "Stop running container"
                 task.containerName.set("${extension.containerPrefix}-${containerExt}")
             }
 
-            project.tasks.register("remove${extensionName}${addContainerPrefixSec}", RemoveContainerByName::class.java) { task ->
+            project.tasks.register(
+                "remove${extensionName}${addContainerPrefixSec}",
+                RemoveContainerByName::class.java) { task ->
+
                 task.group = "icm container $containerExt"
                 task.description = "Remove container from Docker"
 
