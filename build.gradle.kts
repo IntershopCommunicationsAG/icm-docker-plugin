@@ -26,7 +26,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.20"
 
     // test coverage
     jacoco
@@ -302,7 +302,7 @@ dependencies {
 
     implementation(gradleKotlinDsl())
 
-    implementation("com.bmuschko:gradle-docker-plugin:6.6.1")
+    implementation("com.bmuschko:gradle-docker-plugin:6.7.0")
     implementation("org.apache.solr:solr-solrj:8.4.1")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.0")
 
