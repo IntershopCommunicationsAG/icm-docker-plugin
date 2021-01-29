@@ -32,7 +32,7 @@ jobs:
       - name: Run docker login
         run: echo ${{ secrets.DOCKERPASSWD }} | docker login -u ${{ secrets.DOCKERUSER }} --password-stdin
       - name: Run ish docker login
-          run: echo ${{ secrets.ISDOCKERPASSWD }} | docker login -u ${{ secrets.ISDOCKERUSER }} --password-stdin docker.intershop.de
+        run: echo ${{ secrets.ISDOCKERPASSWD }} | docker login -u ${{ secrets.ISDOCKERUSER }} --password-stdin docker.intershop.de
       - name: Create Test container
         run: cd testdocker && ./createimage.sh && cd ..
       - name: Run gradle release
