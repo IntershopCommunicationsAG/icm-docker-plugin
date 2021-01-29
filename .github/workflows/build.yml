@@ -12,6 +12,7 @@ on:
 
 jobs:
   build:
+    environment: CIRelease
     runs-on: ubuntu-latest
 
     steps:
