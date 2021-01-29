@@ -31,6 +31,8 @@ jobs:
         run: echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
       - name: Run docker login
         run: echo ${{ secrets.DOCKERPASSWD }} | docker login -u ${{ secrets.DOCKERUSER }} --password-stdin
+      - name: Run ish docker login
+          run: echo ${{ secrets.ISDOCKERPASSWD }} | docker login -u ${{ secrets.ISDOCKERUSER }} --password-stdin docker.intershop.de
       - name: Create Test container
         run: cd testdocker && ./createimage.sh && cd ..
       - name: Run gradle 2
@@ -41,4 +43,4 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.daemon=true"
         run: ./gradlew -PrunOnCI=true test build :bintrayUpload :publishPlugins -s --scan
       - name: Post Build
-        run: rm -f $HOME/.gradle/gradle.properties
+        run: rm -f $HOME/.gradle/gradle.properties && rm -f $HOME/.docker/config.json

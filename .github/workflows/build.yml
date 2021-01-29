@@ -26,6 +26,8 @@ jobs:
       - run: git fetch --all --tags
       - name: Run docker login
         run: echo ${{ secrets.DOCKERPASSWD }} | docker login -u ${{ secrets.DOCKERUSER }} --password-stdin
+      - name: Run ish docker login
+        run: echo ${{ secrets.ISDOCKERPASSWD }} | docker login -u ${{ secrets.ISDOCKERUSER }} --password-stdin docker.intershop.de
       - name: Create Test container
         run: cd testdocker && ./createimage.sh && cd ..
       - name: Run gradle assemble
@@ -35,3 +37,5 @@ jobs:
           JAVA_OPTS: "-Xmx1024M -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512M"
           GRADLE_OPTS: "-Dorg.gradle.daemon=true"
         run: ./gradlew test build -s --scan
+      - name: Post Build
+        run: rm -f $HOME/.gradle/gradle.properties && rm -f $HOME/.docker/config.json
