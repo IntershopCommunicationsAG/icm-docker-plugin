@@ -25,10 +25,7 @@ jobs:
           fetch-depth: 0
       - run: git fetch --all --tags
       - name: Run docker login
-        env:
-          DOCKERUSER: ${{ secrets.DOCKERUSER }}
-          DOCKERPASSWD: ${{ secrets.DOCKERPASSWD }}
-        run: docker login docker.intershop.de -u $DOCKERUSER -p $DOCKERPASSWD
+        run: echo ${{ secrets.DOCKERPASSWD }} | docker login -u ${{ secrets.DOCKERUSER }} --password-stdin
       - name: Create Test container
         run: cd testdocker && ./createimage.sh && cd ..
       - name: Run gradle assemble

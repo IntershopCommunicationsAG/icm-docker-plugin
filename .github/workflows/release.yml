@@ -30,10 +30,7 @@ jobs:
           APISECRET: ${{ secrets.APISECRET }}
         run: echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
       - name: Run docker login
-        env:
-          DOCKERUSER: ${{ secrets.DOCKERUSER }}
-          DOCKERPASSWD: ${{ secrets.DOCKERPASSWD }}
-        run: docker login docker.intershop.de -u $DOCKERUSER -p $DOCKERPASSWD
+        run: echo ${{ secrets.DOCKERPASSWD }} | docker login -u ${{ secrets.DOCKERUSER }} --password-stdin
       - name: Create Test container
         run: cd testdocker && ./createimage.sh && cd ..
       - name: Run gradle 2
