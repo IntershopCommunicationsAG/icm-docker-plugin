@@ -24,11 +24,29 @@ jobs:
       - run: git fetch --all --tag
       - name: Run gradle 1
         run: ./gradlew assemble
+      - id: install-secret-key
+        name: Install gpg secret key
+        env:
+          SIGNINGFILE: ${{ secrets.SIGNINGFILE }}
+        run: |
+          cat <(echo -e "${{ secrets.SIGNINGFILE }}") | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
+      - id: export-gpg-file
+        name: Export gpg file
+        env:
+          SIGNINGKEYID: ${{ secrets.SIGNINGKEYID }}
+          SIGNINGPASSWORD: ${{ secrets.SIGNINGPASSWORD }}
+        run: |
+          gpg --batch --passphrase="$SIGNINGPASSWORD" --pinentry-mode loopback --export-secret-keys $SIGNINGKEYID > $HOME/.gradle/secrets.gpg
       - name: Create gradle sproperties
         env:
           APIKEY: ${{ secrets.APIKEY }}
           APISECRET: ${{ secrets.APISECRET }}
-        run: echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET" > $HOME/.gradle/gradle.properties
+          SIGNINGKEYID: ${{ secrets.SIGNINGKEYID }}
+          SIGNINGPASSWORD: ${{ secrets.SIGNINGPASSWORD }}
+          SONATYPEPASSWORD: ${{ secrets.SONATYPEPASSWORD }}
+          SONATYPEUSER: ${{ secrets.SONATYPEUSER }}
+        run: echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET\nsigning.keyId=$SIGNINGKEYID\nsigning.password=$SIGNINGPASSWORD\nsigning.secretKeyRingFile=$HOME/.gradle/secrets.gpg\nsonatypeUsername=$SONATYPEPASSWORD\nsonatypePassword=$SONATYPEUSER" > $HOME/.gradle/gradle.properties
       - name: Run docker login
         run: echo ${{ secrets.DOCKERPASSWD }} | docker login -u ${{ secrets.DOCKERUSER }} --password-stdin
       - name: Run ish docker login
@@ -37,10 +55,8 @@ jobs:
         run: cd testdocker && ./createimage.sh && cd ..
       - name: Run gradle release
         env:
-          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
-          BINTRAY_KEY: ${{ secrets.BINTRAY_KEY }}
           JAVA_OPTS: "-Xmx1024M -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512M"
           GRADLE_OPTS: "-Dorg.gradle.daemon=true"
-        run: ./gradlew -PrunOnCI=true test build :bintrayUpload :publishPlugins -s --scan
+        run: ./gradlew -PrunOnCI=true test build :publishIntershopMvnPublicationToMavenRepository :publishPlugins -s --scan
       - name: Post Build
         run: rm -f $HOME/.gradle/gradle.properties && rm -f $HOME/.docker/config.json
