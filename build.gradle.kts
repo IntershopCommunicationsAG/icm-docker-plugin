@@ -1,4 +1,3 @@
-import com.jfrog.bintray.gradle.BintrayExtension
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -37,6 +36,9 @@ plugins {
     // publish plugin
     `maven-publish`
 
+    // artifact signing - necessary on Maven Central
+    signing
+
     // intershop version plugin
     id("com.intershop.gradle.scmversion") version "6.2.0"
 
@@ -51,9 +53,6 @@ plugins {
 
     // plugin for publishing to Gradle Portal
     id("com.gradle.plugin-publish") version "0.12.0"
-
-    // plugin for publishing to jcenter
-    id("com.jfrog.bintray") version "1.8.5"
 }
 
 scm {
@@ -63,6 +62,9 @@ scm {
 group = "com.intershop.gradle.icm.docker"
 description = "Intershop Commerce Management Plugins for Docker Integration"
 version = scm.version.version
+
+val sonatypeUsername: String by project
+val sonatypePassword: String? by project
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -243,57 +245,51 @@ publishing {
                 classifier = "docbook"
             }
 
-            pom.withXml {
-                val root = asNode()
-                root.appendNode("name", project.name)
-                root.appendNode("description", project.description)
-                root.appendNode("url", "https://github.com/IntershopCommunicationsAG/${project.name}")
-
-                val scm = root.appendNode("scm")
-                scm.appendNode("url", "https://github.com/IntershopCommunicationsAG/${project.name}")
-                scm.appendNode("connection", "git@github.com:IntershopCommunicationsAG/${project.name}.git")
-
-                val org = root.appendNode("organization")
-                org.appendNode("name", "Intershop Communications")
-                org.appendNode("url", "http://intershop.com")
-
-                val license = root.appendNode("licenses").appendNode("license")
-                license.appendNode("name", "Apache License, Version 2.0")
-                license.appendNode("url", "http://www.apache.org/licenses/LICENSE-2.0")
-                license.appendNode("distribution", "repo")
+            pom {
+                name.set(project.name)
+                description.set(project.description)
+                url.set("https://github.com/IntershopCommunicationsAG/${project.name}")
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                        distribution.set("repo")
+                    }
+                }
+                organization {
+                    name.set("Intershop Communications AG")
+                    url.set("http://intershop.com")
+                }
+                developers {
+                    developer {
+                        id.set("m-raab")
+                        name.set("M. Raab")
+                        email.set("mraab@intershop.de")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:git://example.com/my-library.git")
+                    developerConnection.set("scm:git:ssh://example.com/my-library.git")
+                    url.set("http://example.com/my-library/")
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+            url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
+            credentials {
+                username = sonatypeUsername
+                password = sonatypePassword
             }
         }
     }
 }
 
-bintray {
-    user = System.getenv("BINTRAY_USER")
-    key = System.getenv("BINTRAY_KEY")
-
-    setPublications("intershopMvn")
-
-    pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
-        repo = "maven"
-        name = project.name
-        userOrg = "intershopcommunicationsag"
-
-        setLicenses("Apache-2.0")
-        vcsUrl = "https://github.com/IntershopCommunicationsAG/${project.name}"
-
-        desc = project.description
-        websiteUrl = "https://github.com/IntershopCommunicationsAG/${project.name}"
-        issueTrackerUrl = "https://github.com/IntershopCommunicationsAG/${project.name}/issues"
-
-        setLabels("intershop", "gradle", "plugin", "build", "docker")
-        publicDownloadNumbers = true
-
-        version(delegateClosureOf<BintrayExtension.VersionConfig> {
-            name = project.version.toString()
-            desc = "${project.description} ${project.version}"
-            released  = Date().toString()
-            vcsTag = project.version.toString()
-        })
-    })
+signing {
+    sign(publishing.publications["intershopMvn"])
 }
 
 dependencies {
@@ -312,5 +308,6 @@ dependencies {
 }
 
 repositories {
+    mavenCentral()
     jcenter()
 }
