@@ -159,8 +159,7 @@ tasks {
         val jacocoTestReport by tasks
         jacocoTestReport.dependsOn("test")
     }
-
-    getByName("bintrayUpload").dependsOn("asciidoctor")
+    
     getByName("jar").dependsOn("asciidoctor")
 
     val dokka by existing(DokkaTask::class) {
