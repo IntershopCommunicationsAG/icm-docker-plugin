@@ -22,8 +22,8 @@ jobs:
         with:
           fetch-depth: 0
       - run: git fetch --all --tag
-      - name: Run gradle 1
-        run: ./gradlew assemble
+      - name: Create .gradle dir
+        run: mkdir -p $HOME/.gradle
       - id: install-secret-key
         name: Install gpg secret key
         env:
