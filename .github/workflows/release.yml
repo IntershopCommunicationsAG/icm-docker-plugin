@@ -46,7 +46,7 @@ jobs:
           SIGNINGPASSWORD: ${{ secrets.SIGNINGPASSWORD }}
           SONATYPEPASSWORD: ${{ secrets.SONATYPEPASSWORD }}
           SONATYPEUSER: ${{ secrets.SONATYPEUSER }}
-        run: echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET\nsigning.keyId=$SIGNINGKEYID\nsigning.password=$SIGNINGPASSWORD\nsigning.secretKeyRingFile=$HOME/.gradle/secrets.gpg\nsonatypeUsername=$SONATYPEPASSWORD\nsonatypePassword=$SONATYPEUSER" > $HOME/.gradle/gradle.properties
+        run: echo -e "gradle.publish.key=$APIKEY\ngradle.publish.secret=$APISECRET\nsigning.keyId=$SIGNINGKEYID\nsigning.password=$SIGNINGPASSWORD\nsigning.secretKeyRingFile=$HOME/.gradle/secrets.gpg\nsonatypeUsername=$SONATYPEUSER\nsonatypePassword=$SONATYPEPASSWORD" > $HOME/.gradle/gradle.properties
       - name: Run docker login
         run: echo ${{ secrets.DOCKERPASSWD }} | docker login -u ${{ secrets.DOCKERUSER }} --password-stdin
       - name: Run ish docker login
