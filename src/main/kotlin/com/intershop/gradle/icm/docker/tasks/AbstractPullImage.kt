@@ -28,6 +28,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
 import org.gradle.util.ConfigureUtil
+import java.util.*
 import javax.inject.Inject
 
 abstract class AbstractPullImage
@@ -78,16 +79,19 @@ abstract class AbstractPullImage
      */
     override fun runRemoteCommand() {
         with(project) {
-            logger.quiet("Pulling image '${image.get()}'.")
+            logger.quiet("Check for image '${image.get()}'")
+
 
             var pull = true
 
             if(! force.get()) {
                 val listImagesCmd = dockerClient.listImagesCmd()
-                listImagesCmd.withImageNameFilter(image.get())
+                listImagesCmd.filters.put("reference", Arrays.asList(image.get()))
                 val images = listImagesCmd.exec()
                 pull = images.size < 1
             }
+
+            logger.quiet("Pulling image '${image.get()}'")
 
             if(pull) {
                 val pullImageCmd = dockerClient.pullImageCmd(image.get())
