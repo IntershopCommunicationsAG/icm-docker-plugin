@@ -32,15 +32,13 @@ jobs:
         run: cd testdocker && ./createimage.sh && cd ..
       - name: Run gradle assemble
         run: ./gradlew assemble
-  - id: install-secret-key
-      name: Install gpg secret key
-      env:
-        SIGNINGFILE: ${{ secrets.SIGNINGFILE }}
-      run: |
-        cat <(echo -e "${{ secrets.SIGNINGFILE }}") | gpg --batch --import
-        gpg --list-secret-keys --keyid-format LONG
-      - id: export-gpg-file
-        name: Export gpg file
+      - name: Install gpg secret key
+        env:
+          SIGNINGFILE: ${{ secrets.SIGNINGFILE }}
+        run: |
+          cat <(echo -e "${{ secrets.SIGNINGFILE }}") | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
+      - name: Export gpg file
         env:
           SIGNINGKEYID: ${{ secrets.SIGNINGKEYID }}
           SIGNINGPASSWORD: ${{ secrets.SIGNINGPASSWORD }}
