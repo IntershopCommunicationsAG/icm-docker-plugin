@@ -67,7 +67,7 @@ class ZKPreparer(project: Project,
             )
 
             task.hostConfig.network.set(networkId)
-
+            task.logger.quiet("The ZK for SolrCloud can be connected with {}:2181", task.containerName)
             task.dependsOn(pullTask, networkTask)
         }
     }

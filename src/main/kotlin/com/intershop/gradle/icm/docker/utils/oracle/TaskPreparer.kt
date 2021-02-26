@@ -69,7 +69,16 @@ class TaskPreparer(project: Project,
                            "${listenerPort}:${containerListenerPort}")
                 )
             }
-
+            with(extension.developmentConfig) {
+                project.logger.quiet(
+                    "The database can be connected with jdbc:oracle:thin:@{}:{}:XE",
+                    task.containerName,
+                    getConfigProperty(
+                        Configuration.DB_ORACLE_PORT,
+                        Configuration.DB_ORACLE_PORT_VALUE
+                    )
+                )
+            }
             task.dependsOn(pullTask, networkTask)
         }
     }

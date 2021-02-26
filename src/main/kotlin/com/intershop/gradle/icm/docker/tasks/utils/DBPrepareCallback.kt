@@ -97,18 +97,26 @@ class DBPrepareCallback (
         if(input != null && input.contains("DBPrepare")) {
             val s1 = input.indexOf("DBPrepare")
             val e1 = input.indexOf("initialization steps")
-            val c = if (s1 > -1 && e1 > -1) input.substring(s1 + "DBPrepare".length, e1).trim().toInt() else 0
+            val c = if (s1 > -1 && e1 > -1) formatStringToInt(input.substring(s1 + "DBPrepare".length, e1)) else 0
 
             val regexS = Regex("success: [\\d]+")
             val matchS = regexS.find(input, 0)
-            val s = matchS?.value?.substring("success:".length)?.trim()?.toInt() ?: 0
+            val s = formatStringToInt(matchS?.value?.substring("success:".length))
 
             val regexF = Regex("failure: [\\d]+")
             val matchF = regexF.find(input, 0)
-            val f = matchF?.value?.substring("failure:".length)?.trim()?.toInt() ?: 0
+            val f = formatStringToInt(matchF?.value?.substring("failure:".length))
 
             return DBPrepareResult(c, s, f)
         }
         return null
+    }
+
+    private fun formatStringToInt(str: String?): Int {
+        return if(str != null) {
+                str.trim().replace(",", "").replace(".", "").toInt()
+            } else {
+                0
+            }
     }
 }

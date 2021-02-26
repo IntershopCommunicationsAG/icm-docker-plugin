@@ -102,6 +102,20 @@ class TaskPreparer(project: Project,
 
             task.finishedCheck = "Parallel redo is shutdown for database"
 
+            with(extension.developmentConfig) {
+                project.logger.quiet(
+                    "The database can be connected with jdbc:sqlserver://{}:{};databaseName={}",
+                    task.containerName,
+                    getConfigProperty(
+                        Configuration.DB_MSSQL_PORT,
+                        Configuration.DB_MSSQL_PORT_VALUE
+                    ),
+                    getConfigProperty(
+                        Configuration.DB_MSSQL_DBNAME,
+                        Configuration.DB_MSSQL_DBNAME_VALUE
+                    )
+                )
+            }
             task.dependsOn(pullTask, networkTask)
         }
     }

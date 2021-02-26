@@ -300,7 +300,7 @@ dependencies {
     implementation("org.apache.solr:solr-solrj:8.4.1")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.0")
 
-    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:3.4.12")
+    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:3.4.14")
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:3.7.0")
     testImplementation(gradleTestKit())
 }
