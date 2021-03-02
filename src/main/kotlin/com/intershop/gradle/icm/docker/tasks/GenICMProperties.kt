@@ -19,20 +19,24 @@ package com.intershop.gradle.icm.docker.tasks
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.IPFinder
+import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
 import javax.inject.Inject
+import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
+import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
+import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
+import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
 
 open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                                            projectLayout: ProjectLayout) : DefaultTask() {
@@ -99,12 +103,11 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         const val asMailSMTPHostProp = "intershop.SMTPServer"
         const val asMailMessageIDProp = "intershop.mail.messageID.domain"
 
-        const val containerListProp = "intershop.environment.container"
-
         const val ICM_PROPERTIES_DIR = "icmproperties"
         const val fileName = "icm.properties"
     }
 
+    @Internal
     protected val extension = project.extensions.getByType<IntershopDockerExtension>()
 
     @get:OutputDirectory
@@ -181,7 +184,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
         val text =
             """
-            ${containerListProp} = 
+            ${Configuration.COTAINER_ENV_PROP} = ${envListTasks.joinToString(",")}
             """.trimIndent()
 
         outputFile.appendText(text, Charsets.UTF_8)
@@ -196,6 +199,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
     private fun writeDevProps(file: File) {
         file.appendText(standardDevProps.trimIndent(), Charsets.UTF_8)
+        file.appendText("\n\n", Charsets.UTF_8)
     }
 
     private fun writeDBUserConfig(file: File, container: Boolean) {
@@ -225,7 +229,11 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         val host = if(icmas) {
             if(container) { "localhost" } else { "<host name of the external db>" }
         } else {
-            if(container) { "${extension.containerPrefix}-oracle" } else { "<host name of the external db>" }
+            if(container) {
+                "${extension.containerPrefix}-${OracleTaskPreparer.extName.toLowerCase()}"
+            } else {
+                "<host name of the external db>"
+            }
         }
         val port = if(icmas) {
             if(container) {
@@ -254,7 +262,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         file.appendText("\n", Charsets.UTF_8)
         writeDBUserConfig(file,  container)
 
-        val dbText = if(container) {
+        if(container) {
+            val ctext =
             """
             # mssql container configuration - do not change this value if the default images is used 
             ${Configuration.DB_ORACLE_LISTENERPORT} = ${Configuration.DB_ORACLE_LISTENERPORT_VALUE}
@@ -262,123 +271,136 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             ${Configuration.DB_ORACLE_PORT} = ${Configuration.DB_ORACLE_PORT_VALUE}
             ${Configuration.DB_ORACLE_CONTAINER_PORT} = ${Configuration.DB_ORACLE_CONTAINER_PORT_VALUE}
             """.trimIndent()
-        } else {
-            ""
+            file.appendText(ctext, Charsets.UTF_8)
+            file.appendText("\n\n", Charsets.UTF_8)
         }
-
-        file.appendText(dbText, Charsets.UTF_8)
-        file.appendText("\n\n", Charsets.UTF_8)
     }
 
     private fun writeMSSQLProps(file: File, container: Boolean) {
         val icmas = icmasOption.get()
 
-        val host = if(icmas) {
-            if(container) { "localhost" } else { "<host name of the external db>" }
+        val host = if (icmas) {
+            if (container) {
+                "localhost"
+            } else {
+                "<host name of the external db>"
+            }
         } else {
-            if(container) { "${extension.containerPrefix}-mssql" } else { "<host name of the external db>" }
+            if (container) {
+                "${extension.containerPrefix}-${MSSQLTaskPreparer.extName.toLowerCase()}"
+            } else {
+                "<host name of the external db>"
+            }
         }
-        val port = if(icmas) {
-            if(container) { Configuration.DB_MSSQL_PORT_VALUE} else { "<port of the external db>" }
+        val port = if (icmas) {
+            if (container) {
+                Configuration.DB_MSSQL_PORT_VALUE
+            } else {
+                "<port of the external db>"
+            }
         } else {
-            if(container) { Configuration.DB_MSSQL_CONTAINER_PORT_VALUE} else { "<port of the external db>" }
+            if (container) {
+                Configuration.DB_MSSQL_CONTAINER_PORT_VALUE
+            } else {
+                "<port of the external db>"
+            }
         }
 
-        val dbname = if(container) { Configuration.DB_MSSQL_DBNAME_VALUE } else { "<db name of the external db>" }
+        val dbname = if (container) {
+            Configuration.DB_MSSQL_DBNAME_VALUE
+        } else {
+            "<db name of the external db>"
+        }
 
         val text =
             """
-            # oracle base configuration
+            # mssql base configuration
             ${databaseTypeProp} = mssql
             ${databaseJDBCUrlProp} = jdbc:sqlserver://${host}:${port};databaseName=${dbname}
             """.trimIndent()
 
         file.appendText(text, Charsets.UTF_8)
         file.appendText("\n", Charsets.UTF_8)
-        writeDBUserConfig(file,  container)
+        writeDBUserConfig(file, container)
 
-        val dbText = if(container) {
-            """
-            # mssql container configuration - do not change this value if the default images is used 
-            ${Configuration.DB_MSSQL_PORT} = ${Configuration.DB_MSSQL_PORT_VALUE}
-            ${Configuration.DB_MSSQL_CONTAINER_PORT} = ${Configuration.DB_MSSQL_CONTAINER_PORT_VALUE}
-            ${Configuration.DB_MSSQL_SA_PASSWORD} = ${Configuration.DB_MSSQL_SA_PASSWORD_VALUE}
-            ${Configuration.DB_MSSQL_RECREATE_DB} = ${Configuration.DB_MSSQL_RECREATE_DB_VALUE}
-            ${Configuration.DB_MSSQL_RECREATE_USER} = ${Configuration.DB_MSSQL_RECREATE_USER_VALUE}
-            ${Configuration.DB_MSSQL_DBNAME} = ${Configuration.DB_MSSQL_DBNAME_VALUE}
-            """.trimIndent()
-        } else {
-            ""
+        with(Configuration) {
+            if (container) {
+                val ctext =
+                    """
+                    # mssql container configuration - do not change this value if the default images is used 
+                    $DB_MSSQL_PORT = $DB_MSSQL_PORT_VALUE
+                    $DB_MSSQL_CONTAINER_PORT = $DB_MSSQL_CONTAINER_PORT_VALUE
+                    $DB_MSSQL_SA_PASSWORD = $DB_MSSQL_SA_PASSWORD_VALUE
+                    $DB_MSSQL_RECREATE_DB = $DB_MSSQL_RECREATE_DB_VALUE
+                    $DB_MSSQL_RECREATE_USER = $DB_MSSQL_RECREATE_USER_VALUE
+                    $DB_MSSQL_DBNAME = $DB_MSSQL_DBNAME_VALUE
+                    """.trimIndent()
+                file.appendText(ctext, Charsets.UTF_8)
+                file.appendText("\n\n", Charsets.UTF_8)
+            }
         }
-
-        file.appendText(dbText, Charsets.UTF_8)
-        file.appendText("\n\n", Charsets.UTF_8)
     }
 
     private fun writeServerProps(file: File) {
-
-        val text =
-            """
-            # webserver configuration
-            # if youn want change the ports of the webserve, it is necessary to change the ports 
-            # in ${webserverUrlProp} and ${webserverSecureUrlProp} according to the settings
-            # ${Configuration.WS_HTTP_PORT} and ${Configuration.WS_HTTPS_PORT}
-            #
-            ${webserverUrlProp} = http://localhost:${Configuration.WS_HTTP_PORT_VALUE}
-            ${webserverSecureUrlProp} = https://localhost:${Configuration.WS_HTTPS_PORT_VALUE}
-            
-            # webserver container configuration - do not change this value if the default images is used 
-            ${Configuration.WS_HTTP_PORT} = ${Configuration.WS_HTTP_PORT_VALUE}
-            ${Configuration.WS_HTTPS_PORT} = ${Configuration.WS_HTTPS_PORT_VALUE}
-            
-            ${Configuration.WS_CONTAINER_HTTP_PORT} = ${Configuration.WS_CONTAINER_HTTP_PORT_VALUE}
-            ${Configuration.WS_CONTAINER_HTTPS_PORT} = ${Configuration.WS_CONTAINER_HTTPS_PORT_VALUE}
-            """.trimIndent()
-
-        file.appendText(text, Charsets.UTF_8)
-        file.appendText("\n\n", Charsets.UTF_8)
-
-
-        if(icmasOption.get()) {
-            val systemIP = IPFinder.getSystemIP()
-
-            val icmasText =
+        with(Configuration) {
+            val text =
                 """
+                # webserver configuration
+                # if youn want change the ports of the webserve, it is necessary to change the ports 
+                # in $webserverUrlProp and $webserverSecureUrlProp according to the settings
+                # $WS_HTTP_PORT and $WS_HTTPS_PORT
+                #
+                $webserverUrlProp = http://localhost:$WS_HTTP_PORT_VALUE
+                $webserverSecureUrlProp = https://localhost:$WS_HTTPS_PORT_VALUE
+                
+                # webserver container configuration - do not change this value if the default images is used 
+                $WS_HTTP_PORT = $WS_HTTP_PORT_VALUE
+                $WS_HTTPS_PORT = $WS_HTTPS_PORT_VALUE
+                
+                $WS_CONTAINER_HTTP_PORT = $WS_CONTAINER_HTTP_PORT_VALUE
+                $WS_CONTAINER_HTTPS_PORT = $WS_CONTAINER_HTTPS_PORT_VALUE
+                """.trimIndent()
+
+            file.appendText(text, Charsets.UTF_8)
+            file.appendText("\n\n", Charsets.UTF_8)
+
+            if (icmasOption.get()) {
+                val systemIP = IPFinder.getSystemIP()
+                val wstext =
+                    """
                 # port number to start the servlet engine
-                ${Configuration.AS_CONNECTOR_PORT} = ${Configuration.AS_CONNECTOR_PORT_VALUE}
+                $AS_CONNECTOR_PORT = $AS_CONNECTOR_PORT_VALUE
             
                 # Host name / IP of the ICM Server (local installation)
                 # both values must match    
-                ${Configuration.LOCAL_CONNECTOR_HOST} = ${systemIP}
+                $LOCAL_CONNECTOR_HOST = $systemIP
                 # WebAdapapter container configuration
-                ${asConnectorAdressProp} = ${systemIP}
+                $asConnectorAdressProp = $systemIP
                 """.trimIndent()
+                file.appendText(wstext, Charsets.UTF_8)
 
-            file.appendText(icmasText, Charsets.UTF_8)
-
-        } else {
-            val asText =
-            """
-            # do not change this configuration, if you use the standard
-            # both ports must match
-            # port number to start the servlet engine
-            ${Configuration.AS_CONNECTOR_PORT} = ${Configuration.AS_CONNECTOR_PORT_VALUE}
-            # container port for the servle engine
-            ${Configuration.AS_CONNECTOR_CONTAINER_PORT} = ${Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE}
-            
-            # port number of the exposed port
-            ${Configuration.AS_EXT_CONNECTOR_PORT} = ${Configuration.AS_EXT_CONNECTOR_PORT_VALUE}
-            
-            # jmx configuration
-            ${Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT} = ${Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE}
-            ${Configuration.AS_JMX_CONNECTOR_PORT} = ${Configuration.AS_JMX_CONNECTOR_PORT_VALUE}
-            ${Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT} = ${Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE}
-            
-            # Host name / IP of the ICM Server (local installation)
-            ${Configuration.LOCAL_CONNECTOR_HOST} = ${extension.containerPrefix}-AS
-            """.trimIndent()
-
-            file.appendText(asText, Charsets.UTF_8)
+            } else {
+                val astext =
+                    """
+                    # do not change this configuration, if you use the standard
+                    # both ports must match
+                    # port number to start the servlet engine
+                    $AS_CONNECTOR_PORT = $AS_CONNECTOR_PORT_VALUE
+                    # container port for the servle engine
+                    $AS_CONNECTOR_CONTAINER_PORT = $AS_CONNECTOR_CONTAINER_PORT_VALUE
+                    
+                    # port number of the exposed port
+                    $AS_EXT_CONNECTOR_PORT = $AS_EXT_CONNECTOR_PORT_VALUE
+                    
+                    # jmx configuration
+                    $AS_JMX_CONNECTOR_PORT = $AS_JMX_CONNECTOR_PORT_VALUE
+                    $AS_JMX_CONNECTOR_CONTAINER_PORT = $AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
+                    
+                    # Host name / IP of the ICM Server (local installation)
+                    $LOCAL_CONNECTOR_HOST = ${extension.containerPrefix}-${ServerTaskPreparer.extName.toLowerCase()}
+                    """.trimIndent()
+                    file.appendText(astext, Charsets.UTF_8)
+            }
         }
         file.appendText("\n\n", Charsets.UTF_8)
     }
@@ -388,20 +410,24 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         val host = if(icmAs) {
             if(container) { "localhost" } else { "<hostname of the mail server>" }
         } else {
-            if(container) { "${extension.containerPrefix}-mailsrv" } else { "<hostname of the mail server>" }
+            if(container) {
+                "${extension.containerPrefix}-${MailTaskPreparer.extName.toLowerCase()}"
+            } else {
+                "<hostname of the mail server>"
+            }
         }
         val port = if(container) { "25" } else { "<port of the external zookeeper node>" }
 
-        val asText =
+        val text =
             """
             ${asMailHostProp}=${host}
             ${asMailPortProp}=${port}
     
             ${asMailSMTPHostProp}=${host}
-            ${asMailMessageIDProp}=${extension.containerPrefix} 
+            ${asMailMessageIDProp}=${extension.containerPrefix}
             """.trimIndent()
 
-        file.appendText(asText, Charsets.UTF_8)
+        file.appendText(text, Charsets.UTF_8)
         file.appendText("\n\n", Charsets.UTF_8)
     }
 
@@ -411,7 +437,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             if(container) { "localhost" } else { "<hostname of min. one external zookeeper node>" }
         } else {
             if(container) {
-                "${extension.containerPrefix}-zk"
+                "${extension.containerPrefix}-${ZKPreparer.extName.toLowerCase()}"
             } else {
                 "<hostname of min. one external zookeeper node>"
             }
@@ -419,18 +445,18 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         val port = if(container) { "2181" } else { "<port of the external zookeeper node>" }
         val solrpath = if(container) { "solr" } else { "<path of the solr cluster>" }
 
-        val asText =
+        val text =
             """
             ${asSolrZKListProp} = ${host}:${port}/${solrpath}
-            ${asSolrPrefixProp} = ${extension.containerPrefix}                    
+            ${asSolrPrefixProp} = ${extension.containerPrefix}
             """.trimIndent()
 
-        file.appendText(asText, Charsets.UTF_8)
+        file.appendText(text, Charsets.UTF_8)
         file.appendText("\n\n", Charsets.UTF_8)
     }
 
     private fun writeGebTestProps(file: File) {
-        val asText =
+        val text =
             """
             # necessary for automatic Solr resest
             intershop.smc.admin.user.name = admin
@@ -441,7 +467,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             geb.local.driver = chromeDriver
             """.trimIndent()
 
-        file.appendText(asText, Charsets.UTF_8)
+        file.appendText(text, Charsets.UTF_8)
         file.appendText("\n\n", Charsets.UTF_8)
     }
 }

@@ -19,21 +19,22 @@ package com.intershop.gradle.icm.docker.utils.solrcloud
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.RemoveNetwork
+import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
-class TaskPreparer(val project: Project,
-                   val prepareNetwork: TaskProvider<PrepareNetwork>,
-                   private val removeNetwork: TaskProvider<RemoveNetwork>) {
+class TaskPreparer(val project: Project, private val networkTasks: TaskPreparer) {
 
     companion object {
         const val TASK_EXT_SERVER = "SolrCloud"
     }
 
     init {
-        val zkTasks = ZKPreparer(project, prepareNetwork)
-        val solrTasks = SolrPreparer(project, prepareNetwork)
+        val zkTasks = ZKPreparer(project, networkTasks.createNetworkTask)
+        val solrTasks = SolrPreparer(project, networkTasks.createNetworkTask)
 
         solrTasks.startTask.configure {
             it.dependsOn(zkTasks.startTask)
@@ -45,7 +46,7 @@ class TaskPreparer(val project: Project,
 
         project.tasks.register("start${TASK_EXT_SERVER}") { task ->
             configureSolrCloudTasks(task, "Start all components of a one note SolrCloud cluster")
-            task.dependsOn(zkTasks.startTask, solrTasks.startTask, prepareNetwork)
+            task.dependsOn(zkTasks.startTask, solrTasks.startTask, networkTasks.createNetworkTask)
         }
 
         project.tasks.register("stop${TASK_EXT_SERVER}") { task ->
@@ -55,10 +56,10 @@ class TaskPreparer(val project: Project,
 
         project.tasks.register("remove${TASK_EXT_SERVER}") { task ->
             configureSolrCloudTasks(task, "Removes all components of a one note SolrCloud cluster")
-            task.dependsOn(zkTasks.removeTask, solrTasks.removeTask, removeNetwork)
+            task.dependsOn(zkTasks.removeTask, solrTasks.removeTask)
         }
 
-        removeNetwork.configure {
+        networkTasks.removeNetworkTask.configure {
             it.mustRunAfter(zkTasks.removeTask, solrTasks.removeTask)
         }
     }

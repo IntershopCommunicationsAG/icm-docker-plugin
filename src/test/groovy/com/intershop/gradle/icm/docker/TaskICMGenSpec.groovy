@@ -29,9 +29,6 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
                 id 'java'
                 id 'com.intershop.gradle.icm.docker'
             }
-            
-            tasks.register('generateICMProps', com.intershop.gradle.icm.docker.tasks.GenICMProperties) {
-            } 
             """.stripIndent()
 
     String settingsfileContent =
@@ -157,7 +154,7 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
         then:
         result1.task(":generateICMProps").outcome == SUCCESS
         file.exists()
-        file.text.contains("oracle base configuration")
+        file.text.contains("mssql base configuration")
         file.text.contains("intershop.jdbc.url = jdbc:sqlserver://rootproject-mssql:1433;databaseName=icmtestdb")
 
         where:
@@ -178,7 +175,7 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
         then:
         result1.task(":generateICMProps").outcome == SUCCESS
         file.exists()
-        file.text.contains("oracle base configuration")
+        file.text.contains("mssql base configuration")
         file.text.contains("<database user of ext db>")
 
         where:
@@ -199,7 +196,7 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
         then:
         result1.task(":generateICMProps").outcome == SUCCESS
         file.exists()
-        file.text.contains("oracle base configuration")
+        file.text.contains("mssql base configuration")
         file.text.contains("jdbc:sqlserver://localhost:1433;databaseName=icmtestdb")
 
         where:
@@ -220,8 +217,98 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
         then:
         result1.task(":generateICMProps").outcome == SUCCESS
         file.exists()
-        file.text.contains("oracle base configuration")
+        file.text.contains("mssql base configuration")
         file.text.contains("<database user of ext db>")
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'mssql, mail, solr file creation (external)'() {
+        settingsFile << settingsfileContent
+        buildFile << buildfileContent
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("generateICMProps", "--db=mssql", "--icmenvops=dev,mail,solr", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
+
+        then:
+        result1.task(":generateICMProps").outcome == SUCCESS
+        file.exists()
+        file.text.contains("mssql base configuration")
+        file.text.contains("<database user of ext db>")
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'mssql-container, mail, solr file creation (external)'() {
+        settingsFile << settingsfileContent
+        buildFile << buildfileContent
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("generateICMProps", "--db=mssql-container", "--icmenvops=dev,mail,solr", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
+
+        then:
+        result1.task(":generateICMProps").outcome == SUCCESS
+        file.exists()
+        file.text.contains("mssql base configuration")
+        file.text.contains("intershop.jdbc.user = intershop")
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'start environment'() {
+        settingsFile << """
+        rootProject.name='rootproject'
+        """.stripIndent()
+
+        buildFile << """
+            plugins {
+                id 'java'
+                id 'com.intershop.gradle.icm.docker'
+            }
+        """.stripIndent()
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("generateICMProps", "--db=mssql-container", "--icmenvops=dev,mail,solr", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
+
+        then:
+        result1.task(":generateICMProps").outcome == SUCCESS
+        file.exists()
+        file.text.contains("mssql base configuration")
+        file.text.contains("intershop.jdbc.user = intershop")
+
+        when:
+        def path = file.parentFile.absolutePath
+
+        def result2 = getPreparedGradleRunner()
+                .withArguments("startEnv", "-PconfigDir=${path}", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":startEnv").outcome == SUCCESS
+
+        when:
+        def result3 = getPreparedGradleRunner()
+                .withArguments("stopEnv", "-PconfigDir=${path}", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result3.task(":stopEnv").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
