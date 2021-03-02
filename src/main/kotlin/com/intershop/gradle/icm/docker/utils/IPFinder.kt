@@ -49,7 +49,7 @@ object IPFinder {
     }
 
     //For Linux OS
-    fun getSystemIP4Linux(name: String): String? {
+    private fun getSystemIP4Linux(name: String): String? {
         return try {
             var ip : String?=null
             val networkInterface = NetworkInterface.getByName(name)

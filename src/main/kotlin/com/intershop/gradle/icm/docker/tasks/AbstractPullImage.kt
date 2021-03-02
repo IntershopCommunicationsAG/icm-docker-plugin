@@ -86,7 +86,7 @@ abstract class AbstractPullImage
 
             if(! force.get()) {
                 val listImagesCmd = dockerClient.listImagesCmd()
-                listImagesCmd.filters.put("reference", Arrays.asList(image.get()))
+                listImagesCmd.filters["reference"] = Arrays.asList(listOf())
                 val images = listImagesCmd.exec()
                 pull = images.size < 1
             }

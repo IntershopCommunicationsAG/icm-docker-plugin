@@ -257,8 +257,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         val text =
             """
             # oracle base configuration
-            ${databaseTypeProp} = oracle
-            ${databaseJDBCUrlProp} = jdbc:oracle:thin:@${host}:${port}:${sid}
+            $databaseTypeProp = oracle
+            $databaseJDBCUrlProp = jdbc:oracle:thin:@$host:$port:$sid
             """.trimIndent()
 
         file.appendText(text, Charsets.UTF_8)
@@ -318,8 +318,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         val text =
             """
             # mssql base configuration
-            ${databaseTypeProp} = mssql
-            ${databaseJDBCUrlProp} = jdbc:sqlserver://${host}:${port};databaseName=${dbname}
+            $databaseTypeProp = mssql
+            $databaseJDBCUrlProp = jdbc:sqlserver://$host:$port;databaseName=$dbname
             """.trimIndent()
 
         file.appendText(text, Charsets.UTF_8)
@@ -450,8 +450,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
         val text =
             """
-            ${asSolrZKListProp} = ${host}:${port}/${solrpath}
-            ${asSolrPrefixProp} = ${extension.containerPrefix}
+            $asSolrZKListProp = $host:$port/$solrpath
+            $asSolrPrefixProp = ${extension.containerPrefix}
             """.trimIndent()
 
         file.appendText(text, Charsets.UTF_8)

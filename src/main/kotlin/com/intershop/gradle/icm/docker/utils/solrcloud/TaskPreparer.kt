@@ -17,13 +17,9 @@
 
 package com.intershop.gradle.icm.docker.utils.solrcloud
 
-import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.RemoveNetwork
-import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
 class TaskPreparer(val project: Project, private val networkTasks: TaskPreparer) {
