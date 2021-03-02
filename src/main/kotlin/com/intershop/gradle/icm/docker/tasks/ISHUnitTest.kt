@@ -62,7 +62,7 @@ open class ISHUnitTest : AbstractContainerTask() {
         val registration = registry.registrations.findByName(name)
                 ?: throw GradleException ("Unable to find build service with name '$name'.")
 
-        return registration.getService()
+        return registration.service
     }
 
     /**

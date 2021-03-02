@@ -51,14 +51,14 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         icmbase.convention("docker.intershop.de/intershop/icm-as:latest")
         icminit.convention("docker.intershop.de/intershop/icm-as-init:latest")
 
-        icmsetup.convention("docker.intershop.de/intershop/icm-base:latest")
-        webadapter.convention("docker.intershop.de/intershop/icm-webadapter:latest")
-        webadapteragent.convention("docker.intershop.de/intershop/icm-webadapteragent:latest")
+        icmsetup.convention("intershophub/icm-base:latest")
+        webadapter.convention("intershophub/icm-webadapter:2.0.19")
+        webadapteragent.convention("intershophub/icm-webadapteragent:3.0.7")
 
         solr.convention("solr:latest")
         zookeeper.convention("zookeeper:latest")
-        mssqldb.convention("mcr.microsoft.com/mssql/server:2019-latest")
-        oracledb.convention("docker.intershop.de/intershop/oracle-xe-server:18.4.0")
+        mssqldb.convention("intershophub/mssql-intershop:2019-latest")
+        oracledb.convention("intershophub/oracle-intershop:latest")
 
         mailsrv.convention("mailhog/mailhog:latest")
 

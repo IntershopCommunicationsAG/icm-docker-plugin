@@ -113,10 +113,6 @@ class DBPrepareCallback (
     }
 
     private fun formatStringToInt(str: String?): Int {
-        return if(str != null) {
-                str.trim().replace(",", "").replace(".", "").toInt()
-            } else {
-                0
-            }
+        return str?.trim()?.replace(",", "")?.replace(".", "")?.toInt() ?: 0
     }
 }

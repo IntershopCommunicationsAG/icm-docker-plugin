@@ -94,4 +94,6 @@ object Configuration {
 
     const val GEB_LOCAL_DRIVER = "geb.local.driver"
     const val GEB_LOCAL_ENVIRONMENT = "geb.local.environment"
+
+    const val COTAINER_ENV_PROP = "intershop.environment.container"
 }

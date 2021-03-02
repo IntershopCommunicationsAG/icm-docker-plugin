@@ -720,15 +720,13 @@ private String findNetworkIdForName(String name) {
 
 private createNetwork(networkId) {
     Network tcNet = new Network() {
-        @Override
+
         String getId() {
             return networkId
         }
 
-        @Override
         void close() throws Exception {}
 
-        @Override
         Statement apply(Statement base, Description description) {
             return null
         }

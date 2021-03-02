@@ -22,7 +22,6 @@ import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.RemoveNetwork
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
@@ -82,23 +81,21 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                     ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
                 val prepareNetwork = project.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
-                val removeNetwork = project.tasks.named(NetworkPreparer.REMOVE_NETWORK, RemoveNetwork::class.java)
 
-                val solrcloudPreparer = SolrCloudPreparer(project, prepareNetwork, removeNetwork)
                 val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
                 val appServerPreparer = ServerTaskPreparer(project, prepareNetwork)
 
                 val mailSrvTask = tasks.named("start${MailPreparer.extName}")
+                val solrCloudTask = tasks.named("start${SolrCloudPreparer.TASK_EXT_SERVER}")
 
                 appServerPreparer.startTask.configure {
-                    it.mustRunAfter(solrcloudPreparer.startTask)
+                    it.mustRunAfter(solrCloudTask)
                     it.mustRunAfter(mailSrvTask)
                 }
 
                 try {
                     tasks.named("containerClean").configure {
                         it.dependsOn(
-                            solrcloudPreparer.removeTask,
                             containerPreparer.removeTask,
                             appServerPreparer.removeTask
                         )

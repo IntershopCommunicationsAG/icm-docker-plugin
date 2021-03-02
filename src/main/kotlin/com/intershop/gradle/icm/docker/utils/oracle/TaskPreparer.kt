@@ -31,7 +31,7 @@ class TaskPreparer(project: Project,
         const val extName: String = "Oracle"
     }
 
-    override val image: Provider<String> = extension.images.mssqldb
+    override val image: Provider<String> = extension.images.oracledb
     override val extensionName: String = extName
     override val containerExt: String = extensionName.toLowerCase()
 

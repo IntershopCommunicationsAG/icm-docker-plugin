@@ -21,9 +21,12 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
+import com.intershop.gradle.icm.docker.tasks.GenICMProperties
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
+import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailSrvPreparer
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
@@ -36,6 +39,11 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
+import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
+import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebTaskPreparer
+import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
+import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
+import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
 
 /**
  * Main plugin class of the project plugin.
@@ -78,6 +86,7 @@ open class ICMDockerPlugin: Plugin<Project> {
             val mssqlTasks = MSSQLPreparer(project, networkTasks.createNetworkTask)
             val oracleTasks = OraclePreparer(project, networkTasks.createNetworkTask)
             val mailSrvTask = MailSrvPreparer(project, networkTasks.createNetworkTask)
+            val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
             val webServerTasks = WebServerPreparer(project, networkTasks)
 
@@ -98,30 +107,84 @@ open class ICMDockerPlugin: Plugin<Project> {
                                 mssqlTasks.removeTask,
                                 mailSrvTask.removeTask,
                                 webServerTasks.removeTask,
-                                oracleTasks.removeTask)
+                                oracleTasks.removeTask,
+                                solrcloudPreparer.removeTask)
             }
 
             networkTasks.removeNetworkTask.configure {
                 it.mustRunAfter(mssqlTasks.removeTask,
                     mailSrvTask.removeTask,
                     webServerTasks.removeTask,
-                    oracleTasks.removeTask)
+                    oracleTasks.removeTask,
+                    solrcloudPreparer.removeTask)
             }
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
 
+            createICMPropertiesGenTask(project)
+
             createImageTasks(project, extension)
+
+            createEnvironmentTask(project, extension)
 
             try {
                 tasks.named("publish").configure {
                     it.finalizedBy(ccTask)
                 }
             } catch(ex: UnknownTaskException) {
-                logger.quiet("Publish task is not available.")
+                logger.info("Publish task is not available.")
             }
         }
     }
 
+    private fun createICMPropertiesGenTask(project: Project) {
+        project.tasks.register("generateICMProps", GenICMProperties::class.java)
+    }
+
+    private fun createEnvironmentTask(project: Project, extension: IntershopDockerExtension) {
+        val listStr = extension.developmentConfig.getConfigProperty(Configuration.COTAINER_ENV_PROP)
+        val list = listStr.split(",")
+
+        project.tasks.register("startEnv") { task ->
+            task.group = GROUP_CONTAINER
+            task.description = "Start all container from Docker for the selected environment"
+            if(list.contains("mail")) {
+                task.dependsOn("start${MailTaskPreparer.extName}")
+            }
+            if(list.contains("webserver")) {
+                task.dependsOn("start${WebTaskPreparer.TASK_EXT_SERVER}")
+            }
+            if(list.contains("solr")) {
+                task.dependsOn("start${SolrTaskPreparer.TASK_EXT_SERVER}")
+            }
+            if(list.contains("mssql")) {
+                task.dependsOn("start${MSSQLTaskPreparer.extName}")
+            }
+            if(list.contains("oracle")) {
+                task.dependsOn("start${OracleTaskPreparer.extName}")
+            }
+        }
+
+        project.tasks.register("stopEnv") { task ->
+            task.group = GROUP_CONTAINER
+            task.description = "Stops all container from Docker for the selected environment"
+            if(list.contains("mail")) {
+                task.dependsOn("stop${MailTaskPreparer.extName}")
+            }
+            if(list.contains("webserver")) {
+                task.dependsOn("stop${WebTaskPreparer.TASK_EXT_SERVER}")
+            }
+            if(list.contains("solr")) {
+                task.dependsOn("stop${SolrTaskPreparer.TASK_EXT_SERVER}")
+            }
+            if(list.contains("mssql")) {
+                task.dependsOn("stop${MSSQLTaskPreparer.extName}")
+            }
+            if(list.contains("oracle")) {
+                task.dependsOn("stop${OracleTaskPreparer.extName}")
+            }
+        }
+    }
 
     private fun createImageTasks(project: Project, extension: IntershopDockerExtension) {
         with(extension) {

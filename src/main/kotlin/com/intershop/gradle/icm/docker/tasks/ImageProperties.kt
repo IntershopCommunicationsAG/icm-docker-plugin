@@ -108,7 +108,7 @@ open class ImageProperties @Inject constructor(objectFactory: ObjectFactory,
         val registration = registry.registrations.findByName(name)
             ?: throw GradleException ("Unable to find build service with name '$name'.")
 
-        val buildservice = registration.getService().get()
+        val buildservice = registration.service.get()
         return if(buildservice is BuildImageRegistry) {
             buildservice
         } else {
