@@ -184,6 +184,9 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
         val text =
             """
+            # The following containers will be started / stopped with
+            # startEnv / stopEnv. The container can be configured in 
+            # the docker image extension.
             ${Configuration.COTAINER_ENV_PROP} = ${envListTasks.joinToString(",")}
             """.trimIndent()
 
