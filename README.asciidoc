@@ -26,17 +26,8 @@ The plugins must be applied to the root project.
 [source,groovy]
 ----
 plugins {
-    id 'com.intershop.gradle.icm.base' version '3.4.0'
+    id 'com.intershop.gradle.icm.base' version '3.4.14'
     id 'com.intershop.gradle.icm.docker' version '{latestRevision}'
-}
-
-docker {
-    registryCredentials {
-        url = "https://<registry hostname>"
-        username = "<registry user name>"
-        password = "<registry user password>"
-        email = "<registry user email>"
-    }
 }
 
 intershop {
@@ -47,13 +38,13 @@ intershop {
 
 intershop_docker {
     images {
-        icmsetup = 'registry.intershop.de/intershop/icm-base:1.9.2'
+        icmsetup = 'intershophub/icm-base:8.282.2'
 
-        webadapter = 'registry.intershop.de/intershop/icm-webadapter:2.0.6'
-        webadapteragent = 'registry.intershop.de/intershop/icm-webadapteragent:3.0.4'
+        webadapter = 'intershophub/icm-webadapter:2.0.19'
+        webadapteragent = 'intershophub/icm-webadapteragent:3.0.7'
 
-        mssql = '<image with an prepares installation for Intershop>'
-        oracle = '<image with an prepares installation for Intershop>'
+        mssql = 'intershophub/mssql-intershop:2019-latest'
+        oracle = 'intershophub/oracle-intershop:latest'
 
         mailsrv = 'mailhog/mailhog:latest'
     }
@@ -109,17 +100,8 @@ intershop_docker {
 [source,kotlin]
 ----
 plugins {
-    id("com.intershop.gradle.icm.base") version "2.2.0"
+    id("com.intershop.gradle.icm.base") version "3.4.14"
     id("com.intershop.gradle.icm.docker") version "{latestRevision}"
-}
-
-docker {
-    registryCredentials {
-        url.set("https://<registry hostname>")
-        username.set("<registry user name>")
-        password.set("<registry user password>")
-        email.set("<registry user email>")
-    }
 }
 
 intershop {
@@ -130,16 +112,17 @@ intershop {
 
 intershop_docker {
     images {
-        icmsetup.set("docker-public.rnd.intershop.de/intershop/icm-base:1.9.2")
+        icmsetup.set("intershophub/icm-base:8.282.2")
 
-        webadapter.set("docker-public.rnd.intershop.de/intershop/icm-webadapter:2.0.6")
-        webadapteragent.set("docker-public.rnd.intershop.de/intershop/icm-webadapteragent:3.0.4")
+        webadapter.set("'intershophub/icm-webadapter:2.0.19")
+        webadapteragent.set("intershophub/icm-webadapteragent:3.0.7")
 
-        mssqldb.set("<image with an prepares installation for Intershop>")
-        oracle.set("<image with an prepares installation for Intershop>")
+        mssql.set("intershophub/mssql-intershop:2019-latest")
+        oracle.set("intershophub/oracle-intershop:latest")
 
         mailsrv.set("mailhog/mailhog:latest")
     }
+
 
 imageBuild {
         license.set("Intershop Communications AG")
@@ -253,6 +236,8 @@ imageBuild {
 |`mssqldb`  | `Property<String>` | `mcr.microsoft.com/mssql/server:2019-latest`       | The Microsoft SQL  server image. There will be also a build file available.
 |`oracledb` | `Property<String>` | `docker.intershop.de/intershop/oracle-xe-server:18.4.0`       | This image is only available internally. The build files will be provided.
 |`mailsrv`  | `Property<String>` | `mailhog/mailhog:latest`       | A mail server for testing the mail feature of the application.
+|`solr`   | `Property<String>`      | `solr/latest`       | This image is used for the Solr Cloud configuration with a single node.
+|`zookeeper`   | `Property<String>` | `zookeeper:latest`  | This image is used for the Solr Cloud configuration with a single node.
 |===
 
 ===== Image Build Configuration `ProjectConfiguration`[[ProjectConfiguration]]
@@ -319,13 +304,40 @@ For all properties configurations methods with a closure or an action are availa
 | **MSSQL*        | These tasks pull, start, stop and remove the MSSQL image.
 | **Oracle*       | These tasks pull, start, stop and remove the Oracle DB image.
 | **MailSrv*      | These tasks pull, start, stop and remove the Mail server image.
+| **SolrCloud*      | These tasks orchestrate all Solr Cloud related tasks.
+| **ZK*             | These tasks pull, start, stop and remove the Zookeeper image.
+| **Solr*           | These tasks pull, start, stop and remove the Solr image.
 | *createWebVolumes* | Creates necessary volumes for the ICM web server with WebAdapter Agent.
 | *removeWebVolumes* | Removes web server volumes from the Docker configuration.
 | **WAA* | These tasks pull, start, stop and remove the ICM Web Adapter Agent image.
 | **WA* | These tasks pull, start, stop and remove the ICM Web Adapter image. This image contains a Apache webserver with the ICM WA module.
 | **WebServer* | These tasks orchestrate all web server related tasks.
 | *containerClean* | This task starts the remove tasks for all available objects.
+| *generateICMProps* | Generates an icm.properties file for local development.
+| *showICMASConfig*  | Shows a special part of icm.properties for local application server development.
+| *startEnv*         | Starts a docker based environment based on "intershop.environment.container" in the icm properties file.
+| *stopEnv*          | Stops the docker based environment based on "intershop.environment.container" in the icm properties file.
 
+|===
+
+==== *generateICMProps* Parameters
+
+The task can be called with the following parameters:
+
+[cols="18%,82%", width="99%, options="header"]
+|===
+| Parameter          |Description
+
+| --db     | Option for the used database. The following values are possible: +
+            _oracle-container_ - Oracle configuration for database provided by a container +
+            _oracle_ - Oracle configuration for an external database +
+            _mssql-container_ - MSSQL configuration for database provided by a container +
+            _mssql_ - MSSQL configuration for an external database
+| --icmas  | If this parameter specified, the properties file will be generated for app server development.
+| --icmenvops  | A comma-separated list of options for the icm.properties files. +
+            _dev_ - General development properties for the application server +
+            _mail_ - MailHog container is used as test mail server +
+            _solr_ - Singel node solr cluster with containers is used
 |===
 
 [[TaskClasses]]
@@ -409,8 +421,6 @@ The plugins must be applied to the root project.
 
 |`icmbase`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the ICM application server image.
 |`icminit`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as-init:latest`  | This image is used as a base image for ICM application server initialization image.
-|`solr`   | `Property<String>`      | `solr/latest`       | This image is used for the Solr Cloud configuration with a single node.
-|`zookeeper`   | `Property<String>` | `zookeeper:latest`  | This image is used for the Solr Cloud configuration with a single node.
 
 |===
 
@@ -420,9 +430,6 @@ The plugins must be applied to the root project.
 |===
 | Task name           |Description
 
-| **SolrCloud*      | These tasks orchestrate all Solr Cloud related tasks.
-| **ZK*             | These tasks pull, start, stop and remove the Zookeeper image.
-| **Solr*           | These tasks pull, start, stop and remove the Solr image.
 | **Container*      | These tasks pull, start, stop and remove the ICM application server image with a special command. There is no running process inside, but it uses the same configuration like the appserver container.
 | **AS*             | These tasks pull, start, stop and remove the ICM application server image.
 | **Server*         | These tasks orchestrate all ICM server related tasks (web server and app server)

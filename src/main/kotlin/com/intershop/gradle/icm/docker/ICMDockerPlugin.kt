@@ -24,6 +24,7 @@ import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.GenICMProperties
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
+import com.intershop.gradle.icm.docker.tasks.ShowICMASConfig
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
@@ -138,7 +139,14 @@ open class ICMDockerPlugin: Plugin<Project> {
     }
 
     private fun createICMPropertiesGenTask(project: Project) {
-        project.tasks.register("generateICMProps", GenICMProperties::class.java)
+        project.tasks.register("generateICMProps", GenICMProperties::class.java).configure {
+            it.group = "icm project setup"
+            it.description = "Generates an icm properties file."
+        }
+        project.tasks.register("showICMASConfig", ShowICMASConfig::class.java).configure {
+            it.group = "icm project setup"
+            it.description = "Shows a special part of the configuration for local application server development"
+        }
     }
 
     private fun createEnvironmentTask(project: Project, extension: IntershopDockerExtension) {

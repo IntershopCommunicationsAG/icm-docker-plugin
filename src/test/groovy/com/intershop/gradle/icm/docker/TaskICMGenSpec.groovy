@@ -310,6 +310,15 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
         then:
         result3.task(":stopEnv").outcome == SUCCESS
 
+        when:
+        def result4 = getPreparedGradleRunner()
+                .withArguments("showICMASConfig", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result4.task(":showICMASConfig").outcome == SUCCESS
+
         where:
         gradleVersion << supportedGradleVersions
     }
