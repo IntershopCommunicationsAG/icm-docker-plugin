@@ -27,18 +27,39 @@ object IPFinder {
         return try {
             var sysIP: String?
             val osName = System.getProperty("os.name")
-            if (osName.contains("Windows")) {
-                sysIP = InetAddress.getLocalHost().hostAddress
-            } else {
-                sysIP = getSystemIP4Linux("eth0")
-                if (sysIP == null) {
-                    sysIP = getSystemIP4Linux("eth1")
-                    if (sysIP == null) {
-                        sysIP = getSystemIP4Linux("eth2")
-                        if (sysIP == null) {
-                            sysIP = getSystemIP4Linux("usb0")
+            sysIP = when {
+                osName.contains("Windows") -> InetAddress.getLocalHost().hostAddress
+                osName.contains("Mac") -> {
+                    var ip = getSystemIP4Linux("en0")
+                    if (ip == null) {
+                        ip = getSystemIP4Linux("en1")
+                        if (ip == null) {
+                            ip = getSystemIP4Linux("en2")
+                            if (ip == null) {
+                                ip = getSystemIP4Linux("en3")
+                                if (ip == null) {
+                                    ip = getSystemIP4Linux("en4")
+                                    if (ip == null) {
+                                        ip = getSystemIP4Linux("en5")
+                                    }
+                                }
+                            }
                         }
                     }
+                    ip
+                }
+                else -> {
+                    var eip = getSystemIP4Linux("eth0")
+                    if (eip == null) {
+                        eip = getSystemIP4Linux("eth1")
+                        if (eip == null) {
+                            eip = getSystemIP4Linux("eth2")
+                            if (eip == null) {
+                                eip = getSystemIP4Linux("usb0")
+                            }
+                        }
+                    }
+                    eip
                 }
             }
             sysIP
@@ -51,15 +72,21 @@ object IPFinder {
     //For Linux OS
     private fun getSystemIP4Linux(name: String): String? {
         return try {
-            var ip : String?=null
+            var ip: String? = null
             val networkInterface = NetworkInterface.getByName(name)
             val inetAddress = networkInterface.inetAddresses
             var currentAddress = inetAddress.nextElement()
-            while (inetAddress.hasMoreElements()) {
-                currentAddress = inetAddress.nextElement()
+            if (!inetAddress.hasMoreElements()) {
                 if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
                     ip = currentAddress.toString()
-                    break
+                }
+            } else {
+                while (inetAddress.hasMoreElements()) {
+                    currentAddress = inetAddress.nextElement()
+                    if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
+                        ip = currentAddress.toString()
+                        break
+                    }
                 }
             }
             if (ip != null) {
