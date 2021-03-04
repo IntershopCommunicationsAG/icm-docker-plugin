@@ -111,6 +111,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                     task.group = GROUP_SERVERBUILD
                     task.description = "Start app server container with webserver containers"
                     task.dependsOn(startWS)
+                    task.dependsOn(appServerPreparer.startTask)
                 }
 
                 startWS.configure {
@@ -119,7 +120,6 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
 
                 startWA.configure {
                     it.mustRunAfter(appServerPreparer.startTask)
-                    it.dependsOn(appServerPreparer.startTask)
                 }
 
                 val stopWS = tasks.named("stop${WebServerPreparer.TASK_EXT_SERVER}")
