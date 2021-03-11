@@ -19,11 +19,14 @@ package com.intershop.gradle.icm.docker.utils.webserver
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.CreateVolumes
 import com.intershop.gradle.icm.docker.tasks.RemoveVolumes
+import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
+import java.io.File
 
 class TaskPreparer(val project: Project, private val networkTasks: NetworkPreparer) {
 
@@ -53,8 +56,17 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
                 task.volumeNames.set( volumes.keys )
             }
 
+        val certsPath =  extension.developmentConfig.getConfigProperty(Configuration.WS_CERT_PATH)
+        val certsDir = File(certsPath)
+        val certVol = if(certsDir.exists()) {
+            ContainerUtils.transformVolumes(mutableMapOf<String, String>(
+                certsDir.absolutePath to "/intershop/webserver-certs"))
+        } else {
+            emptyMap<String, String>()
+        }
+
         val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes)
-        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes)
+        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes + certVol)
 
         waTasks.startTask.configure {
             it.dependsOn(createVolumes)

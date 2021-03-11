@@ -346,6 +346,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
     private fun writeServerProps(file: File) {
         with(Configuration) {
+            val confDir = File(extension.developmentConfig.configFilePath)
             val text =
                 """
                 # webserver configuration
@@ -355,6 +356,9 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                 #
                 $webserverUrlProp = http://localhost:$WS_HTTP_PORT_VALUE
                 $webserverSecureUrlProp = https://localhost:$WS_HTTPS_PORT_VALUE
+              
+                # If you want add your own certs
+                $WS_CERT_PATH = ${File(confDir, "certs")}
                 
                 # webserver container configuration - do not change this value if the default images is used 
                 $WS_HTTP_PORT = $WS_HTTP_PORT_VALUE
