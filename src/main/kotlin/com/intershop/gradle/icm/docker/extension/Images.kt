@@ -51,9 +51,9 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         icmbase.convention("docker.intershop.de/intershop/icm-as:latest")
         icminit.convention("docker.intershop.de/intershop/icm-as-init:latest")
 
-        icmsetup.convention("intershophub/icm-base:latest")
-        webadapter.convention("intershophub/icm-webadapter:2.0.19")
-        webadapteragent.convention("intershophub/icm-webadapteragent:3.0.7")
+        icmsetup.convention("intershophub/icm-base:8.282.3")
+        webadapter.convention("intershophub/icm-webadapter:2.0.20")
+        webadapteragent.convention("intershophub/icm-webadapteragent:3.0.8")
 
         solr.convention("solr:latest")
         zookeeper.convention("zookeeper:latest")

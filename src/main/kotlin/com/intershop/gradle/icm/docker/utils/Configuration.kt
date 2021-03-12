@@ -82,6 +82,8 @@ object Configuration {
     const val WS_CONTAINER_HTTPS_PORT_VALUE = "8443"
 
     const val WS_CERT_PATH = "webServer.cert.path"
+    const val WS_SERVER_CERT = "webserver.cert.server"
+    const val WS_SERVER_PRIVAT = "webserver.cert.privatekey"
 
     const val AS_ADMIN_USER_NAME = "intershop.smc.admin.user.name"
     const val AS_ADMIN_USER_NAME_VALUE = "admin"

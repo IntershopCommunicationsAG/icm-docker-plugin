@@ -359,6 +359,10 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
               
                 # If you want add your own certs
                 $WS_CERT_PATH = ${File(confDir, "certs")}
+                # if the server certificate is not server.crt, add the name
+                $WS_SERVER_CERT =
+                # if the private key is not server.key, add the name
+                $WS_SERVER_PRIVAT =
                 
                 # webserver container configuration - do not change this value if the default images is used 
                 $WS_HTTP_PORT = $WS_HTTP_PORT_VALUE

@@ -72,6 +72,18 @@ class WATaskPreparer(project: Project,
                     Configuration.WS_CONTAINER_HTTPS_PORT,
                     Configuration.WS_CONTAINER_HTTPS_PORT_VALUE)
 
+                val serverCertName = getConfigProperty(
+                    Configuration.WS_SERVER_CERT, "")
+                if(serverCertName.isNotBlank()) {
+                    task.envVars.put("ICM_SERVERCERT", serverCertName)
+                }
+
+                val privateKeyName = getConfigProperty(
+                    Configuration.WS_SERVER_PRIVAT, "")
+                if(privateKeyName.isNotBlank()) {
+                    task.envVars.put("ICM_SERVERPRIVATEKEY", privateKeyName)
+                }
+
                 task.hostConfig.portBindings.set(
                     listOf("${httpPort}:${httpContainerPort}", "${httpsPort}:${httpsContainerPort}")
                 )
