@@ -63,7 +63,8 @@ class SolrPreparer(project: Project,
                 mutableMapOf(
                     "SOLR_PORT" to "8983",
                     "ZK_HOST" to "${extension.containerPrefix}-${ZKPreparer.extName.toLowerCase()}:2181",
-                    "SOLR_HOST" to "${ IPFinder.getSystemIP()}"
+                    "SOLR_HOST" to "${ IPFinder.getSystemIP()}",
+                    "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
                 )
             )
 
