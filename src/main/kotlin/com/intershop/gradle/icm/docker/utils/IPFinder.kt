@@ -25,7 +25,7 @@ object IPFinder {
     //Function to Find out IP Address
     fun getSystemIP(): String? {
         return try {
-            var sysIP: String?
+            val sysIP: String?
             val osName = System.getProperty("os.name")
             sysIP = when {
                 osName.contains("Windows") -> InetAddress.getLocalHost().hostAddress

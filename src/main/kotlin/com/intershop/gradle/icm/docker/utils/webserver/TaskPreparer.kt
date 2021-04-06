@@ -59,10 +59,10 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         val certsPath =  extension.developmentConfig.getConfigProperty(Configuration.WS_CERT_PATH)
         val certsDir = File(certsPath)
         val certVol = if(certsDir.exists()) {
-            ContainerUtils.transformVolumes(mutableMapOf<String, String>(
+            ContainerUtils.transformVolumes(mutableMapOf(
                 certsDir.absolutePath to "/intershop/webserver-certs"))
         } else {
-            emptyMap<String, String>()
+            emptyMap()
         }
 
         val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes)

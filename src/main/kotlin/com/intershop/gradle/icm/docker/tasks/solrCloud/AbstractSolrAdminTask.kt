@@ -18,17 +18,15 @@
 package com.intershop.gradle.icm.docker.tasks.solrCloud
 
 import com.intershop.gradle.icm.docker.utils.IPFinder
+import org.apache.solr.client.solrj.SolrClient
+import org.apache.solr.client.solrj.impl.CloudSolrClient
 import org.gradle.api.DefaultTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import javax.inject.Inject
-import org.apache.solr.client.solrj.SolrClient
-import org.apache.solr.client.solrj.impl.CloudSolrClient
-import org.gradle.api.ActionConfiguration
-import org.gradle.api.GradleException
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
+import javax.inject.Inject
 
 abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
 
@@ -56,11 +54,12 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
 
     @Internal
     protected fun getSolrClient(): SolrClient {
-        if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
-            return getClient(solrConfiguration.get())
+        return if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
+            getClient(solrConfiguration.get())
         } else {
-            project.logger.quiet("\n !!! Use default connect string '${IPFinder.getSystemIP()}:2181' for the client! !!! \n")
-            return getClient("${IPFinder.getSystemIP()}:2181")
+            val defaultConStr = "${IPFinder.getSystemIP()}:2181"
+            project.logger.quiet("\n!!! Use default connect string '${defaultConStr}' for the client! \n")
+            getClient(defaultConStr)
         }
     }
 

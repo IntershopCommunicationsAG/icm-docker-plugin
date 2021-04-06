@@ -25,16 +25,15 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
 import javax.inject.Inject
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
-import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
 
