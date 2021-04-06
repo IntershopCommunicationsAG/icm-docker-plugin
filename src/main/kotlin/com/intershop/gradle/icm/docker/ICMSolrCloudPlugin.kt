@@ -34,6 +34,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_HOSTLIST
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_INDEXPREFIX
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_HTTPS_PORT
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_HTTPS_PORT_VALUE
+import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
@@ -68,7 +69,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     cus.group = "Solr Cloud Support"
                     cus.description = "Removes all collections and configuration for the specified prefix"
 
-                    cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST, "localhost:2181/solr"))
+                    cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST))
                     cus.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX, ""))
                 }
 

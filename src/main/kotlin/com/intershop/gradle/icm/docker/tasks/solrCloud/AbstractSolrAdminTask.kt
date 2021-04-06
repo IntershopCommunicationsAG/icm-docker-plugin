@@ -59,7 +59,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
         if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
             return getClient(solrConfiguration.get())
         } else {
-            project.logger.quiet("Use default values for the client!")
+            project.logger.quiet("\n !!! Use default connect string '${IPFinder.getSystemIP()}:2181' for the client! !!! \n")
             return getClient("${IPFinder.getSystemIP()}:2181")
         }
     }

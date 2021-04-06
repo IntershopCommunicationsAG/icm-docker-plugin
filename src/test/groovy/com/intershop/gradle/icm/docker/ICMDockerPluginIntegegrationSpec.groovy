@@ -938,27 +938,27 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         when:
         def result1 = getPreparedGradleRunner()
                 .withArguments("startSolr", "-s", "-i")
-                //.withGradleVersion(gradleVersion)
+                .withGradleVersion(gradleVersion)
                 .build()
-        sleep(10000)
 
         then:
         result1.task(":startSolr").outcome == SUCCESS
 
         when:
+        sleep(30000)
+
         def resultTest = getPreparedGradleRunner()
                 .withArguments("cleanUpSolr", "-s", "-i")
-        //.withGradleVersion(gradleVersion)
+                .withGradleVersion(gradleVersion)
                 .build()
-        sleep(300000)
 
         then:
-        result1.task(":cleanUpSolr").outcome == SUCCESS
+        resultTest.task(":cleanUpSolr").outcome == SUCCESS
 
         when:
         def result2 = getPreparedGradleRunner()
                 .withArguments("stopZK", "-s", "-i")
-                //.withGradleVersion(gradleVersion)
+                .withGradleVersion(gradleVersion)
                 .build()
 
         then:
@@ -967,7 +967,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         when:
         def result3 = getPreparedGradleRunner()
                 .withArguments("removeSolr", "-s", "-i")
-                //.withGradleVersion(gradleVersion)
+                .withGradleVersion(gradleVersion)
                 .build()
 
         then:
