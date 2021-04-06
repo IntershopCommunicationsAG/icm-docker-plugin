@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.utils.solrcloud
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -61,8 +62,8 @@ class SolrPreparer(project: Project,
             task.envVars.set(
                 mutableMapOf(
                     "SOLR_PORT" to "8983",
-                    "ZK_HOST" to "${extension.containerPrefix}-${ZKPreparer.extName}:2181",
-                    "SOLR_HOST" to "${extension.containerPrefix}-${containerExt}"
+                    "ZK_HOST" to "${extension.containerPrefix}-${ZKPreparer.extName.toLowerCase()}:2181",
+                    "SOLR_HOST" to "${ IPFinder.getSystemIP()}"
                 )
             )
 

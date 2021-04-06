@@ -55,14 +55,20 @@ class ZKPreparer(project: Project,
             task.image.set(pullTask.get().image)
 
             task.hostConfig.portBindings.set(
-                listOf("2181:2181")
+                listOf("2181:2181", "7000:7000")
             )
 
             task.envVars.set(
                 mutableMapOf(
                     "ZOO_MY_ID" to "1",
                     "ZOO_PORT" to "2181",
-                    "ZOO_SERVERS" to "server.1=${extension.containerPrefix}-${containerExt}:2888:3888"
+                    "ZOO_SERVERS" to
+                            "server.1=${extension.containerPrefix}-${containerExt.toLowerCase()}:2888:3888;2181",
+                    "ZOO_4LW_COMMANDS_WHITELIST" to "mntr, conf, ruok",
+                    "ZOO_CFG_EXTRA" to
+                            "metricsProvider.className=org.apache.zookeeper.metrics.prometheus." +
+                            "PrometheusMetricsProvider metricsProvider.httpPort=7000 " +
+                            "metricsProvider.exportJvmInfo=true"
                 )
             )
 

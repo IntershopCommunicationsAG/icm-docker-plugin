@@ -17,6 +17,7 @@
 
 package com.intershop.gradle.icm.docker.tasks.solrCloud
 
+import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.api.DefaultTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -24,6 +25,7 @@ import org.gradle.api.tasks.Input
 import javax.inject.Inject
 import org.apache.solr.client.solrj.SolrClient
 import org.apache.solr.client.solrj.impl.CloudSolrClient
+import org.gradle.api.ActionConfiguration
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
@@ -55,20 +57,26 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
     @Internal
     protected fun getSolrClient(): SolrClient {
         if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
-            val pathList = solrConfiguration.get().split("/")
-            val path = if (pathList.size > 1) {
-                java.util.Optional.of("/${pathList[1].trim()}")
-            } else {
-                java.util.Optional.empty()
-            }
-            val zkHosts = pathList[0].split(";")
-
-            val client = CloudSolrClient.Builder(zkHosts, path).build()
-            client.setZkConnectTimeout(connectionTimeout.get())
-
-            return client
+            return getClient(solrConfiguration.get())
         } else {
-            throw GradleException("The configuration for the Solr Cloud is empty or missing.")
+            project.logger.quiet("Use default values for the client!")
+            return getClient("${IPFinder.getSystemIP()}:2181")
         }
+    }
+
+    private fun getClient(connectStr: String):CloudSolrClient {
+        val pathList = connectStr.split("/")
+
+        val path = if (pathList.size > 1) {
+            java.util.Optional.of("/${pathList[1].trim()}")
+        } else {
+            java.util.Optional.empty()
+        }
+        val zkHosts = pathList[0].split(";")
+
+        val client = CloudSolrClient.Builder(zkHosts, path).build()
+        client.setZkConnectTimeout(connectionTimeout.get())
+
+        return client
     }
 }

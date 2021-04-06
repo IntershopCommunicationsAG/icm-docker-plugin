@@ -68,8 +68,8 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     cus.group = "Solr Cloud Support"
                     cus.description = "Removes all collections and configuration for the specified prefix"
 
-                    cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST))
-                    cus.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX))
+                    cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST, "localhost:2181/solr"))
+                    cus.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX, ""))
                 }
 
                 val solrList = project.tasks.register("listSolr", ListSolr::class.java ) { lst ->

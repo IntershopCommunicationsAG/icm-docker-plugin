@@ -443,22 +443,14 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     }
 
     private fun writeSolrProps(file: File, container: Boolean) {
-        val icmAs = icmasOption.get()
-        val host = if(icmAs) {
-            if(container) { "localhost" } else { "<hostname of min. one external zookeeper node>" }
-        } else {
-            if(container) {
-                "${extension.containerPrefix}-${ZKPreparer.extName.toLowerCase()}"
-            } else {
-                "<hostname of min. one external zookeeper node>"
-            }
-        }
+
+        val host = if(container) { IPFinder.getSystemIP() } else { "<hostname of min. one external zookeeper node>" }
         val port = if(container) { "2181" } else { "<port of the external zookeeper node>" }
-        val solrpath = if(container) { "solr" } else { "<path of the solr cluster>" }
+        val solrpath = if(container) { "" } else { "/<path of the solr cluster>" }
 
         val text =
             """
-            $asSolrZKListProp = $host:$port/$solrpath
+            $asSolrZKListProp = $host:${port}${solrpath}
             $asSolrPrefixProp = ${extension.containerPrefix}
             """.trimIndent()
 

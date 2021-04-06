@@ -229,6 +229,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 id 'java'
                 id 'com.intershop.gradle.icm.project' version '3.0.0'
                 id 'com.intershop.gradle.icm.docker.project'
+                id 'com.intershop.gradle.icm.docker.solrcloud'
             }
             
             group = 'com.intershop.test'
@@ -937,16 +938,27 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         when:
         def result1 = getPreparedGradleRunner()
                 .withArguments("startSolr", "-s", "-i")
-                .withGradleVersion(gradleVersion)
+                //.withGradleVersion(gradleVersion)
                 .build()
+        sleep(10000)
 
         then:
         result1.task(":startSolr").outcome == SUCCESS
 
         when:
+        def resultTest = getPreparedGradleRunner()
+                .withArguments("cleanUpSolr", "-s", "-i")
+        //.withGradleVersion(gradleVersion)
+                .build()
+        sleep(300000)
+
+        then:
+        result1.task(":cleanUpSolr").outcome == SUCCESS
+
+        when:
         def result2 = getPreparedGradleRunner()
                 .withArguments("stopZK", "-s", "-i")
-                .withGradleVersion(gradleVersion)
+                //.withGradleVersion(gradleVersion)
                 .build()
 
         then:
@@ -955,7 +967,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         when:
         def result3 = getPreparedGradleRunner()
                 .withArguments("removeSolr", "-s", "-i")
-                .withGradleVersion(gradleVersion)
+                //.withGradleVersion(gradleVersion)
                 .build()
 
         then:
