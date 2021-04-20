@@ -84,6 +84,12 @@ class WATaskPreparer(project: Project,
                     task.envVars.put("ICM_SERVERPRIVATEKEY", privateKeyName)
                 }
 
+                val usehttp2 = getConfigProperty(
+                    Configuration.WS_SERVER_HTTP2, "false")
+                if(usehttp2 == "true") {
+                    task.envVars.put("USEHTTP2", "true")
+                }
+
                 task.hostConfig.portBindings.set(
                     listOf("${httpPort}:${httpContainerPort}", "${httpsPort}:${httpsContainerPort}")
                 )
