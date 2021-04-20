@@ -40,8 +40,8 @@ intershop_docker {
     images {
         icmsetup = 'intershophub/icm-base:8.282.2'
 
-        webadapter = 'intershophub/icm-webadapter:2.0.19'
-        webadapteragent = 'intershophub/icm-webadapteragent:3.0.7'
+        webadapter = 'intershophub/icm-webadapter:2.1.0'
+        webadapteragent = 'intershophub/icm-webadapteragent:3.1.0'
 
         mssql = 'intershophub/mssql-intershop:2019-latest'
         oracle = 'intershophub/oracle-intershop:latest'
@@ -114,8 +114,8 @@ intershop_docker {
     images {
         icmsetup.set("intershophub/icm-base:8.282.2")
 
-        webadapter.set("'intershophub/icm-webadapter:2.0.19")
-        webadapteragent.set("intershophub/icm-webadapteragent:3.0.7")
+        webadapter.set("'intershophub/icm-webadapter:2.1.0")
+        webadapteragent.set("intershophub/icm-webadapteragent:3.1.0")
 
         mssql.set("intershophub/mssql-intershop:2019-latest")
         oracle.set("intershophub/oracle-intershop:latest")

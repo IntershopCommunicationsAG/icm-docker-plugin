@@ -40,7 +40,6 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
 
     init {
         val volumes = mapOf(
-            "${extension.containerPrefix}-waproperties" to "/intershop/webadapter-conf",
             "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
             "${extension.containerPrefix}-walogs" to "/intershop/logs")
 

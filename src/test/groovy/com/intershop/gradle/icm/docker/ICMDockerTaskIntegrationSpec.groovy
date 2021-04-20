@@ -103,8 +103,8 @@ class ICMDockerTaskIntegrationSpec extends AbstractIntegrationGroovySpec {
             
             intershop_docker {
                 images {
-                    webadapter = 'docker.intershop.de/intershop/icm-webadapter:2.0.6'
-                    webadapteragent = 'docker.intershop.de/intershop/icm-webadapteragent:3.0.4'
+                    webadapter = 'docker.intershop.de/intershop/icm-webadapter:2.1.0'
+                    webadapteragent = 'docker.intershop.de/intershop/icm-webadapteragent:3.1.0'
                 }
             }
         """.stripIndent()
