@@ -17,6 +17,7 @@
 package com.intershop.gradle.icm.docker.extension
 
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
+import com.intershop.gradle.icm.docker.extension.readmepush.ReadmePushConfiguration
 import com.intershop.gradle.icm.docker.utils.Configuration
 import groovy.lang.Closure
 import org.gradle.api.Action
@@ -102,6 +103,27 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
      */
     fun imageBuild(action: Action<in ProjectConfiguration>) {
         action.execute(imageBuild)
+    }
+
+    val readmePush: ReadmePushConfiguration = objectFactory.newInstance(ReadmePushConfiguration::class.java)
+
+    /**
+     * Configures the readme push from a closure.
+     *
+     * @param closure   closure with the readme push configuration.
+     */
+    @Suppress("unused")
+    fun readmePush(closure: Closure<ReadmePushConfiguration>) {
+        ConfigureUtil.configure(closure, readmePush)
+    }
+
+    /**
+     * Configures the readme push from an action.
+     *
+     * @param action   action with the readme push configuration.
+     */
+    fun readmePush(action: Action<in ReadmePushConfiguration>) {
+        action.execute(readmePush)
     }
 
     val ishUnitTests: NamedDomainObjectContainer<Suite> =

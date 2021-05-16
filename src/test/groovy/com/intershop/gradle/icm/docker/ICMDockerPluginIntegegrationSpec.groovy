@@ -671,11 +671,11 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     images {
                         mainImage {
                            dockerBuildDir = "main"
-                           enabled = true
+                           enabled = false
                         }
                         initImage {
                             dockerBuildDir = "init"
-                            enabled = true
+                            enabled = false
                         }
                     } 
                 }
@@ -1073,7 +1073,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 .build()
 
         then:
-        result2.task(":buildMainImage").outcome == SUCCESS
+        result2.task(":buildMainImage").outcome == SKIPPED
 
         when:
         def result3 = getPreparedGradleRunner()
@@ -1082,7 +1082,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 .build()
 
         then:
-        result3.task(":buildInitImage").outcome == SUCCESS
+        result3.task(":buildInitImage").outcome == SKIPPED
 
         when:
         def result4 = getPreparedGradleRunner()

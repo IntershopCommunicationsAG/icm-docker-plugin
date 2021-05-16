@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package com.intershop.gradle.icm.docker.tasks
 
 import com.intershop.gradle.icm.docker.ICMDockerPlugin
