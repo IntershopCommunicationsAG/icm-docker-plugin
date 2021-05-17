@@ -290,16 +290,16 @@ open class ICMDockerPlugin: Plugin<Project> {
                                 imgConf: ImageConfiguration,
                                 taskName: String) : TaskProvider<Task> {
         val cpTask = project.tasks.register("copy${taskName}", Copy::class.java) {
-            it.from( if (imgConf.dockerfileProvider.isPresent)
-                        imgConf.dockerfileProvider
-                     else
-                        project.layout.projectDirectory.file("dockerfile")
-            )
-
+            if (imgConf.dockerfileProvider.isPresent) {
+                it.from(imgConf.dockerfileProvider)
+                it.rename { filename ->
+                    filename.replace(imgConf.dockerfileProvider.get().asFile.name, "Dockerfile")
+                }
+            }
             it.from(imgConf.srcFiles)
             it.into(
                 if(imgConf.dockerBuildDirProvider.isPresent)
-                    imgConf.dockerBuildDirProvider
+                    project.layout.buildDirectory.dir( imgConf.dockerBuildDirProvider )
                 else
                     project.layout.buildDirectory.dir("${taskName}Dir")
             )
@@ -317,9 +317,10 @@ open class ICMDockerPlugin: Plugin<Project> {
             it.inputDir.fileProvider( project.provider { cpTask.get().destinationDir } )
             it.images.set(calculateImageTag(project, imgBuild, imgConf))
             it.buildArgs.put("SETUP_IMAGE", setupImg)
+            // it.dockerFile.set(File(cpTask.get().destinationDir, "Dockerfile"))
             it.dependsOn(cpTask)
 
-            configureLables(it.labels, project, imgBuild)
+            // configureLables(it.labels, project, imgBuild)
 
             it.onlyIf {
                 val returnValue = imgConf.enabledProvider.getOrElse(false)
