@@ -128,7 +128,12 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                 if (!returnValue) {
                     project.logger.quiet("Task {} skipped, because it is not enabled.")
                 }
-                returnValue
+                val runOnCICheck = project.hasProperty("runOnCI") &&
+                        project.property("runOnCI") == "true"
+                if (!runOnCICheck) {
+                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
+                }
+                runOnCICheck && returnValue
             }
         }
 
@@ -149,7 +154,12 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                 if(! returnValue) {
                     project.logger.quiet("Task {} skipped, because it is not enabled.")
                 }
-                returnValue
+                val runOnCICheck = project.hasProperty("runOnCI") &&
+                        project.property("runOnCI") == "true"
+                if (!runOnCICheck) {
+                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
+                }
+                runOnCICheck && returnValue
             }
         }
         
@@ -168,7 +178,12 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                     if (!returnValue) {
                         project.logger.quiet("Task {} skipped, because it is not enabled.")
                     }
-                    returnValue
+                    val runOnCICheck = project.hasProperty("runOnCI") &&
+                            project.property("runOnCI") == "true"
+                    if (!runOnCICheck) {
+                        project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
+                    }
+                    runOnCICheck && returnValue
                 }
             }
 }
