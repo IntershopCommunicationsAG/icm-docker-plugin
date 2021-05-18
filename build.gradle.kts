@@ -199,6 +199,12 @@ gradlePlugin {
             displayName = "icm-docker-test-plugin"
             description = "This ICM plugin contains special Docker tasks for special test container."
         }
+        create("icmDockerReadmePlugin") {
+            id = "com.intershop.gradle.icm.docker.readmepush"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerReadmePushPlugin"
+            displayName = "icm-readmepush-plugin"
+            description = "This ICM plugin integrates tasks to readme files to Dockerhub."
+        }
         create("icmDockerProjectPlugin") {
             id = "com.intershop.gradle.icm.docker.project"
             implementationClass = "com.intershop.gradle.icm.docker.ICMDockerProjectPlugin"

@@ -17,13 +17,14 @@
 package com.intershop.gradle.icm.docker.tasks.readmepush
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
 open class CreateToolContainer
     @Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
-
 
     init {
         group = "icm container readme push"
@@ -33,8 +34,8 @@ open class CreateToolContainer
         attachStdout.set(true)
 
         hostConfig.autoRemove.set(true)
-        hostConfig.binds.set( mapOf( this.project.projectDir.absolutePath to "/myvol") )
-
-        cmd.addAll(listOf("--file", "/myvol/README-containers.md", "--debug", "intershophub/icm-webadapter"))
+        
     }
+
+
 }

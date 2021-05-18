@@ -17,19 +17,16 @@
 package com.intershop.gradle.icm.docker
 
 import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.GenICMProperties
-import com.intershop.gradle.icm.docker.tasks.ISHDockerBuildImage
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
 import com.intershop.gradle.icm.docker.tasks.ShowICMASConfig
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import com.intershop.gradle.icm.docker.utils.Configuration
-import org.gradle.api.GradleException
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailSrvPreparer
@@ -38,16 +35,11 @@ import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPrep
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.services.BuildServiceRegistry
-import org.gradle.api.services.internal.BuildServiceRegistryInternal
-import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebTaskPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
@@ -223,7 +215,7 @@ open class ICMDockerPlugin: Plugin<Project> {
 
             testImgTask.configure { task ->
                 task.description = "Creates the test image of an appserver."
-                //task.buildArgs.put( "BASE_IMAGE", project.provider { imgTask.get().images.get().first() })
+                task.buildArgs.put( "BASE_IMAGE", project.provider { imgTask.get().images.get().first() })
                 task.dependsOn(imgTask)
             }
 
@@ -232,7 +224,7 @@ open class ICMDockerPlugin: Plugin<Project> {
 
             initTestImgTask.configure { task ->
                 task.description = "Creates the init test image for initialization of an test appserver."
-                //task.buildArgs.put( "BASE_IMAGE", project.provider { initImgTask.get().images.get().first() })
+                task.buildArgs.put( "BASE_IMAGE", project.provider { initImgTask.get().images.get().first() })
                 task.dependsOn(initImgTask)
             }
 
@@ -261,7 +253,7 @@ open class ICMDockerPlugin: Plugin<Project> {
         }
     }
 
-    private fun createImageTaskUK(project: Project,
+    private fun createImageTask(project: Project,
                                 setupImg: Property<String>,
                                 imgBuild: ProjectConfiguration,
                                 imgConf: ImageConfiguration,
@@ -274,6 +266,8 @@ open class ICMDockerPlugin: Plugin<Project> {
                 buildImage.srcFiles.from(imgConf.srcFiles)
                 buildImage.dirname.set(imgConf.dockerBuildDirProvider)
 
+                configureLables(buildImage.labels, project, imgBuild)
+
                 with(buildImage.labels) {
                     put("description", project.provider {
                         "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
@@ -282,71 +276,6 @@ open class ICMDockerPlugin: Plugin<Project> {
                 buildImage.buildArgs.put( "SETUP_IMAGE", setupImg )
                 buildImage.images.set( calculateImageTag(project, imgBuild, imgConf) )
             }
-
-
-    private fun createImageTask(project: Project,
-                                setupImg: Property<String>,
-                                imgBuild: ProjectConfiguration,
-                                imgConf: ImageConfiguration,
-                                taskName: String) : TaskProvider<Task> {
-        val cpTask = project.tasks.register("copy${taskName}", Copy::class.java) {
-            if (imgConf.dockerfileProvider.isPresent) {
-                it.from(imgConf.dockerfileProvider)
-                it.rename { filename ->
-                    filename.replace(imgConf.dockerfileProvider.get().asFile.name, "Dockerfile")
-                }
-            }
-            it.from(imgConf.srcFiles)
-            it.into(
-                if(imgConf.dockerBuildDirProvider.isPresent)
-                    project.layout.buildDirectory.dir( imgConf.dockerBuildDirProvider )
-                else
-                    project.layout.buildDirectory.dir("${taskName}Dir")
-            )
-
-            it.onlyIf {
-                val returnValue = imgConf.enabledProvider.getOrElse(false)
-                if(! returnValue) {
-                    project.logger.quiet("Task {} skipped, because it is not enabled.")
-                }
-                returnValue
-            }
-        }
-
-        val buildTask = project.tasks.register("dockerBuild${taskName}", ISHDockerBuildImage::class.java) {
-            it.inputDir.fileProvider( project.provider { cpTask.get().destinationDir } )
-            it.images.set(calculateImageTag(project, imgBuild, imgConf))
-            it.buildArgs.put("SETUP_IMAGE", setupImg)
-            // it.dockerFile.set(File(cpTask.get().destinationDir, "Dockerfile"))
-            it.dependsOn(cpTask)
-
-            // configureLables(it.labels, project, imgBuild)
-
-            it.onlyIf {
-                val returnValue = imgConf.enabledProvider.getOrElse(false)
-                if(! returnValue) {
-                    project.logger.quiet("Task {} skipped, because it is not enabled.")
-                }
-                returnValue
-            }
-        }
-
-        val imgTask =  project.tasks.register(taskName) { mainTask ->
-            mainTask.group = "icm image build"
-
-            mainTask.onlyIf {
-                val returnValue = imgConf.enabledProvider.getOrElse(false)
-                if(! returnValue) {
-                    project.logger.quiet("Task {} skipped, because it is not enabled.")
-                }
-                returnValue
-            }
-
-            mainTask.dependsOn(buildTask)
-        }
-
-        return imgTask
-    }
 
     private fun configureLables(property: MapProperty<String,String>,
                                 project: Project,

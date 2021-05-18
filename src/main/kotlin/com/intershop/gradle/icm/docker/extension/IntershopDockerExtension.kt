@@ -17,7 +17,7 @@
 package com.intershop.gradle.icm.docker.extension
 
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
-import com.intershop.gradle.icm.docker.extension.readmepush.ReadmePushConfiguration
+import com.intershop.gradle.icm.docker.extension.readme.push.ReadmePushConfiguration
 import com.intershop.gradle.icm.docker.utils.Configuration
 import groovy.lang.Closure
 import org.gradle.api.Action
