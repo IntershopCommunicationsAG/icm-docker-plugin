@@ -19,6 +19,8 @@ package com.intershop.gradle.icm.docker.utils.webserver
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -55,6 +57,33 @@ class WAATaskPreparer(project: Project,
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
+            with(extension.developmentConfig) {
+                val asHTTPPort = if (appserverAsContainer) {
+                    getConfigProperty(
+                        Configuration.AS_CONNECTOR_CONTAINER_PORT,
+                        Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
+                    )
+                } else {
+                    getConfigProperty(
+                        Configuration.AS_CONNECTOR_PORT,
+                        Configuration.AS_CONNECTOR_PORT_VALUE
+                    )
+                }
+
+                val asHostname = if (appserverAsContainer) {
+                    "${extension.containerPrefix}-${ServerTaskPreparer.extName}"
+                } else {
+                    getConfigProperty(
+                        Configuration.LOCAL_CONNECTOR_HOST,
+                        Configuration.LOCAL_CONNECTOR_HOST_VALUE
+                    )
+                }
+
+                task.envVars.put(
+                    "ICM_ICMSERVLETURLS",
+                    "cs.url.0=http://${asHostname}:${asHTTPPort}/servlet/ConfigurationServlet"
+                )
+            }
             task.hostConfig.binds.set( volumes )
             task.hostConfig.network.set(networkId)
 
