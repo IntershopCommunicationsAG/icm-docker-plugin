@@ -46,17 +46,6 @@ open class ReadmePushConfiguration @Inject constructor(objectFactory: ObjectFact
      */
     val baseImageName: Property<String> = objectFactory.property(String::class.java)
 
-    /**
-     * Provider for the base directory of readmes.
-     */
-    val readmeBaseDirProvider: Provider<String>
-        get() = readmeBaseDir
-
-    /**
-     * Creation time of images in one project.
-     */
-    val readmeBaseDir: Property<String> = objectFactory.property(String::class.java)
-
     val images: Images = objectFactory.newInstance(Images::class.java)
 
     /**
@@ -81,6 +70,5 @@ open class ReadmePushConfiguration @Inject constructor(objectFactory: ObjectFact
     init {
         toolImage.convention("chko/docker-pushrm:1")
         baseImageName.convention("intershophub/icm")
-        readmeBaseDir.convention("container-readme")
     }
 }

@@ -45,6 +45,17 @@ open class ImageConfiguration @Inject constructor(objectFactory: ObjectFactory) 
      */
     val filename: Property<String> = objectFactory.property(String::class.java)
 
+    /**
+     * Provider for directory path with the file.
+     */
+    val dirpathProvider: Provider<String>
+        get() = this.filename
+
+    /**
+     * Directory path with the file.
+     */
+    val dirpath: Property<String> = objectFactory.property(String::class.java)
+
     val enabledProvider: Provider<Boolean>
         get() = this.enabled
 

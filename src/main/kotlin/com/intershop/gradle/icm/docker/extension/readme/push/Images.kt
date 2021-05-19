@@ -110,15 +110,15 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     init {
         mainImage.nameExtension.set("as")
-        mainImage.filename.set("readme.md")
+        mainImage.filename.set("README.md")
 
         initImage.nameExtension.set("as-init")
-        initImage.filename.set("readme.md")
+        initImage.filename.set("README.md")
 
         testImage.nameExtension.set("as-test")
-        testImage.filename.set("readme.md")
+        testImage.filename.set("README.md")
 
         initTestImage.nameExtension.set("as-test-init")
-        initTestImage.filename.set("readme.md")
+        initTestImage.filename.set("README.md")
     }
 }

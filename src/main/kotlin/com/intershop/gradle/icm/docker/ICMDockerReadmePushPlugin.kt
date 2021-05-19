@@ -54,31 +54,31 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
 
                 with(extension.readmePush) {
                     val createContainerAS = createContainerTask(this@project, "AS",
-                        this.readmeBaseDir, this.baseImageName, this.images.mainImage, pullImg)
+                        this.baseImageName, this.images.mainImage, pullImg)
                     val runContainerAS = createRunTask(this@project, "AS",
                         this.images.mainImage, createContainerAS)
                     val logContainerAS = createLogTask(this@project, "AS",
                         this.images.mainImage, runContainerAS)
 
                     val createContainerTest = createContainerTask(this@project, "Test",
-                        this.readmeBaseDir, this.baseImageName, this.images.testImage, pullImg)
+                        this.baseImageName, this.images.testImage, pullImg)
                     val runContainerTest = createRunTask(this@project, "Test",
                         this.images.testImage, createContainerTest)
                     val logContainerTest = createLogTask(this@project, "Test",
                         this.images.testImage, runContainerTest)
 
                     val createContainerInit = createContainerTask(this@project, "Init",
-                        this.readmeBaseDir, this.baseImageName, this.images.initImage, pullImg)
+                        this.baseImageName, this.images.initImage, pullImg)
                     val runContainerInit = createRunTask(this@project, "Init",
                         this.images.initImage, createContainerInit)
-                    val logContainerInit = createLogTask(this@project, "Test",
+                    val logContainerInit = createLogTask(this@project, "Init",
                         this.images.initImage, runContainerInit)
 
                     val createContainerTestInit = createContainerTask(this@project, "TestInit",
-                        this.readmeBaseDir, this.baseImageName, this.images.initTestImage, pullImg)
-                    val runContainerTestInit = createRunTask(this@project, "Init",
+                        this.baseImageName, this.images.initTestImage, pullImg)
+                    val runContainerTestInit = createRunTask(this@project, "TestInit",
                         this.images.initTestImage, createContainerTestInit)
-                    val logContainerInitTest = createLogTask(this@project, "Test",
+                    val logContainerInitTest = createLogTask(this@project, "TestInit",
                         this.images.mainImage, runContainerTestInit)
 
                     tasks.register("pushReadme") { task ->
@@ -96,7 +96,6 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
 
     private fun createContainerTask(project: Project,
                               ext: String,
-                              baseDir: Property<String>,
                               baseImg: Property<String>,
                               conf: ImageConfiguration,
                               pullTask: Provider<PullExtraImage>): Provider<CreateToolContainer> =
@@ -108,12 +107,16 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            task.envVars.put("DOCKER_USER", project.property("regUserName").toString())
-            task.envVars.put("DOCKER_PASS", project.property("regUserPassword").toString())
+            if(project.hasProperty("regUserName")) {
+                task.envVars.put("DOCKER_USER", project.property("regUserName").toString())
+            }
+            if(project.hasProperty("regUserPassword")) {
+                task.envVars.put("DOCKER_PASS", project.property("regUserPassword").toString())
+            }
 
             task.hostConfig.binds.set(
                 mapOf(
-                    project.layout.projectDirectory.dir("${baseDir}/${conf.nameExtension}").asFile.absolutePath
+                    project.layout.projectDirectory.dir(conf.dirpath).get().asFile.absolutePath
                             to "/myvol"
                 )
             )
