@@ -349,7 +349,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             val text =
                 """
                 # webserver configuration
-                # if youn want change the ports of the webserve, it is necessary to change the ports 
+                # if youn want change the ports of the webserver, it is necessary to change the ports 
                 # in $webserverUrlProp and $webserverSecureUrlProp according to the settings
                 # $WS_HTTP_PORT and $WS_HTTPS_PORT
                 #
@@ -363,10 +363,11 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                 # if the private key is not server.key, add the name
                 $WS_SERVER_PRIVAT =
                 
-                # webserver container configuration - do not change this value if the default images is used 
+                # This ports will be exposed to the host.
                 $WS_HTTP_PORT = $WS_HTTP_PORT_VALUE
                 $WS_HTTPS_PORT = $WS_HTTPS_PORT_VALUE
                 
+                # Webserver container configuration - do not change this value if the default images is used
                 $WS_CONTAINER_HTTP_PORT = $WS_CONTAINER_HTTP_PORT_VALUE
                 $WS_CONTAINER_HTTPS_PORT = $WS_CONTAINER_HTTPS_PORT_VALUE
                 """.trimIndent()
