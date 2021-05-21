@@ -166,27 +166,27 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
             }
         }
         
-        private fun createLogTask(project: Project,
-                                  ext: String,
-                                  conf: ImageConfiguration,
-                                  runTask: Provider<DockerStartContainer>) =
-            project.tasks.register("logReadmePush${ext}", LogToolContainer::class.java) { task ->
-                task.group = "icm container readme push"
-                task.description = "Log container output for pushing readme for ${ext} container"
+    private fun createLogTask(project: Project,
+                              ext: String,
+                              conf: ImageConfiguration,
+                              runTask: Provider<DockerStartContainer>) =
+        project.tasks.register("logReadmePush${ext}", LogToolContainer::class.java) { task ->
+            task.group = "icm container readme push"
+            task.description = "Log container output for pushing readme for ${ext} container"
 
-                task.targetContainerId(runTask.get().containerId)
+            task.containerId.set(runTask.get().containerId)
 
-                task.onlyIf {
-                    val returnValue = conf.enabled.getOrElse(false)
-                    if (!returnValue) {
-                        project.logger.quiet("Task {} skipped, because it is not enabled.")
-                    }
-                    val runOnCICheck = project.hasProperty("runOnCI") &&
-                            project.property("runOnCI") == "true"
-                    if (!runOnCICheck) {
-                        project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
-                    }
-                    runOnCICheck && returnValue
+            task.onlyIf {
+                val returnValue = conf.enabled.getOrElse(false)
+                if (!returnValue) {
+                    project.logger.quiet("Task {} skipped, because it is not enabled.")
                 }
+                val runOnCICheck = project.hasProperty("runOnCI") &&
+                        project.property("runOnCI") == "true"
+                if (!runOnCICheck) {
+                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
+                }
+                runOnCICheck && returnValue
             }
+        }
 }
