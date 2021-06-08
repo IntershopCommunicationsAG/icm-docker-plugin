@@ -27,7 +27,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_NAME_VA
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_PASSWORD
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_CONTAINER_PORT
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
-import com.intershop.gradle.icm.docker.utils.Configuration.DISABLE_SSL_VERIFICATION
+import com.intershop.gradle.icm.docker.utils.Configuration.SSL_VERIFICATION
 import com.intershop.gradle.icm.docker.utils.Configuration.LOCAL_CONNECTOR_HOST
 import com.intershop.gradle.icm.docker.utils.Configuration.LOCAL_CONNECTOR_HOST_VALUE
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_HOSTLIST
@@ -90,8 +90,8 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     rsi.userName.set(getConfigProperty(AS_ADMIN_USER_NAME, AS_ADMIN_USER_NAME_VALUE))
                     rsi.userPassword.set(getConfigProperty(AS_ADMIN_USER_PASSWORD))
 
-                    rsi.disableSSLVerification.set(
-                        getConfigProperty(DISABLE_SSL_VERIFICATION, "false").toLowerCase() == "true")
+                    rsi.sslVerification.set(
+                        getConfigProperty(SSL_VERIFICATION, "false").toLowerCase() == "true")
                 }
 
                 rebuildIndex.get().dependsOn(solrCleanUp, wfsTask)

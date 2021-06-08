@@ -57,7 +57,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
     val maxWait: Property<Long> = objectFactory.property(Long::class.java)
 
     @get:Input
-    val disableSSLVerification: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    val sslVerification: Property<Boolean> = objectFactory.property(Boolean::class.java)
 
     init {
         protocol.convention("https")
@@ -66,7 +66,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
         maxWait.convention(600000)
         domain.convention("SLDSystem")
         servergroup.convention("BOS")
-        disableSSLVerification.convention(false)
+        sslVerification.convention(false)
     }
 
     private val jobRunner: JobRunner by lazy {
@@ -86,8 +86,8 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
                     timeout = maxWait.get(),
                     logger = project.logger)
 
-        if(disableSSLVerification.get()) {
-            runner.disableSSLVerification()
+        if(sslVerification.get()) {
+            runner.enableSSLVerification()
         }
 
         runner

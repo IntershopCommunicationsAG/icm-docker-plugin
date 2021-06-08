@@ -94,7 +94,7 @@ object Configuration {
     const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
 
-    const val DISABLE_SSL_VERIFICATION = "disable.ssl.verification"
+    const val SSL_VERIFICATION = "ssl.verification"
 
     const val ADDITIONAL_CONTAINER_PREFIX = "additional.container.prefix"
 
