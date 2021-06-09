@@ -66,7 +66,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
         maxWait.convention(600000)
         domain.convention("SLDSystem")
         servergroup.convention("BOS")
-        sslVerification.convention(false)
+        sslVerification.convention(true)
     }
 
     private val jobRunner: JobRunner by lazy {

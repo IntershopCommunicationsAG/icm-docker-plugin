@@ -64,7 +64,7 @@ class ProjectImageBuildPreparer(private val project: Project,
     }
 
     fun prepareImageBuilds() {
-        /**
+
         val mainPkgTaskName = buildImages.mainImage.pkgTaskName.getOrElse("createMainPkg")
         val mainPkgTask = project.tasks.named(mainPkgTaskName, Tar::class.java)
         val mainBuildImageTask = project.tasks.named(BUILD_MAIN_IMAGE, BuildImage::class.java )
@@ -120,7 +120,7 @@ class ProjectImageBuildPreparer(private val project: Project,
             task.srcFiles.from(initTestPkgTask)
             task.dependsOn(initTestDockerFile)
         }
-        **/
+
     }
 
     private fun getBaseDockerfileTask(taskname: String,
