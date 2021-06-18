@@ -67,25 +67,11 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                     val logContainerTest = createLogTask(this@project, "Test",
                         this.images.testImage, runContainerTest)
 
-                    val createContainerInit = createContainerTask(this@project, "Init",
-                        this.baseImageName, this.images.initImage, pullImg)
-                    val runContainerInit = createRunTask(this@project, "Init",
-                        this.images.initImage, createContainerInit)
-                    val logContainerInit = createLogTask(this@project, "Init",
-                        this.images.initImage, runContainerInit)
-
-                    val createContainerTestInit = createContainerTask(this@project, "TestInit",
-                        this.baseImageName, this.images.initTestImage, pullImg)
-                    val runContainerTestInit = createRunTask(this@project, "TestInit",
-                        this.images.initTestImage, createContainerTestInit)
-                    val logContainerInitTest = createLogTask(this@project, "TestInit",
-                        this.images.mainImage, runContainerTestInit)
-
                     tasks.register("pushReadme") { task ->
                         task.group =  "icm container readme push"
                         task.description = "Push readme for all containers"
 
-                        task.dependsOn(logContainerAS, logContainerTest, logContainerInit, logContainerInitTest)
+                        task.dependsOn(logContainerAS, logContainerTest)
                     }
                 }
 

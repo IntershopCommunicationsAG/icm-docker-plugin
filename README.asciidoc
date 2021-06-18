@@ -63,25 +63,11 @@ intershop_docker {
                 description = 'AppServer Container'
                 enabled = true
             }
-            initImage {
-                dockerfile = file('docker/init/Dockerfile')
-                addFiles(tasks.createInitPkg.outputs.files)
-                dockerBuildDir = 'init'
-                description = 'Init Container'
-                enabled = true
-            }
             testImage {
                 dockerfile = file('docker/test/Dockerfile')
                 addFiles(tasks.createTestPkg.outputs.files)
                 dockerBuildDir = 'test'
                 description = 'AppServer Test Container'
-                enabled = true
-            }
-            initTestImage {
-                dockerfile = file('docker/initTest/Dockerfile')
-                addFiles(tasks.createInitTestPkg.outputs.files)
-                dockerBuildDir = 'inittest'
-                description = 'Test Init Conainer'
                 enabled = true
             }
         }

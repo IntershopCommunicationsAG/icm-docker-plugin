@@ -39,12 +39,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         createLocalFile("config/dev/cluster/test.properties", "dev_test = 1")
         createLocalFile("config/prod/cluster/test.properties", "test.properties = prod_dir")
 
-        createLocalFile("sites/base/test-site1/units/test.properties", "test-site1-sites = base")
-        createLocalFile("sites/base/test-site2/units/test.properties", "test-site2-sites = 2")
-        createLocalFile("sites/prod/test-site1/units/test.properties", "test-site1-sites = prod")
-        createLocalFile("sites/test/test-site1/units/test.properties", "test-site1-sites = test")
-        createLocalFile("sites/dev/test-site1/units/test.properties", "test-site1-sites = dev")
-
         buildFile << """
             plugins {
                 id 'java'
@@ -69,12 +63,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                            dockerBuildDir = "main"
                            enabled = true
                         }
-                        initImage {
-                            dockerfile = file("docker/init/Dockerfile")
-                            addFiles(tasks.createInitPkg.outputs.files)
-                            dockerBuildDir = "init"
-                            enabled = true
-                        }
                     } 
                 }
             }
@@ -83,16 +71,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             ${repoConf}
 
-        """.stripIndent()
-
-        def dockerInitFile = new File(testProjectDir, "docker/init/Dockerfile")
-        dockerInitFile.parentFile.mkdirs()
-        dockerInitFile.createNewFile()
-        dockerInitFile <<
-                """
-        ARG SETUP_IMAGE
-        FROM \$SETUP_IMAGE as BUILD
-        RUN mkdir -p /intershop/sites
         """.stripIndent()
 
         def dockerMainFile = new File(testProjectDir, "docker/main/Dockerfile")
@@ -218,12 +196,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         createLocalFile("config/dev/cluster/test.properties", "dev_test = 1")
         createLocalFile("config/prod/cluster/test.properties", "test.properties = prod_dir")
 
-        createLocalFile("sites/base/test-site1/units/test.properties", "test-site1-sites = base")
-        createLocalFile("sites/base/test-site2/units/test.properties", "test-site2-sites = 2")
-        createLocalFile("sites/prod/test-site1/units/test.properties", "test-site1-sites = prod")
-        createLocalFile("sites/test/test-site1/units/test.properties", "test-site1-sites = test")
-        createLocalFile("sites/dev/test-site1/units/test.properties", "test-site1-sites = dev")
-
         buildFile << """
             plugins {
                 id 'java'
@@ -266,14 +238,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
                     serverDirConfig {
                         base {
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/base"))
-                                        exclude("**/test-site1/units/test.properties")
-                                    }
-                                }
-                            }
                             config {
                                 dirs {
                                     main {
@@ -292,22 +256,8 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                     }
                                 }
                             }
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/prod"))
-                                    }
-                                }
-                            }
                         }
                         test {
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/test"))
-                                    }
-                                }
-                            }
                             config {
                                 dirs {
                                     main {
@@ -317,17 +267,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                             }
                         }
                         dev {
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/dev"))
-                                    }
-                                    test {
-                                        dir.set(file("sites/test"))
-                                        exclude("**/units/test.properties")
-                                    }
-                                }
-                            }
                             config {
                                 dirs {
                                     main {
@@ -348,7 +287,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 images {
                     icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
-                    icminit = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
                     solr = 'solr:8.5.2-slim'
@@ -374,12 +312,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                            dockerBuildDir = "main"
                            enabled = true
                         }
-                        initImage {
-                            dockerfile = file("docker/init/Dockerfile")
-                            addFiles(tasks.createInitPkg.outputs.files)
-                            dockerBuildDir = "init"
-                            enabled = true
-                        }
                     } 
                 }
             }
@@ -388,16 +320,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             ${repoConf}
 
-        """.stripIndent()
-
-        def dockerInitFile = new File(testProjectDir, "docker/init/Dockerfile")
-        dockerInitFile.parentFile.mkdirs()
-        dockerInitFile.createNewFile()
-        dockerInitFile <<
-        """
-        ARG SETUP_IMAGE
-        FROM \$SETUP_IMAGE as BUILD
-        RUN mkdir -p /intershop/sites
         """.stripIndent()
 
         def dockerMainFile = new File(testProjectDir, "docker/main/Dockerfile")
@@ -523,12 +445,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         createLocalFile("config/dev/cluster/test.properties", "dev_test = 1")
         createLocalFile("config/prod/cluster/test.properties", "test.properties = prod_dir")
 
-        createLocalFile("sites/base/test-site1/units/test.properties", "test-site1-sites = base")
-        createLocalFile("sites/base/test-site2/units/test.properties", "test-site2-sites = 2")
-        createLocalFile("sites/prod/test-site1/units/test.properties", "test-site1-sites = prod")
-        createLocalFile("sites/test/test-site1/units/test.properties", "test-site1-sites = test")
-        createLocalFile("sites/dev/test-site1/units/test.properties", "test-site1-sites = dev")
-
         buildFile << """
             plugins {
                 id 'java'
@@ -570,14 +486,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
                     serverDirConfig {
                         base {
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/base"))
-                                        exclude("**/test-site1/units/test.properties")
-                                    }
-                                }
-                            }
                             config {
                                 dirs {
                                     main {
@@ -596,22 +504,8 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                     }
                                 }
                             }
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/prod"))
-                                    }
-                                }
-                            }
                         }
                         test {
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/test"))
-                                    }
-                                }
-                            }
                             config {
                                 dirs {
                                     main {
@@ -621,17 +515,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                             }
                         }
                         dev {
-                            sites {
-                                dirs {
-                                    main {
-                                        dir.set(file("sites/dev"))
-                                    }
-                                    test {
-                                        dir.set(file("sites/test"))
-                                        exclude("**/units/test.properties")
-                                    }
-                                }
-                            }
                             config {
                                 dirs {
                                     main {
@@ -652,7 +535,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 images {
                     icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
-                    icminit = 'intershopmock/icm-as-mock:latest'
                 }
 
                 ishUnitTests {
@@ -672,10 +554,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                         mainImage {
                            dockerBuildDir = "main"
                            enabled = false
-                        }
-                        initImage {
-                            dockerBuildDir = "init"
-                            enabled = false
                         }
                     } 
                 }
@@ -990,15 +868,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         result2.task(":buildMainImage").outcome == SUCCESS
 
         when:
-        def result3 = getPreparedGradleRunner()
-                .withArguments("buildInitImage", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result3.task(":buildInitImage").outcome == SUCCESS
-
-        when:
         def result4 = getPreparedGradleRunner()
                 .withArguments("buildTestImage", "-s", "-i")
                 .withGradleVersion(gradleVersion)
@@ -1033,15 +902,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         result2.task(":buildMainImage").outcome == SUCCESS
 
         when:
-        def result3 = getPreparedGradleRunner()
-                .withArguments("buildInitImage", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result3.task(":buildInitImage").outcome == SUCCESS
-
-        when:
         def result4 = getPreparedGradleRunner()
                 .withArguments("buildTestImage", "-s", "-i")
                 .withGradleVersion(gradleVersion)
@@ -1074,15 +934,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result2.task(":buildMainImage").outcome == SKIPPED
-
-        when:
-        def result3 = getPreparedGradleRunner()
-                .withArguments("buildInitImage", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result3.task(":buildInitImage").outcome == SKIPPED
 
         when:
         def result4 = getPreparedGradleRunner()

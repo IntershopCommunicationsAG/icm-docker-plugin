@@ -375,8 +375,9 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             file.appendText(text, Charsets.UTF_8)
             file.appendText("\n\n", Charsets.UTF_8)
 
+            val systemIP = IPFinder.getSystemIP()
+
             if (icmasOption.get()) {
-                val systemIP = IPFinder.getSystemIP()
                 val wstext =
                     """
                 # port number to start the servlet engine
@@ -408,7 +409,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                     $AS_JMX_CONNECTOR_CONTAINER_PORT = $AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
                     
                     # Host name / IP of the ICM Server (local installation)
-                    $LOCAL_CONNECTOR_HOST = ${extension.containerPrefix}-${ServerTaskPreparer.extName.toLowerCase()}
+                    # both values must match    
+                    $LOCAL_CONNECTOR_HOST = $systemIP
                     """.trimIndent()
                     file.appendText(astext, Charsets.UTF_8)
             }
