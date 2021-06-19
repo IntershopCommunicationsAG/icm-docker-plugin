@@ -94,6 +94,10 @@ tasks {
         systemProperty("intershop.gradle.versions", "6.8,7.1")
         useJUnitPlatform()
 
+        this.javaLauncher.set( project.javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(11))
+        })
+
         testLogging {
             showStandardStreams = true
         }
@@ -301,12 +305,11 @@ dependencies {
     implementation("org.apache.solr:solr-solrj:8.4.1")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.5")
 
-    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:3.5.11")
+    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:4.0.0")
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.1")
     testImplementation(gradleTestKit())
 }
 
 repositories {
     mavenCentral()
-    jcenter()
 }
