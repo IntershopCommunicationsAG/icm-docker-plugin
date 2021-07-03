@@ -44,7 +44,6 @@ class ProjectImageBuildPreparer(private val project: Project,
         const val USERSET = "--chown=intershop:intershop"
 
         const val MAIN_ICM_DIR = "/intershop"
-        const val INIT_ICM_DIR = "/intershop-init"
 
         const val DIFFDIRSCRIPT = "/${PRJ_DIR}/diffdir.sh"
         const val WORKDIR = "${MAIN_ICM_DIR}/${PRJ_DIR}"
@@ -71,6 +70,7 @@ class ProjectImageBuildPreparer(private val project: Project,
             task.srcFiles.from(mainPkgTask)
             task.dependsOn(mainDockerFile)
         }
+
 
         val testPkgTaskName = buildImages.testImage.pkgTaskName.getOrElse("createTestPkg")
         val testPkgTask = project.tasks.named(testPkgTaskName, Tar::class.java)
@@ -114,7 +114,7 @@ class ProjectImageBuildPreparer(private val project: Project,
 
                 task.from( project.provider {
                     if(image.getOrElse("").isEmpty()) {
-                        throw GradleException("It is necessary to provide an ICM base oder init image!")
+                        throw GradleException("It is necessary to provide an ICM base image!")
                     }
                     Dockerfile.From(image.getOrElse("")).withStage(BUILDSTAGE) } )
                 task.runCommand("mkdir -p ${WORKDIR}/diff")
@@ -123,7 +123,7 @@ class ProjectImageBuildPreparer(private val project: Project,
 
                 task.from( project.provider {
                     if(image.getOrElse("").isEmpty()) {
-                        throw GradleException("It is necessary to provide an ICM base oder init image!")
+                        throw GradleException("It is necessary to provide an ICM base image!")
                     }
                     Dockerfile.From(image.getOrElse(""))
                 } )

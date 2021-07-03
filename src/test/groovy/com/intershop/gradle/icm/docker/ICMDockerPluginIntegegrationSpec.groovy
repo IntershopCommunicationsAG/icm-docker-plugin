@@ -39,12 +39,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         createLocalFile("config/dev/cluster/test.properties", "dev_test = 1")
         createLocalFile("config/prod/cluster/test.properties", "test.properties = prod_dir")
 
-        createLocalFile("sites/base/test-site1/units/test.properties", "test-site1-sites = base")
-        createLocalFile("sites/base/test-site2/units/test.properties", "test-site2-sites = 2")
-        createLocalFile("sites/prod/test-site1/units/test.properties", "test-site1-sites = prod")
-        createLocalFile("sites/test/test-site1/units/test.properties", "test-site1-sites = test")
-        createLocalFile("sites/dev/test-site1/units/test.properties", "test-site1-sites = dev")
-
         buildFile << """
             plugins {
                 id 'java'
@@ -77,16 +71,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             ${repoConf}
 
-        """.stripIndent()
-
-        def dockerInitFile = new File(testProjectDir, "docker/init/Dockerfile")
-        dockerInitFile.parentFile.mkdirs()
-        dockerInitFile.createNewFile()
-        dockerInitFile <<
-                """
-        ARG SETUP_IMAGE
-        FROM \$SETUP_IMAGE as BUILD
-        RUN mkdir -p /intershop/sites
         """.stripIndent()
 
         def dockerMainFile = new File(testProjectDir, "docker/main/Dockerfile")
@@ -212,12 +196,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         createLocalFile("config/dev/cluster/test.properties", "dev_test = 1")
         createLocalFile("config/prod/cluster/test.properties", "test.properties = prod_dir")
 
-        createLocalFile("sites/base/test-site1/units/test.properties", "test-site1-sites = base")
-        createLocalFile("sites/base/test-site2/units/test.properties", "test-site2-sites = 2")
-        createLocalFile("sites/prod/test-site1/units/test.properties", "test-site1-sites = prod")
-        createLocalFile("sites/test/test-site1/units/test.properties", "test-site1-sites = test")
-        createLocalFile("sites/dev/test-site1/units/test.properties", "test-site1-sites = dev")
-
         buildFile << """
             plugins {
                 id 'java'
@@ -339,16 +317,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             ${repoConf}
 
-        """.stripIndent()
-
-        def dockerInitFile = new File(testProjectDir, "docker/init/Dockerfile")
-        dockerInitFile.parentFile.mkdirs()
-        dockerInitFile.createNewFile()
-        dockerInitFile <<
-        """
-        ARG SETUP_IMAGE
-        FROM \$SETUP_IMAGE as BUILD
-        RUN mkdir -p /intershop/sites
         """.stripIndent()
 
         def dockerMainFile = new File(testProjectDir, "docker/main/Dockerfile")
@@ -474,12 +442,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         createLocalFile("config/dev/cluster/test.properties", "dev_test = 1")
         createLocalFile("config/prod/cluster/test.properties", "test.properties = prod_dir")
 
-        createLocalFile("sites/base/test-site1/units/test.properties", "test-site1-sites = base")
-        createLocalFile("sites/base/test-site2/units/test.properties", "test-site2-sites = 2")
-        createLocalFile("sites/prod/test-site1/units/test.properties", "test-site1-sites = prod")
-        createLocalFile("sites/test/test-site1/units/test.properties", "test-site1-sites = test")
-        createLocalFile("sites/dev/test-site1/units/test.properties", "test-site1-sites = dev")
-
         buildFile << """
             plugins {
                 id 'java'
@@ -537,6 +499,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                 }
                         }
                         test {
+                            config {
                                 dirs {
                                     main {
                                         dir.set(file("config/test"))
