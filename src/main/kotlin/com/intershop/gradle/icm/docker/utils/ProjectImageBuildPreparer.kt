@@ -22,9 +22,6 @@ import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_MAIN_IMAG
 import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_TEST_IMAGE
 import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
-import com.intershop.gradle.icm.docker.extension.Images as BaseImages
-import com.intershop.gradle.icm.docker.extension.image.build.Images as BuildImages
-
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFile
@@ -32,6 +29,8 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Tar
+import com.intershop.gradle.icm.docker.extension.Images as BaseImages
+import com.intershop.gradle.icm.docker.extension.image.build.Images as BuildImages
 
 class ProjectImageBuildPreparer(private val project: Project,
                                 private val images: BaseImages,

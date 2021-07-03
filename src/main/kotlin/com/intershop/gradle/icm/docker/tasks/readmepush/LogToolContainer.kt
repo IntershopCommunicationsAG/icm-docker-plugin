@@ -16,7 +16,6 @@
  */
 package com.intershop.gradle.icm.docker.tasks.readmepush
 
-import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerLogsContainer
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject

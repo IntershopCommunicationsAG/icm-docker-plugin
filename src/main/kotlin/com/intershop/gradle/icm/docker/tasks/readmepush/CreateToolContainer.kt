@@ -17,10 +17,7 @@
 package com.intershop.gradle.icm.docker.tasks.readmepush
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
 open class CreateToolContainer

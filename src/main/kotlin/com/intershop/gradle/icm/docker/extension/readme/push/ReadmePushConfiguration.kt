@@ -18,13 +18,13 @@ package com.intershop.gradle.icm.docker.extension.readme.push
 
 import groovy.lang.Closure
 import org.gradle.api.Action
+import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
 
-open class ReadmePushConfiguration @Inject constructor(objectFactory: ObjectFactory) {
+open class ReadmePushConfiguration @Inject constructor(val project: Project, objectFactory: ObjectFactory) {
 
     /**
      * Provider for the base image of the push task.
@@ -46,7 +46,7 @@ open class ReadmePushConfiguration @Inject constructor(objectFactory: ObjectFact
      */
     val baseImageName: Property<String> = objectFactory.property(String::class.java)
 
-    val images: Images = objectFactory.newInstance(Images::class.java)
+    val images: Images = objectFactory.newInstance(Images::class.java, project)
 
     /**
      * Configures images configuration from a closure.
@@ -55,7 +55,7 @@ open class ReadmePushConfiguration @Inject constructor(objectFactory: ObjectFact
      */
     @Suppress("unused")
     fun images(closure: Closure<Images>) {
-        ConfigureUtil.configure(closure, images)
+        project.configure(images, closure)
     }
 
     /**

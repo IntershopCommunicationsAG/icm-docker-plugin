@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
+import com.intershop.gradle.icm.tasks.CreateSitesFolder
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -44,7 +45,6 @@ abstract class AbstractTaskPreparer(project: Project,
         const val ISHUNITOUT_PATH = "ishunitrunner/output"
 
         const val TASK_PREPARESERVER = "prepareServer"
-        const val TASK_CREATESITES = "createSites"
         const val TASK_EXTRACARTRIDGES = "setupCartridges"
         const val TASK_CREATECONFIG = "createConfig"
         const val TASK_CREATECLUSTERID = "createClusterID"
@@ -88,14 +88,17 @@ abstract class AbstractTaskPreparer(project: Project,
         }
     }
 
-
     val dirPreparer: TaskProvider<Task> by lazy {
-            project.tasks.named(TASK_DIRPEPARER)
-        }
+        project.tasks.named(CreateSitesFolder.DEFAULT_NAME)
+    }
+
+    val sitesPreparer: TaskProvider<Task> by lazy {
+        project.tasks.named(TASK_DIRPEPARER)
+    }
 
     val prepareServer: TaskProvider<Task> by lazy {
         project.tasks.named(TASK_PREPARESERVER)
-        }
+    }
 
     private val addDirectories: Map<String, Provider<Directory>> by lazy {
         mapOf(
@@ -107,7 +110,7 @@ abstract class AbstractTaskPreparer(project: Project,
     protected fun getServerVolumes(): Provider<Map<String,String>> = project.provider {
         ContainerUtils.transformVolumes(
             mapOf(
-                getOutputPathFor(TASK_CREATESITES, "sites")
+                getOutputPathFor(CreateSitesFolder.DEFAULT_NAME, CreateSitesFolder.DEFAULT_DIR_NAME)
                         to "/intershop/sites",
                 extension.developmentConfig.licenseDirectory
                         to "/intershop/license",

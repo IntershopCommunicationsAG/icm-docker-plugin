@@ -18,11 +18,11 @@ package com.intershop.gradle.icm.docker.extension.readme.push
 
 import groovy.lang.Closure
 import org.gradle.api.Action
+import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
-import org.gradle.util.ConfigureUtil
 import javax.inject.Inject
 
-open class Images @Inject constructor(objectFactory: ObjectFactory) {
+open class Images @Inject constructor(val project: Project, objectFactory: ObjectFactory) {
 
     val mainImage: ImageConfiguration = objectFactory.newInstance(ImageConfiguration::class.java)
 
@@ -33,7 +33,7 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
      */
     @Suppress("unused")
     fun mainImage(closure: Closure<ImageConfiguration>) {
-        ConfigureUtil.configure(closure, mainImage)
+        project.configure(mainImage, closure)
     }
 
     /**
@@ -54,7 +54,7 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
      */
     @Suppress("unused")
     fun testImage(closure: Closure<ImageConfiguration>) {
-        ConfigureUtil.configure(closure, testImage)
+        project.configure(testImage, closure)
     }
 
     /**

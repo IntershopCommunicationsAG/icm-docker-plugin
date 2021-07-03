@@ -87,7 +87,7 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                               pullTask: Provider<PullExtraImage>): Provider<CreateToolContainer> =
         project.tasks.register("createReadmePush${ext}",
             CreateToolContainer::class.java) { task ->
-            task.description = "Create image for pushing readme for ${ext} container"
+            task.description = "Create image for pushing readme for $ext container"
 
             task.dependsOn(pullTask)
             task.targetImageId(project.provider { pullTask.get().image.get() })
@@ -133,7 +133,7 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                                 containerTask: Provider<CreateToolContainer>) : Provider<DockerStartContainer> =
         project.tasks.register("runReadmePush${ext}", DockerStartContainer::class.java) { task ->
             task.group =  "icm container readme push"
-            task.description = "Run container for pushing readme for ${ext} container"
+            task.description = "Run container for pushing readme for $ext container"
 
             task.dependsOn(containerTask)
             task.containerId.set( containerTask.get().containerId )
@@ -158,7 +158,7 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                               runTask: Provider<DockerStartContainer>) =
         project.tasks.register("logReadmePush${ext}", LogToolContainer::class.java) { task ->
             task.group = "icm container readme push"
-            task.description = "Log container output for pushing readme for ${ext} container"
+            task.description = "Log container output for pushing readme for $ext container"
 
             task.containerId.set(runTask.get().containerId)
 

@@ -223,22 +223,21 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                             'prjCartridge_test' ] 
 
                     base {
-                        dependency = "com.intershop.icm:icm-as:1.0.0"
+                        dependency.set("com.intershop.icm:icm-as:1.0.0")
                         platforms = [ "com.intershop:libbom:1.0.0" ]
                     }
 
                     modules {
                         solrExt {
-                            dependency = "com.intershop.search:solrcloud:1.0.0"
+                            dependency.set("com.intershop.search:solrcloud:1.0.0")
                         }
                         paymentExt {
-                            dependency = "com.intershop.payment:paymenttest:1.0.0"
+                            dependency.set("com.intershop.payment:paymenttest:1.0.0")
                         }
                     }
 
                     serverDirConfig {
                         base {
-                            config {
                                 dirs {
                                     main {
                                         dir.set(file("config/base"))
@@ -246,28 +245,26 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                     }
                                 }
                                 exclude("**/cluster/cartridgelist.properties")
-                            }
                         }
                         prod {
-                            config {
+
                                 dirs {
                                     main {
                                         dir.set(file("config/prod"))
                                     }
                                 }
-                            }
                         }
                         test {
-                            config {
+
                                 dirs {
                                     main {
                                         dir.set(file("config/test"))
                                     }
                                 }
-                            }
+                            
                         }
                         dev {
-                            config {
+
                                 dirs {
                                     main {
                                         dir.set(file("config/dev"))
@@ -277,7 +274,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                         exclude("**/cluster/test.properties")
                                     }
                                 }
-                            }
+                            
                         }
                     }
                 }
@@ -477,16 +474,15 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
                     modules {
                         solrExt {
-                            dependency = "com.intershop.search:solrcloud:1.0.0"
+                            dependency.set("com.intershop.search:solrcloud:1.0.0")
                         }
                         paymentExt {
-                            dependency = "com.intershop.payment:paymenttest:1.0.0"
+                            dependency.set("com.intershop.payment:paymenttest:1.0.0")
                         }
                     }
 
                     serverDirConfig {
                         base {
-                            config {
                                 dirs {
                                     main {
                                         dir.set(file("config/base"))
@@ -494,28 +490,22 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                     }
                                 }
                                 exclude("**/cluster/cartridgelist.properties")
-                            }
                         }
                         prod {
-                            config {
                                 dirs {
                                     main {
                                         dir.set(file("config/prod"))
                                     }
                                 }
-                            }
                         }
                         test {
-                            config {
                                 dirs {
                                     main {
                                         dir.set(file("config/test"))
                                     }
                                 }
-                            }
                         }
                         dev {
-                            config {
                                 dirs {
                                     main {
                                         dir.set(file("config/dev"))
@@ -525,7 +515,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                         exclude("**/cluster/test.properties")
                                     }
                                 }
-                            }
                         }
                     }
                 }
@@ -759,6 +748,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore
     def 'run ishunit'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 

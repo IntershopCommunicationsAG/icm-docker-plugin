@@ -23,7 +23,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    kotlin("jvm") version "1.4.20"
+    kotlin("jvm") version "1.4.31"
 
     // test coverage
     jacoco
@@ -65,8 +65,8 @@ val sonatypeUsername: String by project
 val sonatypePassword: String? by project
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 // set correct project status
@@ -86,21 +86,17 @@ compileOnly.extendsFrom(shaded)
 tasks {
     withType<KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_1_8.toString()
+            jvmTarget = JavaVersion.VERSION_11.toString()
         }
     }
 
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "6.8,7.1")
-        useJUnitPlatform()
-
-        this.javaLauncher.set( project.javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(11))
-        })
+        systemProperty("intershop.gradle.versions", "7.1")
 
         testLogging {
             showStandardStreams = true
         }
+        useJUnitPlatform()
 
         dependsOn("jar")
     }
@@ -301,15 +297,18 @@ dependencies {
 
     implementation(gradleKotlinDsl())
 
-    implementation("com.bmuschko:gradle-docker-plugin:6.7.0")
+    implementation("com.bmuschko:gradle-docker-plugin:7.1.0")
     implementation("org.apache.solr:solr-solrj:8.4.1")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.5")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:4.2.0")
 
-    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:4.0.0")
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.1")
     testImplementation(gradleTestKit())
 }
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://plugins.gradle.org/m2/")
+    }
 }

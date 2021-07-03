@@ -18,10 +18,10 @@ package com.intershop.gradle.icm.docker.extension.image.build
 
 import groovy.lang.Closure
 import org.gradle.api.Action
+import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.util.ConfigureUtil
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -30,7 +30,7 @@ import javax.inject.Inject
 /**
  * Extension to configure the image labels.
  */
-open class ProjectConfiguration @Inject constructor(objectFactory: ObjectFactory) {
+open class ProjectConfiguration @Inject constructor(val project: Project, objectFactory: ObjectFactory) {
 
     /**
      * License provider of all images.
@@ -98,7 +98,7 @@ open class ProjectConfiguration @Inject constructor(objectFactory: ObjectFactory
      */
     val baseImageName: Property<String> = objectFactory.property(String::class.java)
 
-    val images: Images = objectFactory.newInstance(Images::class.java)
+    val images: Images = objectFactory.newInstance(Images::class.java, project)
 
     /**
      * Configures images configuration from a closure.
@@ -107,7 +107,7 @@ open class ProjectConfiguration @Inject constructor(objectFactory: ObjectFactory
      */
     @Suppress("unused")
     fun images(closure: Closure<Images>) {
-        ConfigureUtil.configure(closure, images)
+        project.configure(images, closure)
     }
 
     /**

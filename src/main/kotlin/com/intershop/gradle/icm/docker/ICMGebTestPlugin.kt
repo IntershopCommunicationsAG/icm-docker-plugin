@@ -18,12 +18,12 @@
 package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
-import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownload
-import com.intershop.gradle.icm.docker.tasks.geb.GebTest
+import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownload
+import com.intershop.gradle.icm.docker.tasks.geb.GebTest
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_DRIVER
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_ENVIRONMENT
@@ -57,6 +57,7 @@ class ICMGebTestPlugin : Plugin<Project> {
 
             val sourceSets = project.extensions.getByType(JavaPluginExtension::class.java).sourceSets
 
+            // resource copy is executed twice!
             val sourcesets = sourceSets.create("gebTest") {
                 it.java.srcDirs("src/gebTest/groovy")
                 it.resources.srcDirs("src/gebTest/resources")
