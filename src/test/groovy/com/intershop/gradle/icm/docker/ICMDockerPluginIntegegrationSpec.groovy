@@ -499,7 +499,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                                 }
                         }
                         test {
-                            config {
                                 dirs {
                                     main {
                                         dir.set(file("config/test"))
