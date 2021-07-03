@@ -748,6 +748,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore
     def 'run ishunit'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
