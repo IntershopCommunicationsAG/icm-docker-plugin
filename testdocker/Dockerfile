@@ -33,7 +33,7 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     chown -R ${USERNAME}:intershop /intershop-init
 
 # FROM busybox:latest
-FROM adoptopenjdk/openjdk8:jdk8u242-b08-alpine
+FROM adoptopenjdk/openjdk11:jdk-11.0.11_9-alpine
 ARG USERNAME=intershop
 ARG USERID=150
 

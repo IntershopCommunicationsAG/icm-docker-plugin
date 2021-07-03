@@ -18,12 +18,12 @@
 package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
-import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
-import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownload
-import com.intershop.gradle.icm.docker.tasks.geb.GebTest
+import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownload
+import com.intershop.gradle.icm.docker.tasks.geb.GebTest
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_DRIVER
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_ENVIRONMENT
@@ -34,7 +34,7 @@ import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.plugins.GroovyPlugin
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.getByType
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
 
@@ -55,10 +55,9 @@ class ICMGebTestPlugin : Plugin<Project> {
 
             plugins.apply(GroovyPlugin::class.java)
 
-            val sourceSets = project.convention.getPlugin(
-                JavaPluginConvention::class.java
-            ).sourceSets
+            val sourceSets = project.extensions.getByType(JavaPluginExtension::class.java).sourceSets
 
+            // resource copy is executed twice!
             val sourcesets = sourceSets.create("gebTest") {
                 it.java.srcDirs("src/gebTest/groovy")
                 it.resources.srcDirs("src/gebTest/resources")

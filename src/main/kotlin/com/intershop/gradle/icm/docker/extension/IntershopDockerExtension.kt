@@ -25,14 +25,13 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
-import org.gradle.util.ConfigureUtil
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
 /**
  * Main extension to configure Docker related tasks.
  */
-open class IntershopDockerExtension @Inject constructor(project: Project,
+open class IntershopDockerExtension @Inject constructor(val project: Project,
                                                         objectFactory: ObjectFactory) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -51,7 +50,7 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
      */
     @Suppress("unused")
     fun developmentConfig(closure: Closure<DevelopmentConfiguration>) {
-        ConfigureUtil.configure(closure, developmentConfig)
+        project.configure(developmentConfig, closure)
     }
 
     /**
@@ -72,7 +71,7 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
      */
     @Suppress("unused")
     fun images(closure: Closure<Images>) {
-        ConfigureUtil.configure(closure, images)
+        project.configure(images, closure)
     }
 
     /**
@@ -93,7 +92,7 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
      */
     @Suppress("unused")
     fun imageBuild(closure: Closure<ProjectConfiguration>) {
-        ConfigureUtil.configure(closure, imageBuild)
+        project.configure(imageBuild, closure)
     }
 
     /**
@@ -114,7 +113,7 @@ open class IntershopDockerExtension @Inject constructor(project: Project,
      */
     @Suppress("unused")
     fun readmePush(closure: Closure<ReadmePushConfiguration>) {
-        ConfigureUtil.configure(closure, readmePush)
+        project.configure(readmePush, closure)
     }
 
     /**

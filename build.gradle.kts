@@ -1,5 +1,4 @@
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
-import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /*
@@ -24,7 +23,7 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    kotlin("jvm") version "1.4.20"
+    kotlin("jvm") version "1.4.31"
 
     // test coverage
     jacoco
@@ -42,16 +41,16 @@ plugins {
     id("com.intershop.gradle.scmversion") version "6.2.0"
 
     // plugin for documentation
-    id("org.asciidoctor.jvm.convert") version "3.3.0"
+    id("org.asciidoctor.jvm.convert") version "3.3.2"
 
     // documentation
-    id("org.jetbrains.dokka") version "0.10.1"
+    id("org.jetbrains.dokka") version "1.4.32"
 
     // code analysis for kotlin
-    id("io.gitlab.arturbosch.detekt") version "1.15.0"
+    id("io.gitlab.arturbosch.detekt") version "1.17.1"
 
     // plugin for publishing to Gradle Portal
-    id("com.gradle.plugin-publish") version "0.12.0"
+    id("com.gradle.plugin-publish") version "0.15.0"
 }
 
 scm {
@@ -66,8 +65,8 @@ val sonatypeUsername: String by project
 val sonatypePassword: String? by project
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 // set correct project status
@@ -87,16 +86,17 @@ compileOnly.extendsFrom(shaded)
 tasks {
     withType<KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_1_8.toString()
+            jvmTarget = JavaVersion.VERSION_11.toString()
         }
     }
 
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "6.8")
+        systemProperty("intershop.gradle.versions", "7.1")
 
         testLogging {
             showStandardStreams = true
         }
+        useJUnitPlatform()
 
         dependsOn("jar")
     }
@@ -161,13 +161,8 @@ tasks {
     
     getByName("jar").dependsOn("asciidoctor")
 
-    val dokka by existing(DokkaTask::class) {
-        outputFormat = "javadoc"
-        outputDirectory = "$buildDir/javadoc"
-
-        // Java 8 is only version supported both by Oracle/OpenJDK and Dokka itself
-        // https://github.com/Kotlin/dokka/issues/294
-        enabled = JavaVersion.current().isJava8
+    dokkaJavadoc.configure {
+        outputDirectory.set(buildDir.resolve("dokka"))
     }
 
     register<Jar>("sourceJar") {
@@ -179,8 +174,8 @@ tasks {
     }
 
     register<Jar>("javaDoc") {
-        dependsOn(dokka)
-        from(dokka)
+        dependsOn(dokkaJavadoc)
+        from(dokkaJavadoc)
         archiveClassifier.set("javadoc")
     }
 }
@@ -302,16 +297,18 @@ dependencies {
 
     implementation(gradleKotlinDsl())
 
-    implementation("com.bmuschko:gradle-docker-plugin:6.7.0")
+    implementation("com.bmuschko:gradle-docker-plugin:7.1.0")
     implementation("org.apache.solr:solr-solrj:8.4.1")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.5")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:4.2.0")
 
-    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:3.5.11")
-    testImplementation("com.intershop.gradle.test:test-gradle-plugin:3.7.0")
+    testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.1")
     testImplementation(gradleTestKit())
 }
 
 repositories {
     mavenCentral()
-    jcenter()
+    maven {
+        url = uri("https://plugins.gradle.org/m2/")
+    }
 }

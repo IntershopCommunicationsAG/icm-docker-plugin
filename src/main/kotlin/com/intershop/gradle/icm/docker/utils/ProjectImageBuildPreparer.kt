@@ -18,15 +18,10 @@
 package com.intershop.gradle.icm.docker.utils
 
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
-import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_INIT_IMAGE
-import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_INIT_TEST_IMAGE
 import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_MAIN_IMAGE
 import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_TEST_IMAGE
 import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
-import com.intershop.gradle.icm.docker.extension.Images as BaseImages
-import com.intershop.gradle.icm.docker.extension.image.build.Images as BuildImages
-
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFile
@@ -34,6 +29,8 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Tar
+import com.intershop.gradle.icm.docker.extension.Images as BaseImages
+import com.intershop.gradle.icm.docker.extension.image.build.Images as BuildImages
 
 class ProjectImageBuildPreparer(private val project: Project,
                                 private val images: BaseImages,
@@ -54,13 +51,9 @@ class ProjectImageBuildPreparer(private val project: Project,
 
         const val DOCKERFILE_MAIN = "dockerfileMain"
         const val DOCKERFILE_TEST = "dockerfileTest"
-        const val DOCKERFILE_INIT = "dockerfileInit"
-        const val DOCKERFILE_INITTEST = "dockerfileInitTest"
 
         const val DOCKERFILE_MAIN_DIR = "dockerfile/main"
         const val DOCKERFILE_TEST_DIR = "dockerfile/test"
-        const val DOCKERFILE_INIT_DIR = "dockerfile/init"
-        const val DOCKERFILE_INITTEST_DIR = "dockerfile/inittest"
     }
 
     fun prepareImageBuilds() {
@@ -79,20 +72,6 @@ class ProjectImageBuildPreparer(private val project: Project,
             task.dependsOn(mainDockerFile)
         }
 
-        val initPkgTaskName = buildImages.initImage.pkgTaskName.getOrElse("createInitPkg")
-        val initPkgTask = project.tasks.named(initPkgTaskName, Tar::class.java)
-        val initBuildImageTask = project.tasks.named(BUILD_INIT_IMAGE, BuildImage::class.java )
-
-        val initDockerFile = getBaseDockerfileTask(
-                DOCKERFILE_INIT, DOCKERFILE_INIT_DIR, images.icminit,
-                INIT_ICM_DIR, initPkgTask, buildImages.initImage)
-
-        initBuildImageTask.configure { task ->
-            task.dockerfile.set( getDockerfile(buildImages.initImage.dockerfile, initDockerFile) )
-            task.srcFiles.from(initPkgTask)
-            task.dependsOn(initDockerFile)
-        }
-
         val testPkgTaskName = buildImages.testImage.pkgTaskName.getOrElse("createTestPkg")
         val testPkgTask = project.tasks.named(testPkgTaskName, Tar::class.java)
         val testBuildImageTask = project.tasks.named(BUILD_TEST_IMAGE, BuildImage::class.java )
@@ -106,21 +85,6 @@ class ProjectImageBuildPreparer(private val project: Project,
             task.srcFiles.from(mainPkgTask)
             task.dependsOn(testDockerFile)
         }
-
-        val initTestPkgTaskName = buildImages.initImage.pkgTaskName.getOrElse("createInitTestPkg")
-        val initTestPkgTask = project.tasks.named(initTestPkgTaskName, Tar::class.java)
-        val initTestBuildImageTask = project.tasks.named(BUILD_INIT_TEST_IMAGE, BuildImage::class.java )
-
-        val initTestDockerFile = getBaseDockerfileTask(
-                DOCKERFILE_INITTEST, DOCKERFILE_INITTEST_DIR, project.provider { "BASE_IMAGE" },
-                INIT_ICM_DIR, initTestPkgTask, buildImages.initTestImage)
-
-        initTestBuildImageTask.configure { task ->
-            task.dockerfile.set( getDockerfile(buildImages.initTestImage.dockerfile, initTestDockerFile) )
-            task.srcFiles.from(initTestPkgTask)
-            task.dependsOn(initTestDockerFile)
-        }
-
     }
 
     private fun getBaseDockerfileTask(taskname: String,

@@ -53,9 +53,7 @@ open class ICMDockerPlugin: Plugin<Project> {
 
     companion object {
         const val BUILD_MAIN_IMAGE = "buildMainImage"
-        const val BUILD_INIT_IMAGE = "buildInitImage"
         const val BUILD_TEST_IMAGE = "buildTestImage"
-        const val BUILD_INIT_TEST_IMAGE = "buildInitTestImage"
 
         const val BUILD_IMAGES = "buildImages"
         const val PUSH_IMAGES = "pushImages"
@@ -203,13 +201,6 @@ open class ICMDockerPlugin: Plugin<Project> {
                 task.description = "Creates the main image with an appserver."
             }
 
-            val initImgTask = createImageTask(
-                project, images.icmsetup, imageBuild, imageBuild.images.initImage, BUILD_INIT_IMAGE)
-
-            initImgTask.configure { task ->
-                task.description = "Creates the main init image for initialization of an appserver."
-            }
-
             val testImgTask = createImageTask(
                     project, images.icmsetup, imageBuild, imageBuild.images.testImage, BUILD_TEST_IMAGE)
 
@@ -219,23 +210,14 @@ open class ICMDockerPlugin: Plugin<Project> {
                 task.dependsOn(imgTask)
             }
 
-            val initTestImgTask = createImageTask(
-                    project, images.icmsetup, imageBuild, imageBuild.images.initTestImage, BUILD_INIT_TEST_IMAGE)
-
-            initTestImgTask.configure { task ->
-                task.description = "Creates the init test image for initialization of an test appserver."
-                task.buildArgs.put( "BASE_IMAGE", project.provider { initImgTask.get().images.get().first() })
-                task.dependsOn(initImgTask)
-            }
-
             project.tasks.register(BUILD_IMAGES) { task ->
                 task.group = "build"
                 task.description = "Build all configured images"
-                task.dependsOn(imgTask, initImgTask, testImgTask, initTestImgTask)
+                task.dependsOn(imgTask, testImgTask)
             }
 
             val push = project.tasks.register(PUSH_IMAGES, PushImages::class.java) { task ->
-                task.dependsOn(imgTask, initImgTask, testImgTask, initTestImgTask)
+                task.dependsOn(imgTask, testImgTask)
             }
 
             try {

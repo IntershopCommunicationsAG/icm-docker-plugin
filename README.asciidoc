@@ -63,25 +63,11 @@ intershop_docker {
                 description = 'AppServer Container'
                 enabled = true
             }
-            initImage {
-                dockerfile = file('docker/init/Dockerfile')
-                addFiles(tasks.createInitPkg.outputs.files)
-                dockerBuildDir = 'init'
-                description = 'Init Container'
-                enabled = true
-            }
             testImage {
                 dockerfile = file('docker/test/Dockerfile')
                 addFiles(tasks.createTestPkg.outputs.files)
                 dockerBuildDir = 'test'
                 description = 'AppServer Test Container'
-                enabled = true
-            }
-            initTestImage {
-                dockerfile = file('docker/initTest/Dockerfile')
-                addFiles(tasks.createInitTestPkg.outputs.files)
-                dockerBuildDir = 'inittest'
-                description = 'Test Init Conainer'
                 enabled = true
             }
         }
@@ -138,25 +124,11 @@ imageBuild {
                 description.set("AppServer Container")
                 enabled.set(true)
             }
-            initImage {
-                dockerfile.set(file("docker/init/Dockerfile"))
-                addFiles(tasks.createInitPkg.get().outputs.files)
-                dockerBuildDir.set("init")
-                description.set("Init Container")
-                enabled.set(true)
-            }
             testImage {
                 dockerfile.set(file("docker/test/Dockerfile"))
                 addFiles(tasks.createTestPkg.get().outputs.files)
                 dockerBuildDir.set("test")
                 description.set("AppServer Test Container")
-                enabled.set(true)
-            }
-            initTestImage {
-                dockerfile.set(file("docker/initTest/Dockerfile"))
-                addFiles(tasks.createInitTestPkg.get().outputs.files)
-                dockerBuildDir.set("inittest")
-                description.set("Test Init Conainer")
                 enabled.set(true)
             }
         }
@@ -268,8 +240,6 @@ imageBuild {
 
 |`mainImage` | `ImageConfiguration` | | The configuration of the main server image build.
 |`testImage` | `ImageConfiguration` | | The configuration of the test server image build. This image uses the main image as a base image.
-|`initImage` | `ImageConfiguration` | | The configuration of the init image for the ICM application server.
-|`initTestImage` | `ImageConfiguration` | | The configuration of the test init image. This image uses the init image as a base image.
 
 |===
 
@@ -420,7 +390,6 @@ The plugins must be applied to the root project.
 |Property               | Type      | Default value | Description
 
 |`icmbase`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the ICM application server image.
-|`icminit`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as-init:latest`  | This image is used as a base image for ICM application server initialization image.
 
 |===
 
