@@ -63,7 +63,7 @@ class ServerTaskPreparer(project: Project,
             task.hostConfig.binds.set(getServerVolumes())
             task.finishedCheck = SERVER_READY_STRING
 
-            task.dependsOn(pullTask, dirPreparer, prepareServer, prepareServer, networkTask)
+            task.dependsOn(pullTask, prepareServer, prepareServer, networkTask)
         }
     }
 }
