@@ -50,7 +50,7 @@ class ContainerTaskPreparer(project: Project,
 
             task.hostConfig.network.set(networkId)
 
-            task.dependsOn(dirPreparer, prepareServer, pullTask, networkTask)
+            task.dependsOn(prepareServer, pullTask, networkTask)
         }
     }
 }

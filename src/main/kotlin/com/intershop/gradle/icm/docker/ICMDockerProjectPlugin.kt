@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
@@ -40,6 +41,7 @@ import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.tasks.TaskProvider
+import java.io.File
 
 /**
  * Main plugin class of the project plugin.
@@ -141,12 +143,80 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 val mssqlDatabase = tasks.named("start${MSSQLPreparer.extName}")
                 val oracleDatabase = tasks.named("start${OraclePreparer.extName}")
 
+                prepareSitesFolder(project, extension)
+
                 val dbprepare: TaskProvider<DBPrepareTask> =
                     getDBPrepare(this, containerPreparer, mssqlDatabase, oracleDatabase)
 
                 configureISHUnitTest(this, extension, containerPreparer, dbprepare, mssqlDatabase, oracleDatabase)
                 addTestReportConfiguration(this)
                 ProjectImageBuildPreparer(this, extension.images, extension.imageBuild.images).prepareImageBuilds()
+            }
+        }
+    }
+
+    private fun prepareSitesFolder(project: Project, extension: IntershopDockerExtension) {
+        with(project) {
+            val sitesFolderPath = extension.developmentConfig.getConfigProperty(
+                Configuration.SITES_FOLDER_PATH, ""
+            )
+
+            val defaultSitesFolder =
+                project.layout.buildDirectory.dir("sites_folder").forUseAtConfigurationTime().get().asFile
+
+            if (sitesFolderPath.isEmpty()) {
+                logger.warn(
+                    "There is no configuration for the sites folder. Check '{}' in your icm.properties! \n" +
+                            "The default '{}' value will be used!",
+                    Configuration.SITES_FOLDER_PATH,
+                    defaultSitesFolder.path
+                )
+
+                if (! defaultSitesFolder.exists()) {
+                    if (! defaultSitesFolder.mkdirs()) {
+                        logger.error(
+                            "It was not possible to create the sites folder '{}'!",
+                            defaultSitesFolder.path
+                        )
+                        throw GradleException(
+                            "It was not possible to create the sites folder '{" +
+                                    defaultSitesFolder.path + "'!"
+                        )
+                    }
+                } else {
+                    logger.warn(
+                        "The sites folder exists and will be used '{}'!",
+                        defaultSitesFolder.path
+                    )
+                }
+            } else {
+                val sitesFolder = File(sitesFolderPath)
+
+                if (sitesFolder.exists() && sitesFolder.canWrite()) {
+                    logger.warn("The sites folder exists and can be used '{}'!", sitesFolder.path)
+                } else {
+                    if (!sitesFolder.canWrite()) {
+                        logger.warn(
+                            "The sites folder exists, but it is not possible to write '{}'!",
+                            sitesFolder.path
+                        )
+                    }
+                    if (sitesFolder.mkdirs()) {
+                        logger.warn(
+                            "The sites folder does not exist, but it is was possible to create '{}'!",
+                            sitesFolder.path
+                        )
+                    } else {
+                        logger.error(
+                            "The sites folder does not exist and it is was possible to create '{}'!",
+                            sitesFolder.path
+                        )
+                        throw GradleException(
+                            "It was not possible to create the sites folder '{" +
+                                    sitesFolder.path + "'!"
+                        )
+                    }
+                }
             }
         }
     }

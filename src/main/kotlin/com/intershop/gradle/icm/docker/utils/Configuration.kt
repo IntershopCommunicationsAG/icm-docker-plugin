@@ -102,4 +102,6 @@ object Configuration {
     const val GEB_LOCAL_ENVIRONMENT = "geb.local.environment"
 
     const val COTAINER_ENV_PROP = "intershop.environment.container"
+
+    const val SITES_FOLDER_PATH = "sites.folder.path"
 }

@@ -42,7 +42,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.base' version '3.0.0'
+                id 'com.intershop.gradle.icm.base' version '4.3.0'
                 id 'com.intershop.gradle.icm.docker'
             }
             
@@ -199,7 +199,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '3.0.0'
+                id 'com.intershop.gradle.icm.project' version '4.3.0'
                 id 'com.intershop.gradle.icm.docker.project'
                 id 'com.intershop.gradle.icm.docker.solrcloud'
             }
@@ -445,7 +445,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '3.0.0'
+                id 'com.intershop.gradle.icm.project' version '4.3.0'
                 id 'com.intershop.gradle.icm.docker.project'
             }
             

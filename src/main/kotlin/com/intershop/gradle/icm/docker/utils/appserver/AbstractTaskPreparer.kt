@@ -21,8 +21,8 @@ import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.Configuration.SITES_FOLDER_PATH
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
-import com.intershop.gradle.icm.tasks.CreateSitesFolder
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -49,8 +49,6 @@ abstract class AbstractTaskPreparer(project: Project,
         const val TASK_CREATECONFIG = "createConfig"
         const val TASK_CREATECLUSTERID = "createClusterID"
         const val TASK_COPYLIBS = "copyLibs"
-
-        const val TASK_DIRPEPARER = "dirPreparer"
     }
 
     override val image: Provider<String> = extension.images.icmbase
@@ -74,26 +72,6 @@ abstract class AbstractTaskPreparer(project: Project,
 
             task.containerName.set("${extension.containerPrefix}-${containerExt}")
         }
-
-        project.tasks.register(TASK_DIRPEPARER) { task ->
-            task.doLast {
-                addDirectories.forEach { (_, dir) ->
-                    val file = dir.get().asFile
-                    if(file.exists()) {
-                        file.deleteRecursively()
-                    }
-                    dir.get().asFile.mkdirs()
-                }
-            }
-        }
-    }
-
-    val dirPreparer: TaskProvider<Task> by lazy {
-        project.tasks.named(CreateSitesFolder.DEFAULT_NAME)
-    }
-
-    val sitesPreparer: TaskProvider<Task> by lazy {
-        project.tasks.named(TASK_DIRPEPARER)
     }
 
     val prepareServer: TaskProvider<Task> by lazy {
@@ -110,8 +88,9 @@ abstract class AbstractTaskPreparer(project: Project,
     protected fun getServerVolumes(): Provider<Map<String,String>> = project.provider {
         ContainerUtils.transformVolumes(
             mapOf(
-                getOutputPathFor(CreateSitesFolder.DEFAULT_NAME, CreateSitesFolder.DEFAULT_DIR_NAME)
-                        to "/intershop/sites",
+                extension.developmentConfig.getConfigProperty(SITES_FOLDER_PATH,
+                    project.layout.buildDirectory.dir("sites_folder").
+                        forUseAtConfigurationTime().get().asFile.absolutePath) to "/intershop/sites",
                 extension.developmentConfig.licenseDirectory
                         to "/intershop/license",
                 addDirectories.getValue(SERVERLOGS).get().asFile.absolutePath
