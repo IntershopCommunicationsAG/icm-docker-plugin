@@ -103,7 +103,7 @@ abstract class AbstractTaskPreparer(project: Project,
                         to "/intershop/project/extraCartridges",
                 getOutputPathFor(TASK_COPYLIBS, "")
                         to "/intershop/project/libs",
-                getOutputDirFor(TASK_CREATECLUSTERID).parent
+                getOutputPathFor(TASK_CREATECLUSTERID, "")
                         to "/intershop/clusterid",
                 extension.developmentConfig.configDirectory
                         to "/intershop/conf",
