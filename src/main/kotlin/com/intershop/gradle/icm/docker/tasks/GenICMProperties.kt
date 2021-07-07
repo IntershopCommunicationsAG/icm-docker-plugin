@@ -165,6 +165,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             db == "mssql" -> writeMSSQLProps(outputFile, false)
             else -> project.logger.quiet("No database option is specified!")
         }
+        writeSitesFolderConfiguration(outputFile)
 
         writeServerProps(outputFile)
 
@@ -340,6 +341,18 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                 file.appendText(ctext, Charsets.UTF_8)
                 file.appendText("\n\n", Charsets.UTF_8)
             }
+        }
+    }
+
+    private fun writeSitesFolderConfiguration(file: File) {
+        with(Configuration) {
+            val text =
+                """
+                # configuration for sites folder 
+                # this configuration is connected with the database
+                $SITES_FOLDER_PATH = <path on local file system outside from the sources>
+                
+                """.trimIndent()
         }
     }
 

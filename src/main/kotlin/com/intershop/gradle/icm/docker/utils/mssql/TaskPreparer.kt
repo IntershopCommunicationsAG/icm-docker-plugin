@@ -105,7 +105,7 @@ class TaskPreparer(project: Project,
             with(extension.developmentConfig) {
                 project.logger.quiet(
                     "The database can be connected with jdbc:sqlserver://{}:{};databaseName={}",
-                    task.containerName,
+                    task.containerName.get(),
                     getConfigProperty(
                         Configuration.DB_MSSQL_PORT,
                         Configuration.DB_MSSQL_PORT_VALUE

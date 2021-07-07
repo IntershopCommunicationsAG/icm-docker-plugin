@@ -72,7 +72,7 @@ class TaskPreparer(project: Project,
             with(extension.developmentConfig) {
                 project.logger.quiet(
                     "The database can be connected with jdbc:oracle:thin:@{}:{}:XE",
-                    task.containerName,
+                    task.containerName.get(),
                     getConfigProperty(
                         Configuration.DB_ORACLE_PORT,
                         Configuration.DB_ORACLE_PORT_VALUE
