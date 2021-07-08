@@ -57,10 +57,8 @@ class ICMGebTestPlugin : Plugin<Project> {
 
             val sourceSets = project.extensions.getByType(JavaPluginExtension::class.java).sourceSets
 
-            // resource copy is executed twice!
             val sourcesets = sourceSets.create("gebTest") {
                 it.java.srcDirs("src/gebTest/groovy")
-                it.resources.srcDirs("src/gebTest/resources")
                 it.compileClasspath = sourceSets.named("main").get().output +
                         configurations.getByName(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
                 it.runtimeClasspath = it.output + it.compileClasspath
