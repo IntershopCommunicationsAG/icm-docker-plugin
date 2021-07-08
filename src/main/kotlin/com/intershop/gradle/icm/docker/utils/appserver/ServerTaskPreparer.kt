@@ -24,7 +24,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
 class ServerTaskPreparer(project: Project,
-                          networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
+                         networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
         const val extName: String = "AS"

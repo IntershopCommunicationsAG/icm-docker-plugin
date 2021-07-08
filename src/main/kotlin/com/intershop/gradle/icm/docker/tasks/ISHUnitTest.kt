@@ -38,7 +38,6 @@ open class ISHUnitTest : AbstractContainerTask() {
 
     init {
         group = "icm container project"
-        debugProperty.convention(false)
     }
 
     @get:Input
@@ -78,7 +77,8 @@ open class ISHUnitTest : AbstractContainerTask() {
         execCmd.withAttachStderr(true)
         execCmd.withAttachStdout(true)
 
-        if(debugProperty.get()) {
+        val debug = System.getProperty("debug-jvm", "false")
+        if(debug != "false") {
             execCmd.withEnv(listOf("ENABLE_DEBUG=true"))
         }
 

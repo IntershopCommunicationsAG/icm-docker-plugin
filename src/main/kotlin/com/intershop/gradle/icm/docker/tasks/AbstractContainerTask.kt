@@ -30,30 +30,12 @@ import java.util.concurrent.TimeUnit
 
 abstract class AbstractContainerTask : AbstractDockerRemoteApiTask() {
 
-    @Internal
-    protected val debugProperty: Property<Boolean> = project.objects.property(Boolean::class.java)
-
     /**
      * The ID or name of container used to perform operation.
      * The container for the provided ID has to be created first.
      */
     @get:Input
     val containerId: Property<String> = project.objects.property(String::class.java)
-
-    /**
-     * Enable debugging for the process. The process is started suspended and listening on port 5005.
-     * This can be configured also over the gradle parameter "debug-java".
-     *
-     * @property debug is the task property
-     */
-    @set:Option(
-        option = "debug-jvm",
-        description = "Enable debugging for the process. The process is started suspended and listening on port 5005."
-    )
-    @get:Input
-    var debug: Boolean
-        get() = debugProperty.get()
-        set(value) = debugProperty.set(value)
 
     protected fun waitForExit(localExecId: String ): Long {
 

@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
@@ -40,6 +41,7 @@ import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.configure
 
 /**
  * Main plugin class of the project plugin.
@@ -161,6 +163,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
             task.group = GROUP_SERVERBUILD
             task.description = "Starts dbPrepare in an existing ICM base container."
             task.containerId.set(project.provider { containerPreparer.startTask.get().containerId.get() })
+
             task.dependsOn(containerPreparer.startTask)
             task.finalizedBy(containerPreparer.removeTask)
             task.mustRunAfter(mssqlDatabase, oracleDatabase)

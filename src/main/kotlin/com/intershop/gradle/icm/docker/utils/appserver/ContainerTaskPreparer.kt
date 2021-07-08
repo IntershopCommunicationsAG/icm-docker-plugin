@@ -45,9 +45,7 @@ class ContainerTaskPreparer(project: Project,
 
             task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
 
-            task.hostConfig.portBindings.set(listOf("5005:7746"))
             task.hostConfig.binds.set(getServerVolumes())
-
             task.hostConfig.network.set(networkId)
 
             task.dependsOn(prepareServer, pullTask, networkTask)

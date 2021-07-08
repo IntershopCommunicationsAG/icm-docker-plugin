@@ -51,7 +51,12 @@ open class StartServerContainer
     @get:Input
     var debug: Boolean
         get() = debugProperty.get()
-        set(value) = debugProperty.set(value)
+        set(value) {
+            debugProperty.set(value)
+            if(value) {
+                configureDebug()
+            }
+        }
 
     /**
      * Enable jmx port for the process. The process listening on port 7747.
@@ -66,7 +71,25 @@ open class StartServerContainer
     @get:Input
     var jmx: Boolean
         get() = jmxProperty.get()
-        set(value) = jmxProperty.set(value)
+        set(value) {
+            jmxProperty.set(value)
+            if(value) {
+                envVars.put("ENABLE_JMX", "true")
+
+                val extension = project.extensions.getByType<IntershopDockerExtension>()
+
+                val httpJMXContainerPort = extension.developmentConfig.getConfigProperty(
+                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT,
+                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
+                )
+                val httpJMXPort = extension.developmentConfig.getConfigProperty(
+                    Configuration.AS_JMX_CONNECTOR_PORT,
+                    Configuration.AS_JMX_CONNECTOR_PORT_VALUE
+                )
+
+                hostConfig.portBindings.add("${httpJMXPort}:${httpJMXContainerPort}")
+            }
+        }
 
     /**
      * Enable gclog for the process.
@@ -81,7 +104,12 @@ open class StartServerContainer
     @get:Input
     var gclog: Boolean
         get() = gclogProperty.get()
-        set(value) = gclogProperty.set(value)
+        set(value) {
+            gclogProperty.set(value)
+            if(value) {
+                envVars.put("ENABLE_GCLOG", "true")
+            }
+        }
 
     /**
      * Enable heapdump for the process.
@@ -96,7 +124,12 @@ open class StartServerContainer
     @get:Input
     var heapdump: Boolean
         get() = heapdumpProperty.get()
-        set(value) = heapdumpProperty.set(value)
+        set(value) {
+            heapdumpProperty.set(value)
+            if(value) {
+                this.envVars.put("ENABLE_HEAPDUMP", "true")
+            }
+        }
 
     /**
      * Set an special name for an appserver over
@@ -109,7 +142,12 @@ open class StartServerContainer
     @get:Input
     var appserver: String
         get() = appserverProperty.get()
-        set(value) = appserverProperty.set(value)
+        set(value) {
+            appserverProperty.set(value)
+            if(value.isNotEmpty()) {
+                envVars.put("SERVER_NAME", appserverProperty.get())
+            }
+        }
 
     /**
      * Set environment properties to provide additional
@@ -122,7 +160,17 @@ open class StartServerContainer
     @get:Input
     var envprops: List<String>
         get() = envpropsProperty.get()
-        set(value) = envpropsProperty.set(value)
+        set(list) {
+            envpropsProperty.set(list)
+            list.forEach {  prop ->
+                val pl = prop.split("=")
+                if(pl.size > 2) {
+                    envVars.put(pl[0], pl[1])
+                } else {
+                    project.logger.quiet("This is not a correct parameter: {}", prop)
+                }
+            }
+        }
 
     init {
         debugProperty.convention(false)
@@ -131,49 +179,15 @@ open class StartServerContainer
         heapdumpProperty.convention(false)
         appserverProperty.convention("")
         envpropsProperty.empty()
+
+        val debug = System.getProperty("debug-jvm", "false")
+        if(debug != "false") {
+            configureDebug()
+        }
     }
 
-    override fun runRemoteCommand() {
-        val extension = project.extensions.getByType<IntershopDockerExtension>()
-
-        if(debugProperty.get()) {
-            this.envVars.put("ENABLE_DEBUG", "true")
-            hostConfig.portBindings.add("5005:7746")
-        }
-        if(gclogProperty.get()) {
-            this.envVars.put("ENABLE_GCLOG", "true")
-        }
-        if(jmxProperty.get()) {
-            this.envVars.put("ENABLE_JMX", "")
-
-            val httpJMXContainerPort = extension.developmentConfig.getConfigProperty(
-                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT,
-                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
-            )
-            val httpJMXPort = extension.developmentConfig.getConfigProperty(
-                Configuration.AS_JMX_CONNECTOR_PORT,
-                Configuration.AS_JMX_CONNECTOR_PORT_VALUE
-            )
-
-            hostConfig.portBindings.add("${httpJMXPort}:${httpJMXContainerPort}")
-        }
-        if(heapdumpProperty.get()) {
-            this.envVars.put("ENABLE_HEAPDUMP", "")
-        }
-
-        if(appserverProperty.get().isNotEmpty()) {
-            this.envVars.put("SERVER_NAME", appserverProperty.get())
-        }
-
-        for (prop in envpropsProperty.get()) {
-            val pl = prop.split("=")
-            if(pl.size > 2) {
-                this.envVars.put(pl[0], pl[1])
-            } else {
-                project.logger.quiet("This is not a correct parameter: {}", prop)
-            }
-        }
-
-        super.runRemoteCommand()
+    private fun configureDebug() {
+        envVars.put("ENABLE_DEBUG", "true")
+        hostConfig.portBindings.add("5005:7746")
     }
 }

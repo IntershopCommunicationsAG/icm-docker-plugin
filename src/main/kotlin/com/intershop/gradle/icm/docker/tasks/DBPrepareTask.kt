@@ -53,7 +53,6 @@ open class DBPrepareTask: AbstractContainerTask() {
         cleanDB.convention("no")
         cartridges.convention("")
         propertyKeys.convention("")
-        debugProperty.convention(false)
 
         group = "icm docker project"
     }
@@ -71,7 +70,8 @@ open class DBPrepareTask: AbstractContainerTask() {
         val command = mutableListOf<String>()
         command.addAll(listOf("/intershop/bin/intershop.sh", "dbprepare", "-classic"))
 
-        if(debugProperty.get()) {
+        val debug = System.getProperty("debug-jvm", "false")
+        if(debug != "false") {
             execCmd.withEnv(listOf("ENABLE_DEBUG=true"))
         }
 
