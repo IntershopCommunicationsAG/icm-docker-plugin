@@ -22,6 +22,7 @@ import com.intershop.icm.jobrunner.configuration.Server
 import com.intershop.icm.jobrunner.configuration.User
 import com.intershop.icm.jobrunner.utils.JobRunnerException
 import com.intershop.icm.jobrunner.utils.Protocol
+import org.apache.http.client.utils.URIBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
@@ -33,7 +34,7 @@ import javax.inject.Inject
 abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
 
     @get:Input
-    val hostAddress: Property<String> = objectFactory.property(String::class.java)
+    val webServerHost: Property<String> = objectFactory.property(String::class.java)
 
     @get:Input
     val protocol: Property<String> = objectFactory.property(String::class.java)
@@ -60,9 +61,11 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
     val sslVerification: Property<Boolean> = objectFactory.property(Boolean::class.java)
 
     init {
-        protocol.convention("https")
-        hostAddress.convention(Configuration.LOCAL_CONNECTOR_HOST_VALUE)
-        webServerPort.convention(Configuration.WS_HTTPS_PORT_VALUE)
+        val uriDefault = URIBuilder(Configuration.WS_SECURE_URL_VALUE)
+
+        protocol.convention(uriDefault.scheme)
+        webServerHost.convention(uriDefault.host)
+        webServerPort.convention(uriDefault.port.toString())
         maxWait.convention(600000)
         domain.convention("SLDSystem")
         servergroup.convention("BOS")
@@ -76,7 +79,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
             Protocol.HTTP
         }
         val user = User(userName.get(), userPassword.get())
-        val server = Server(protocolObj, hostAddress.get(), webServerPort.get())
+        val server = Server(protocolObj, webServerHost.get(), webServerPort.get())
 
         val runner = JobRunner(
                     server = server,

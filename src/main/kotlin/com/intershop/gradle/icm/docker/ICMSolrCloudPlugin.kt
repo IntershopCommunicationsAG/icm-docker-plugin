@@ -32,8 +32,9 @@ import com.intershop.gradle.icm.docker.utils.Configuration.LOCAL_CONNECTOR_HOST
 import com.intershop.gradle.icm.docker.utils.Configuration.LOCAL_CONNECTOR_HOST_VALUE
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_HOSTLIST
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_INDEXPREFIX
-import com.intershop.gradle.icm.docker.utils.Configuration.WS_HTTPS_PORT
-import com.intershop.gradle.icm.docker.utils.Configuration.WS_HTTPS_PORT_VALUE
+import com.intershop.gradle.icm.docker.utils.Configuration.WS_SECURE_URL
+import com.intershop.gradle.icm.docker.utils.Configuration.WS_SECURE_URL_VALUE
+import org.apache.http.client.utils.URIBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
@@ -55,14 +56,17 @@ class ICMSolrCloudPlugin : Plugin<Project> {
             ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
             with(extension.developmentConfig) {
-                val host = getConfigProperty(LOCAL_CONNECTOR_HOST, LOCAL_CONNECTOR_HOST_VALUE)
-                val websrvport = getConfigProperty(WS_HTTPS_PORT, WS_HTTPS_PORT_VALUE)
-                val assrvport = getConfigProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
+                val wsUrl = getConfigProperty(WS_SECURE_URL, WS_SECURE_URL_VALUE)
+                val assrvHost = getConfigProperty(LOCAL_CONNECTOR_HOST, LOCAL_CONNECTOR_HOST_VALUE)
+                val assrvPort = getConfigProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
+
+                val uri = URIBuilder(wsUrl)
 
                 val wfsTask = project.tasks.register("waitForServer", WaitForServer::class.java ) { wfs ->
-                    wfs.webServerPort.set(websrvport)
-                    wfs.appServerPort.set(assrvport)
-                    wfs.hostAddress.set(host)
+                    wfs.webServerPort.set(uri.port.toString())
+                    wfs.webServerHost.set(uri.host)
+                    wfs.appServerPort.set(assrvPort)
+                    wfs.appServerHost.set(assrvHost)
                 }
 
                 val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolr::class.java ) { cus ->
@@ -86,8 +90,8 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     rsi.group = "Solr Cloud Support"
                     rsi.description = "Rebuilds the search index for the specified server."
 
-                    rsi.webServerPort.set(websrvport)
-                    rsi.hostAddress.set(host)
+                    rsi.webServerPort.set(uri.port.toString())
+                    rsi.webServerHost.set(uri.host)
                     rsi.userName.set(getConfigProperty(AS_ADMIN_USER_NAME, AS_ADMIN_USER_NAME_VALUE))
                     rsi.userPassword.set(getConfigProperty(AS_ADMIN_USER_PASSWORD))
 

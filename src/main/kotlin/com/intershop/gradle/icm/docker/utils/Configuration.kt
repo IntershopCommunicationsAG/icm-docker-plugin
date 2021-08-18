@@ -87,6 +87,9 @@ object Configuration {
 
     const val WS_SERVER_HTTP2 = "webserver.use.http2"
 
+    const val WS_SECURE_URL = "intershop.WebServerSecureURL"
+    const val WS_SECURE_URL_VALUE = "https://localhost:8443"
+
     const val AS_ADMIN_USER_NAME = "intershop.smc.admin.user.name"
     const val AS_ADMIN_USER_NAME_VALUE = "admin"
     const val AS_ADMIN_USER_PASSWORD = "intershop.smc.admin.user.password"

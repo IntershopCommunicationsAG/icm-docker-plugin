@@ -32,13 +32,16 @@ import javax.inject.Inject
 open class WaitForServer @Inject constructor(objectFactory: ObjectFactory): DefaultTask() {
 
     @get:Input
-    val hostAddress: Property<String> = objectFactory.property(String::class.java)
-
-    @get:Input
     val webServerPort: Property<String> = objectFactory.property(String::class.java)
 
     @get:Input
+    val webServerHost: Property<String> = objectFactory.property(String::class.java)
+
+    @get:Input
     val appServerPort: Property<String> = objectFactory.property(String::class.java)
+
+    @get:Input
+    val appServerHost: Property<String> = objectFactory.property(String::class.java)
 
     @get:Input
     val socketTries: Property<Int> = objectFactory.property(Int::class.java)
@@ -54,15 +57,15 @@ open class WaitForServer @Inject constructor(objectFactory: ObjectFactory): Defa
     @TaskAction
     fun waiting() {
         // wait for web server
-        waitForSocket(hostAddress.get(), webServerPort.get(), socketTries.get())
+        waitForSocket(webServerHost.get(), webServerPort.get(), socketTries.get())
 
         // wait for app server
         waitForURL(
-            "http://${hostAddress.get()}:${appServerPort.get()}/servlet/ConfigurationServlet",
+            "http://${appServerHost.get()}:${appServerPort.get()}/servlet/ConfigurationServlet",
             urlTries.get()
         )
 
-        project.logger.quiet("Server on {}:{} is ready!", hostAddress.get(), webServerPort.get())
+        project.logger.quiet("Server on {}:{} is ready!", webServerHost.get(), webServerPort.get())
     }
 
     private fun waitForSocket(hostaddr: String, port: String, counter: Int) {
