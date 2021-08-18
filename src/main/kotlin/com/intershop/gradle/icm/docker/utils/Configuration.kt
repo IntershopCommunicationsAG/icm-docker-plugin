@@ -107,4 +107,13 @@ object Configuration {
     const val COTAINER_ENV_PROP = "intershop.environment.container"
 
     const val SITES_FOLDER_PATH = "sites.folder.path"
+
+    const val DATA_FOLDER_PATH = "data.folder.path"
+    const val BACKUP_FOLDER_PATH = "backup.folder.path"
+
+    const val DATA_FOLDER_VOLUME = "data.folder.volume"
+    const val BACKUP_FOLDER_VOLUME = "backup.folder.volume"
+
+    const val DATA_FOLDER_VOLUME_VALUE = "/var/opt/mssql/data"
+    const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
 }
