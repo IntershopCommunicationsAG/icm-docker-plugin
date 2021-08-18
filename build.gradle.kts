@@ -67,6 +67,8 @@ val sonatypePassword: String? by project
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
+
+    withSourcesJar()
 }
 
 // set correct project status
@@ -149,10 +151,10 @@ tasks {
 
     withType<JacocoReport> {
         reports {
-            xml.isEnabled = true
-            html.isEnabled = true
+            xml.required.set(true)
+            html.required.set(true)
 
-            html.destination = File(project.buildDir, "jacocoHtml")
+            html.outputLocation.set( File(project.buildDir, "jacocoHtml"))
         }
 
         val jacocoTestReport by tasks
@@ -163,14 +165,6 @@ tasks {
 
     dokkaJavadoc.configure {
         outputDirectory.set(buildDir.resolve("dokka"))
-    }
-
-    register<Jar>("sourceJar") {
-        description = "Creates a JAR that co" +
-                "ntains the source code."
-
-        from(sourceSets.getByName("main").allSource)
-        archiveClassifier.set("sources")
     }
 
     register<Jar>("javaDoc") {
@@ -233,7 +227,6 @@ publishing {
         create("intershopMvn", MavenPublication::class.java) {
             from(components["java"])
 
-            artifact(tasks.getByName("sourceJar"))
             artifact(tasks.getByName("javaDoc"))
 
             artifact(File(buildDir, "docs/asciidoc/html5/README.html")) {
