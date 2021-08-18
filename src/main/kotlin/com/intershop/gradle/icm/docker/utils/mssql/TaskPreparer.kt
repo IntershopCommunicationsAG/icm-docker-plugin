@@ -20,8 +20,10 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import java.io.File
 
 class TaskPreparer(project: Project,
                    networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask){
@@ -98,6 +100,30 @@ class TaskPreparer(project: Project,
                                 )
                     )
                 )
+
+                val volumeMap = mutableMapOf<String, String>()
+
+                // add data path if configured
+                val dataPath = getConfigProperty(Configuration.DATA_FOLDER_PATH,"")
+                if(dataPath.isNotBlank()) {
+                    volumeMap[extension.developmentConfig.getConfigProperty(
+                        Configuration.DATA_FOLDER_PATH,
+                        project.layout.buildDirectory.dir("data_folder").get().asFile.absolutePath)] =
+                            extension.developmentConfig.getConfigProperty(
+                                Configuration.DATA_FOLDER_VOLUME,
+                                Configuration.DATA_FOLDER_VOLUME_VALUE)
+                }
+
+                // add backup folder - default is build directory
+                volumeMap[getConfigProperty(Configuration.BACKUP_FOLDER_PATH,
+                    project.layout.buildDirectory.dir("data_backup_folder").get().asFile.absolutePath)] =
+                        extension.developmentConfig.getConfigProperty(
+                            Configuration.BACKUP_FOLDER_VOLUME,
+                            Configuration.BACKUP_FOLDER_VOLUME_VALUE)
+
+                volumeMap.forEach { path, _ -> File(path).mkdirs() }
+
+                task.hostConfig.binds.set(ContainerUtils.transformVolumes(volumeMap))
             }
 
             task.finishedCheck = "Parallel redo is shutdown for database"
