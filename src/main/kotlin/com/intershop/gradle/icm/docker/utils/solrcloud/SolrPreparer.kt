@@ -32,7 +32,7 @@ class SolrPreparer(project: Project,
 
     override val image: Provider<String> = extension.images.solr
     override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override val containerExt: String = extensionName.lowercase()
 
     init {
         initBaseTasks()
@@ -62,8 +62,8 @@ class SolrPreparer(project: Project,
             task.envVars.set(
                 mutableMapOf(
                     "SOLR_PORT" to "8983",
-                    "ZK_HOST" to "${extension.containerPrefix}-${ZKPreparer.extName.toLowerCase()}:2181",
-                    "SOLR_HOST" to "${ IPFinder.getSystemIP()}",
+                    "ZK_HOST" to "${extension.containerPrefix}-${ZKPreparer.extName.lowercase()}:2181",
+                    "SOLR_HOST" to "${ IPFinder.getSystemIP().first }",
                     "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
                 )
             )

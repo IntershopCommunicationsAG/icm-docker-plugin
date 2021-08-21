@@ -20,6 +20,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
+import java.net.UnknownHostException
 
 open class ShowICMASConfig : DefaultTask() {
 
@@ -27,19 +28,37 @@ open class ShowICMASConfig : DefaultTask() {
     fun showconfig() {
         val systemIP = IPFinder.getSystemIP()
 
+        val hostname = if(systemIP.second != null) {
+            try {
+                systemIP.second
+            } catch (e: UnknownHostException) {
+                e.printStackTrace()
+            }
+        } else {
+            "localhost"
+        }
+
         println(
             """
             ==============================================================
             check your icm.properties file
             --------------------------------------------------------------
+            # webserver configuration
+            # if youn want change the ports of the webserver, it is necessary to change the ports 
+            # in ${GenICMProperties.webserverUrlProp} and ${GenICMProperties.webserverSecureUrlProp} 
+            # according to the settings ${Configuration.WS_HTTP_PORT} and ${Configuration.WS_HTTPS_PORT}
+            #
+            ${GenICMProperties.webserverUrlProp} = http://$hostname:${Configuration.WS_HTTP_PORT_VALUE}
+            ${GenICMProperties.webserverSecureUrlProp} = https://$hostname:${Configuration.WS_HTTPS_PORT_VALUE}
+                
             # port number to start the servlet engine
             ${Configuration.AS_CONNECTOR_PORT} = ${Configuration.AS_CONNECTOR_PORT_VALUE}
             
             # Host name / IP of the ICM Server (local installation)
             # both values must match    
-            ${Configuration.LOCAL_CONNECTOR_HOST} = $systemIP
+            ${Configuration.LOCAL_CONNECTOR_HOST} = ${systemIP.first}
             # WebAdapapter container configuration
-            ${GenICMProperties.asConnectorAdressProp} = $systemIP
+            ${GenICMProperties.asConnectorAdressProp} = ${systemIP.first}
             ==============================================================
             """.trimIndent())
     }

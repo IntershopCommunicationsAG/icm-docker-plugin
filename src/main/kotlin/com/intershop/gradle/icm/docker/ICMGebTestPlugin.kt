@@ -68,16 +68,16 @@ class ICMGebTestPlugin : Plugin<Project> {
                 "start" + WATaskPreparer.extName,
                 StartExtraContainer::class.java
             )
-            val startSrv = rootProject.tasks.named(TASK_START_SERVER)
+
             val networkTask = rootProject.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
 
             val os = getOS()
             val localDriverConfig = extension.developmentConfig.getConfigProperty(GEB_LOCAL_DRIVER, "")
             val localEnvironmentConfig = extension.developmentConfig.getConfigProperty(GEB_LOCAL_ENVIRONMENT, "")
 
-            val httpContainerPort = extension.developmentConfig.getConfigProperty(
-                Configuration.WS_CONTAINER_HTTP_PORT,
-                Configuration.WS_CONTAINER_HTTP_PORT_VALUE
+            val baseUrlConfig = extension.developmentConfig.getConfigProperty(
+                Configuration.WS_SECURE_URL,
+                Configuration.WS_SECURE_URL_VALUE
             )
 
             val gebTest = tasks.register("gebTest", GebTest::class.java) {
@@ -85,8 +85,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                 it.classpath = sourcesets.runtimeClasspath
 
                 it.containerNetwork.set(networkTask.get().networkName)
-                it.remoteHost.set(startWebSrv.get().containerName)
-                it.remotePort.set(httpContainerPort)
+                it.baseUrl.set(baseUrlConfig)
                 if(localEnvironmentConfig.isNotBlank()) {
                     logger.quiet("Setting from config is used for Geb environment: {}", localEnvironmentConfig)
                     it.gebEnvironment.set(localEnvironmentConfig)
@@ -94,7 +93,6 @@ class ICMGebTestPlugin : Plugin<Project> {
                     it.gebEnvironment.set(gebExtension.gebEnvironment)
                 }
 
-                it.dependsOn(startSrv)
                 it.mustRunAfter(startWebSrv)
             }
 
@@ -107,15 +105,6 @@ class ICMGebTestPlugin : Plugin<Project> {
             }
 
             if(localDriverConfig.isNotBlank()) {
-
-                val httpPort = extension.developmentConfig.getConfigProperty(
-                    Configuration.WS_HTTP_PORT,
-                    Configuration.WS_HTTP_PORT_VALUE)
-
-                val hostName = extension.developmentConfig.getConfigProperty(
-                    Configuration.LOCAL_CONNECTOR_HOST,
-                    Configuration.LOCAL_CONNECTOR_HOST_VALUE)
-
                 if( os != null) {
                     gebExtension.localDriver.all { localDriver ->
                         localDriver.osPackages.all { driverDownLoad ->
@@ -132,10 +121,8 @@ class ICMGebTestPlugin : Plugin<Project> {
                                     it.browserExecutableName.set(driverDownLoad.webDriverExecName)
                                     it.browserExecutableDir.set(download.get().driverDir)
 
-                                    it.remoteHost.set(hostName)
-                                    it.remotePort.set(httpPort)
+                                    it.baseUrl.set(baseUrlConfig)
                                 }
-
                             }
                         }
                     }
@@ -145,7 +132,7 @@ class ICMGebTestPlugin : Plugin<Project> {
     }
 
     private fun getOS(): OS? {
-        val os = System.getProperty("os.name").toLowerCase()
+        val os = System.getProperty("os.name").lowercase()
 
         return when {
             os.contains(OS.WINDOWS.value) -> { OS.WINDOWS }
