@@ -32,6 +32,8 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
+import java.net.InetAddress
+import java.net.UnknownHostException
 import javax.inject.Inject
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
@@ -116,7 +118,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         """A comma-separated list of options for the icm.properties files.
             dev - General development properties for the application server
             mail - MailHog container is used as test mail server
-            solr - Singel node solr cluster with containers is used
+            solr - Single node solr cluster with containers is used
         """)
     @get:Input
     val contentOptions: Property<String> = project.objects.property(String::class.java)
@@ -232,7 +234,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             if(container) { "localhost" } else { "<host name of the external db>" }
         } else {
             if(container) {
-                "${extension.containerPrefix}-${OracleTaskPreparer.extName.toLowerCase()}"
+                "${extension.containerPrefix}-${OracleTaskPreparer.extName.lowercase()}"
             } else {
                 "<host name of the external db>"
             }
@@ -289,7 +291,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             }
         } else {
             if (container) {
-                "${extension.containerPrefix}-${MSSQLTaskPreparer.extName.toLowerCase()}"
+                "${extension.containerPrefix}-${MSSQLTaskPreparer.extName.lowercase()}"
             } else {
                 "<host name of the external db>"
             }
@@ -329,6 +331,9 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             if (container) {
                 val ctext =
                     """
+                    $DATA_FOLDER_PATH =
+                    $BACKUP_FOLDER_PATH =
+                        
                     # mssql container configuration - do not change this value if the default images is used 
                     $DB_MSSQL_PORT = $DB_MSSQL_PORT_VALUE
                     $DB_MSSQL_CONTAINER_PORT = $DB_MSSQL_CONTAINER_PORT_VALUE
@@ -346,15 +351,27 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     private fun writeServerProps(file: File) {
         with(Configuration) {
             val confDir = File(extension.developmentConfig.configFilePath)
+            val systemIP = IPFinder.getSystemIP()
+
+            val hostname = if(systemIP.second != null) {
+                try {
+                    systemIP.second
+                } catch (e: UnknownHostException) {
+                    e.printStackTrace()
+                }
+            } else {
+                "localhost"
+            }
+
             val text =
                 """
                 # webserver configuration
                 # if youn want change the ports of the webserver, it is necessary to change the ports 
-                # in $webserverUrlProp and $webserverSecureUrlProp according to the settings
-                # $WS_HTTP_PORT and $WS_HTTPS_PORT
+                # in $webserverUrlProp and $webserverSecureUrlProp 
+                # according to the settings $WS_HTTP_PORT and $WS_HTTPS_PORT
                 #
-                $webserverUrlProp = http://localhost:$WS_HTTP_PORT_VALUE
-                $webserverSecureUrlProp = https://localhost:$WS_HTTPS_PORT_VALUE
+                $webserverUrlProp = http://$hostname:$WS_HTTP_PORT_VALUE
+                $webserverSecureUrlProp = https://$hostname:$WS_HTTPS_PORT_VALUE
               
                 # If you want add your own certs
                 $WS_CERT_PATH = ${File(confDir, "certs")}
@@ -375,8 +392,6 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             file.appendText(text, Charsets.UTF_8)
             file.appendText("\n\n", Charsets.UTF_8)
 
-            val systemIP = IPFinder.getSystemIP()
-
             if (icmasOption.get()) {
                 val wstext =
                     """
@@ -385,9 +400,10 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             
                 # Host name / IP of the ICM Server (local installation)
                 # both values must match    
-                $LOCAL_CONNECTOR_HOST = $systemIP
+                $LOCAL_CONNECTOR_HOST = ${systemIP.first}
                 # WebAdapapter container configuration
-                $asConnectorAdressProp = $systemIP
+                $asConnectorAdressProp = ${systemIP.first}
+         
                 """.trimIndent()
                 file.appendText(wstext, Charsets.UTF_8)
 
@@ -410,7 +426,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                     
                     # Host name / IP of the ICM Server (local installation)
                     # both values must match    
-                    $LOCAL_CONNECTOR_HOST = $systemIP
+                    $LOCAL_CONNECTOR_HOST = ${systemIP.first}
                     """.trimIndent()
                     file.appendText(astext, Charsets.UTF_8)
             }
@@ -424,7 +440,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             if(container) { "localhost" } else { "<hostname of the mail server>" }
         } else {
             if(container) {
-                "${extension.containerPrefix}-${MailTaskPreparer.extName.toLowerCase()}"
+                "${extension.containerPrefix}-${MailTaskPreparer.extName.lowercase()}"
             } else {
                 "<hostname of the mail server>"
             }

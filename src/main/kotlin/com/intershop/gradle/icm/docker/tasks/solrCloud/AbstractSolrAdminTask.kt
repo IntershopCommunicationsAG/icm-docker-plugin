@@ -57,10 +57,11 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
         return if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
             getClient(solrConfiguration.get())
         } else {
-            val defaultConStr = "${IPFinder.getSystemIP()}:2181"
+            val defaultConStr = "${IPFinder.getSystemIP().first}:2181"
             project.logger.quiet("\n!!! Use default connect string '${defaultConStr}' for the client! \n")
             getClient(defaultConStr)
         }
+
     }
 
     private fun getClient(connectStr: String):CloudSolrClient {

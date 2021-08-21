@@ -31,10 +31,7 @@ open class GebTest : Test() {
     val containerNetwork: Property<String> = objectFactory.property(String::class.java)
 
     @get:Input
-    val remoteHost: Property<String> = objectFactory.property(String::class.java)
-
-    @get:Input
-    val remotePort: Property<String> = objectFactory.property(String::class.java)
+    val baseUrl: Property<String> = objectFactory.property(String::class.java)
 
     @get:Input
     @get:Optional
@@ -49,8 +46,7 @@ open class GebTest : Test() {
 
     init {
         containerNetwork.convention("")
-        remoteHost.convention("localhost")
-        remotePort.convention("8080")
+        baseUrl.convention("https://testhost.domain.com:8443")
         gebEnvironment.convention("firefoxContainer")
 
         description = "Runs the geb tests for an running ICM Server."
@@ -69,7 +65,7 @@ open class GebTest : Test() {
         systemProperty("geb.build.reportsDir", "${project.buildDir}/geb-reports/${gebEnvironment.get()}")
 
         systemProperty("container.network", containerNetwork.get())
-        systemProperty("geb.build.baseUrl", "http://${remoteHost.get()}:${remotePort.get()}")
+        systemProperty("geb.build.baseUrl", baseUrl.get())
 
         super.executeTests()
     }

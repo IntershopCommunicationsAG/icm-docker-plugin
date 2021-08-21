@@ -34,7 +34,7 @@ class TaskPreparer(project: Project,
 
     override val image: Provider<String> = extension.images.mssqldb
     override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override val containerExt: String = extensionName.lowercase()
 
     init {
         initBaseTasks()
@@ -115,11 +115,13 @@ class TaskPreparer(project: Project,
                 }
 
                 // add backup folder - default is build directory
-                volumeMap[getConfigProperty(Configuration.BACKUP_FOLDER_PATH,
-                    project.layout.buildDirectory.dir("data_backup_folder").get().asFile.absolutePath)] =
-                        extension.developmentConfig.getConfigProperty(
-                            Configuration.BACKUP_FOLDER_VOLUME,
-                            Configuration.BACKUP_FOLDER_VOLUME_VALUE)
+                var backupPath = getConfigProperty(Configuration.BACKUP_FOLDER_PATH)
+                if(backupPath.isNullOrBlank()) {
+                    backupPath = project.layout.buildDirectory.dir("data_backup_folder").get().asFile.absolutePath
+                }
+                volumeMap[backupPath] = extension.developmentConfig.getConfigProperty(
+                                            Configuration.BACKUP_FOLDER_VOLUME,
+                                            Configuration.BACKUP_FOLDER_VOLUME_VALUE)
 
                 volumeMap.forEach { path, _ -> File(path).mkdirs() }
 

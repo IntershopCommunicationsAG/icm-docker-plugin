@@ -23,12 +23,15 @@ import java.net.NetworkInterface
 object IPFinder {
 
     //Function to Find out IP Address
-    fun getSystemIP(): String? {
+    fun getSystemIP(): Pair<String?,String?> {
         return try {
-            val sysIP: String?
+            val sysIPHostName:  Pair<String?,String?>
             val osName = System.getProperty("os.name")
-            sysIP = when {
-                osName.contains("Windows") -> InetAddress.getLocalHost().hostAddress
+            sysIPHostName = when {
+                osName.contains("Windows") -> {
+                    val ip = InetAddress.getLocalHost()
+                    Pair(ip.hostAddress, ip.canonicalHostName)
+                }
                 osName.contains("Mac") -> {
                     var ip = getSystemIP4Linux("en0")
                     if (ip == null) {
@@ -46,7 +49,7 @@ object IPFinder {
                             }
                         }
                     }
-                    ip
+                    Pair(ip?.hostAddress, ip?.canonicalHostName)
                 }
                 else -> {
                     var eip = getSystemIP4Linux("eth0")
@@ -59,40 +62,38 @@ object IPFinder {
                             }
                         }
                     }
-                    eip
+                    Pair(eip?.hostAddress, eip?.canonicalHostName)
                 }
             }
-            sysIP
+            sysIPHostName
         } catch (E: Exception) {
             System.err.println("System IP Exp : " + E.message)
-            null
+            Pair(null,null)
         }
     }
 
     //For Linux OS
-    private fun getSystemIP4Linux(name: String): String? {
+    private fun getSystemIP4Linux(name: String): InetAddress? {
         return try {
-            var ip: String? = null
+            var ip: InetAddress? = null
             val networkInterface = NetworkInterface.getByName(name)
             val inetAddress = networkInterface.inetAddresses
             var currentAddress = inetAddress.nextElement()
             if (!inetAddress.hasMoreElements()) {
                 if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
-                    ip = currentAddress.toString()
+                    ip = currentAddress
                 }
             } else {
                 while (inetAddress.hasMoreElements()) {
                     currentAddress = inetAddress.nextElement()
                     if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
-                        ip = currentAddress.toString()
+                        ip = currentAddress
                         break
                     }
                 }
             }
-            if (ip != null) {
-                if (ip.startsWith("/")) {
-                    ip = ip.substring(1)
-                }
+            if (ip == null) {
+                ip = InetAddress.getLocalHost()
             }
             ip
         } catch (E: Exception) {
