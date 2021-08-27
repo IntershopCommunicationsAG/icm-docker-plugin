@@ -16,6 +16,7 @@
  */
 package com.intershop.gradle.icm.docker
 
+import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_DBPREPARE
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.WaitForServer
@@ -39,7 +40,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
 
-
 class ICMSolrCloudPlugin : Plugin<Project> {
 
     /**
@@ -55,59 +55,65 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                 IntershopDockerExtension::class.java
             ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
-            with(extension.developmentConfig) {
-                val wsUrl = getConfigProperty(WS_SECURE_URL, WS_SECURE_URL_VALUE)
-                val assrvHost = getConfigProperty(LOCAL_CONNECTOR_HOST, LOCAL_CONNECTOR_HOST_VALUE)
-                val assrvPort = getConfigProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
+            try {
+                val startServer = tasks.named(TASK_START_SERVER)
+                val startSolrCloud = tasks.named("startSolrCloud")
+                val dbPrepareTask = tasks.named(TASK_DBPREPARE)
 
-                val uri = URIBuilder(wsUrl)
+                with(extension.developmentConfig) {
+                    val wsUrl = getConfigProperty(WS_SECURE_URL, WS_SECURE_URL_VALUE)
+                    val assrvHost = getConfigProperty(LOCAL_CONNECTOR_HOST, LOCAL_CONNECTOR_HOST_VALUE)
+                    val assrvPort = getConfigProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
 
-                val wfsTask = project.tasks.register("waitForServer", WaitForServer::class.java ) { wfs ->
-                    wfs.webServerPort.set(uri.port.toString())
-                    wfs.webServerHost.set(uri.host)
-                    wfs.appServerPort.set(assrvPort)
-                    wfs.appServerHost.set(assrvHost)
+                    val uri = URIBuilder(wsUrl)
+
+                    val wfsTask = project.tasks.register("waitForServer", WaitForServer::class.java ) { wfs ->
+                        wfs.webServerPort.set(uri.port.toString())
+                        wfs.webServerHost.set(uri.host)
+                        wfs.appServerPort.set(assrvPort)
+                        wfs.appServerHost.set(assrvHost)
+
+                        wfs.mustRunAfter(startServer)
+                    }
+
+                    val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolr::class.java ) { cus ->
+                        cus.group = "Solr Cloud Support"
+                        cus.description = "Removes all collections and configuration for the specified prefix"
+
+                        cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST))
+                        cus.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX, ""))
+                        cus.mustRunAfter(startSolrCloud, wfsTask)
+                    }
+
+                    val rebuildIndex = project.tasks.register( "rebuildSearchIndex",
+                        RebuildSolrSearchIndex::class.java ) { rsi ->
+                        rsi.group = "Solr Cloud Support"
+                        rsi.description = "Rebuilds the search index for the specified server."
+
+                        rsi.webServerPort.set(uri.port.toString())
+                        rsi.webServerHost.set(uri.host)
+                        rsi.userName.set(getConfigProperty(AS_ADMIN_USER_NAME, AS_ADMIN_USER_NAME_VALUE))
+                        rsi.userPassword.set(getConfigProperty(AS_ADMIN_USER_PASSWORD))
+
+                        rsi.sslVerification.set(
+                            getConfigProperty(SSL_VERIFICATION, "false").lowercase() == "true")
+
+                        rsi.dependsOn(solrCleanUp, wfsTask)
+                        rsi.mustRunAfter(dbPrepareTask)
+                    }
+
+                    val solrList = project.tasks.register("listSolr", ListSolr::class.java ) { lst ->
+                        lst.group = "Solr Cloud Support"
+                        lst.description = "List all collections and configuration for the specified prefix"
+
+                        lst.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST))
+                        lst.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX))
+
+                        lst.mustRunAfter(rebuildIndex, solrCleanUp)
+                    }
                 }
-
-                val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolr::class.java ) { cus ->
-                    cus.group = "Solr Cloud Support"
-                    cus.description = "Removes all collections and configuration for the specified prefix"
-
-                    cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST))
-                    cus.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX, ""))
-                }
-
-                val solrList = project.tasks.register("listSolr", ListSolr::class.java ) { lst ->
-                    lst.group = "Solr Cloud Support"
-                    lst.description = "List all collections and configuration for the specified prefix"
-
-                    lst.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST))
-                    lst.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX))
-                }
-
-                val rebuildIndex = project.tasks.register( "rebuildSearchIndex",
-                    RebuildSolrSearchIndex::class.java ) { rsi ->
-                    rsi.group = "Solr Cloud Support"
-                    rsi.description = "Rebuilds the search index for the specified server."
-
-                    rsi.webServerPort.set(uri.port.toString())
-                    rsi.webServerHost.set(uri.host)
-                    rsi.userName.set(getConfigProperty(AS_ADMIN_USER_NAME, AS_ADMIN_USER_NAME_VALUE))
-                    rsi.userPassword.set(getConfigProperty(AS_ADMIN_USER_PASSWORD))
-
-                    rsi.sslVerification.set(
-                        getConfigProperty(SSL_VERIFICATION, "false").toLowerCase() == "true")
-                }
-
-                rebuildIndex.get().dependsOn(solrCleanUp, wfsTask)
-                solrList.get().mustRunAfter(rebuildIndex, solrCleanUp)
-
-                try {
-                    val startServer = tasks.named(TASK_START_SERVER)
-                    wfsTask.get().mustRunAfter(startServer)
-                } catch (ex: UnknownTaskException) {
-                    project.logger.info("No startServer task found.")
-                }
+            } catch (ex: UnknownTaskException) {
+                project.logger.info("No startServer task found.")
             }
         }
     }
