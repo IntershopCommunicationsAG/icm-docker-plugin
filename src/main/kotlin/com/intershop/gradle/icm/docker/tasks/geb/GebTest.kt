@@ -64,6 +64,8 @@ open class GebTest : Test() {
         systemProperty("geb.env", gebEnvironment.get())
         systemProperty("geb.build.reportsDir", "${project.buildDir}/geb-reports/${gebEnvironment.get()}")
 
+        useJUnitPlatform()
+
         systemProperty("container.network", containerNetwork.get())
         systemProperty("geb.build.baseUrl", baseUrl.get())
 

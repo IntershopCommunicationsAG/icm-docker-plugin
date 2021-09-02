@@ -26,6 +26,10 @@ open class RebuildSolrSearchIndex
         @Inject constructor(objectFactory: ObjectFactory) :
         AbstractJobRunnerTask(objectFactory) {
 
+    init {
+        this.maxWait.convention(1500000)
+    }
+
     @TaskAction
     fun runRebuild() {
         project.logger.info("Start Complete Rebuild Search Indexes")
