@@ -36,8 +36,7 @@ open class CreateVolumes @Inject constructor(objectFactory: ObjectFactory) : Abs
      */
     override fun runRemoteCommand() {
         volumeNames.get().forEach {
-            val resp = dockerClient.createVolumeCmd().withName(it).exec()
-            println(resp)
+            dockerClient.createVolumeCmd().withName(it).exec()
         }
     }
 }

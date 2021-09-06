@@ -79,8 +79,8 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolr::class.java ) { cus ->
                         cus.group = "Solr Cloud Support"
                         cus.description = "Removes all collections and configuration for the specified prefix"
-
-                        cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST))
+                        
+                        cus.solrConfiguration.set(getConfigProperty(SOLR_CLOUD_HOSTLIST, "localhost"))
                         cus.solrClusterPrefixProperty.convention(getConfigProperty(SOLR_CLOUD_INDEXPREFIX, ""))
                         cus.mustRunAfter(startSolrCloud, wfsTask)
                     }

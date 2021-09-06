@@ -20,6 +20,7 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
 
+
 object IPFinder {
 
     //Function to Find out IP Address
@@ -32,37 +33,18 @@ object IPFinder {
                     val ip = InetAddress.getLocalHost()
                     Pair(ip.hostAddress, ip.canonicalHostName)
                 }
-                osName.contains("Mac") -> {
-                    var ip = getSystemIP4Linux("en0")
-                    if (ip == null) {
-                        ip = getSystemIP4Linux("en1")
-                        if (ip == null) {
-                            ip = getSystemIP4Linux("en2")
-                            if (ip == null) {
-                                ip = getSystemIP4Linux("en3")
-                                if (ip == null) {
-                                    ip = getSystemIP4Linux("en4")
-                                    if (ip == null) {
-                                        ip = getSystemIP4Linux("en5")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Pair(ip?.hostAddress, ip?.canonicalHostName)
-                }
                 else -> {
-                    var eip = getSystemIP4Linux("eth0")
-                    if (eip == null) {
-                        eip = getSystemIP4Linux("eth1")
-                        if (eip == null) {
-                            eip = getSystemIP4Linux("eth2")
-                            if (eip == null) {
-                                eip = getSystemIP4Linux("usb0")
-                            }
+                    val nets = NetworkInterface.getNetworkInterfaces()
+                    var pair: Pair<String?,String?> = Pair(null, null)
+                    nets.toList().map { it.name }.sorted().forEach {
+                        var ip = getSystemIP4Linux(it)
+                        if(ip != null) {
+                            println(it + "---" + ip)
+                            pair = Pair(ip?.hostAddress, ip?.canonicalHostName)
+                            return@forEach
                         }
                     }
-                    Pair(eip?.hostAddress, eip?.canonicalHostName)
+                    pair
                 }
             }
             sysIPHostName
@@ -76,24 +58,27 @@ object IPFinder {
     private fun getSystemIP4Linux(name: String): InetAddress? {
         return try {
             var ip: InetAddress? = null
-            val networkInterface = NetworkInterface.getByName(name)
-            val inetAddress = networkInterface.inetAddresses
-            var currentAddress = inetAddress.nextElement()
-            if (!inetAddress.hasMoreElements()) {
-                if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
-                    ip = currentAddress
-                }
-            } else {
-                while (inetAddress.hasMoreElements()) {
-                    currentAddress = inetAddress.nextElement()
+            if(name.substring(0, 2) in  listOf("en", "wl") || name.substring(0, 3) in  listOf("eth", "usb")) {
+                val networkInterface = NetworkInterface.getByName(name)
+                val inetAddress = networkInterface.inetAddresses
+                var currentAddress = inetAddress.nextElement()
+
+                if (!inetAddress.hasMoreElements()) {
                     if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
                         ip = currentAddress
-                        break
+                    }
+                } else {
+                    while (inetAddress.hasMoreElements()) {
+                        currentAddress = inetAddress.nextElement()
+                        if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
+                            ip = currentAddress
+                            break
+                        }
                     }
                 }
-            }
-            if (ip == null) {
-                ip = InetAddress.getLocalHost()
+                if (ip == null) {
+                    ip = InetAddress.getLocalHost()
+                }
             }
             ip
         } catch (E: Exception) {
