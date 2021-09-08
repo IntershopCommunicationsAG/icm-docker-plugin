@@ -409,7 +409,7 @@ The plugins must be applied to the root project.
 |===
 
 For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
-The task *startContainer* and *startAs* uses `StartServerContainer`. *pullContainer* and *pullAS* uses `PullImage`.
+The task *startContainer* and *startAS* uses `StartServerContainer`. *pullContainer* and *pullAS* uses `PullImage`.
 With this task it is possible to use an alternative image for these tasks with a command line parameter `--altImage`.
 
 == Intershop Commerce Management Test Docker Plugin

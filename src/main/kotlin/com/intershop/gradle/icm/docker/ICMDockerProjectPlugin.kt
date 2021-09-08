@@ -117,7 +117,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 }
 
                 startWS.configure {
-                    it.dependsOn(appServerPreparer.startTask)
+                    it.mustRunAfter(appServerPreparer.startTask)
                 }
 
                 startWA.configure {
