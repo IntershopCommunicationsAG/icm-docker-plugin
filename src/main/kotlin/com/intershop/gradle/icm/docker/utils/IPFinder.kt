@@ -39,7 +39,6 @@ object IPFinder {
                     nets.toList().map { it.name }.sorted().forEach {
                         var ip = getSystemIP4Linux(it)
                         if(ip != null) {
-                            println(it + "---" + ip)
                             pair = Pair(ip?.hostAddress, ip?.canonicalHostName)
                             return@forEach
                         }
