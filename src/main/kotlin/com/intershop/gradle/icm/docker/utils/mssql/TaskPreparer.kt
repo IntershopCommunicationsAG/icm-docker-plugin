@@ -105,21 +105,24 @@ class TaskPreparer(project: Project,
 
                 // add data path if configured
                 val dataPath = getConfigProperty(Configuration.DATA_FOLDER_PATH,"")
-                if(dataPath.isNotBlank()) {
-                    volumeMap[extension.developmentConfig.getConfigProperty(
-                        Configuration.DATA_FOLDER_PATH,
-                        project.layout.buildDirectory.dir("data_folder").get().asFile.absolutePath)] =
-                            extension.developmentConfig.getConfigProperty(
-                                Configuration.DATA_FOLDER_VOLUME,
-                                Configuration.DATA_FOLDER_VOLUME_VALUE)
+                val dataPahtFP = if(dataPath.isNullOrBlank()) {
+                    project.layout.buildDirectory.dir("data_folder").get().asFile
+                } else {
+                    File(dataPath)
                 }
+
+                volumeMap[dataPahtFP.absolutePath] = extension.developmentConfig.getConfigProperty(
+                    Configuration.DATA_FOLDER_VOLUME,
+                    Configuration.DATA_FOLDER_VOLUME_VALUE)
 
                 // add backup folder - default is build directory
                 var backupPath = getConfigProperty(Configuration.BACKUP_FOLDER_PATH)
-                if(backupPath.isNullOrBlank()) {
-                    backupPath = project.layout.buildDirectory.dir("data_backup_folder").get().asFile.absolutePath
+                val backupPathFP = if(backupPath.isNullOrBlank()) {
+                    project.layout.buildDirectory.dir("data_backup_folder").get().asFile
+                } else {
+                    File(backupPath)
                 }
-                volumeMap[backupPath] = extension.developmentConfig.getConfigProperty(
+                volumeMap[backupPathFP.absolutePath] = extension.developmentConfig.getConfigProperty(
                                             Configuration.BACKUP_FOLDER_VOLUME,
                                             Configuration.BACKUP_FOLDER_VOLUME_VALUE)
 
