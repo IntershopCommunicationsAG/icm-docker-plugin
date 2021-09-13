@@ -32,16 +32,47 @@ class TestRepo {
         }
     }
 
+    String getDBRepoConfig() {
+        if(! intRepoconfig) {
+            createDBRepo(repoDir)
+
+            String repostr = """
+            repositories {
+                maven {
+                    url "${repoDir.toURI().toURL()}"
+                }
+            }""".stripIndent()
+
+            return repostr
+        }
+        return intRepoconfig
+    }
+
+    private String createDBRepo(File dir) {
+        dir.deleteDir()
+        dir.mkdirs()
+
+        new TestMavenRepoBuilder().repository {
+            project(groupId: 'com.company', artifactId: 'exporttest', version: '1.0.0') {
+                artifact(
+                        classifier: "dbexport",
+                        ext: "zip",
+                        content: getResources('dbexp/dbexport.zip')
+                )
+            }
+        }.writeTo(repoDir)
+    }
+
     String getRepoConfig() {
         if(! intRepoconfig) {
             createRepo(repoDir)
 
             String repostr = """
             repositories {
-                jcenter()
                 maven {
                     url "${repoDir.toURI().toURL()}"
                 }
+                jcenter()
             }""".stripIndent()
 
             return repostr
@@ -328,5 +359,16 @@ class TestRepo {
 
         File resourceFile = new File(resource.toURI())
         return resourceFile.text
+    }
+
+    protected File getResources(String srcDir) {
+        ClassLoader classLoader = getClass().getClassLoader()
+        URL resource = classLoader.getResource(srcDir)
+        if (resource == null) {
+            throw new RuntimeException("Could not find classpath resource: $srcDir")
+        }
+
+        File resourceFile = new File(resource.toURI())
+        return resourceFile
     }
 }

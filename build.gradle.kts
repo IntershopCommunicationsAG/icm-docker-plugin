@@ -212,6 +212,12 @@ gradlePlugin {
             displayName = "icm-gebtest-plugin"
             description = "This ICM plugin integrates tasks to handle Geb Tests in a ICM project."
         }
+        create("mssqlPlugin") {
+            id = "com.intershop.gradle.icm.mssql.backup"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMMSSQLBackupPlugin"
+            displayName = "icm-mssql-backup-plugin"
+            description = "This ICM plugin integrates tasks to import or export MSSQL database export files."
+        }
     }
 }
 
@@ -289,6 +295,8 @@ dependencies {
     implementation(localGroovy())
 
     implementation(gradleKotlinDsl())
+
+    implementation("com.microsoft.sqlserver:mssql-jdbc:8.1.1.jre11-preview")
 
     implementation("com.bmuschko:gradle-docker-plugin:7.1.0")
     implementation("org.apache.solr:solr-solrj:8.4.1")

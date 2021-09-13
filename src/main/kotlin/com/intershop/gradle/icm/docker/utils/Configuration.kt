@@ -116,4 +116,7 @@ object Configuration {
 
     const val DATA_FOLDER_VOLUME_VALUE = "/var/opt/mssql/data"
     const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
+
+    const val DATA_FOLDER_PATH_VALUE = "data_folder"
+    const val BACKUP_FOLDER_PATH_VALUE = "backup_folder"
 }

@@ -20,7 +20,10 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.Configuration.BACKUP_FOLDER_PATH_VALUE
+import com.intershop.gradle.icm.docker.utils.Configuration.DATA_FOLDER_PATH_VALUE
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import java.io.File
@@ -106,7 +109,7 @@ class TaskPreparer(project: Project,
                 // add data path if configured
                 val dataPath = getConfigProperty(Configuration.DATA_FOLDER_PATH,"")
                 val dataPahtFP = if(dataPath.isNullOrBlank()) {
-                    project.layout.buildDirectory.dir("data_folder").get().asFile
+                    project.layout.buildDirectory.dir(DATA_FOLDER_PATH_VALUE).get().asFile
                 } else {
                     File(dataPath)
                 }
@@ -118,7 +121,7 @@ class TaskPreparer(project: Project,
                 // add backup folder - default is build directory
                 var backupPath = getConfigProperty(Configuration.BACKUP_FOLDER_PATH)
                 val backupPathFP = if(backupPath.isNullOrBlank()) {
-                    project.layout.buildDirectory.dir("data_backup_folder").get().asFile
+                    project.layout.buildDirectory.dir(BACKUP_FOLDER_PATH_VALUE).get().asFile
                 } else {
                     File(backupPath)
                 }
@@ -126,7 +129,16 @@ class TaskPreparer(project: Project,
                                             Configuration.BACKUP_FOLDER_VOLUME,
                                             Configuration.BACKUP_FOLDER_VOLUME_VALUE)
 
-                volumeMap.forEach { path, _ -> File(path).mkdirs() }
+                volumeMap.forEach { path, _ ->
+                    val file = File(path)
+                    if(! file.exists()) {
+                        if(file.mkdirs()) {
+                            project.logger.quiet("Local directory '$path' for MSSQL container created.")
+                        } else {
+                            throw GradleException("It was not possible to create '$path' for MSSQL container created.")
+                        }
+                    }
+                }
 
                 task.hostConfig.binds.set(ContainerUtils.transformVolumes(volumeMap))
             }
