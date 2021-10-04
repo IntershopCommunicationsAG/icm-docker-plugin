@@ -29,6 +29,8 @@ jobs:
         run: echo ${{ secrets.ISDOCKERPASSWD }} | docker login -u ${{ secrets.ISDOCKERUSER }} --password-stdin docker.intershop.de
       - name: Create Test container
         run: cd testdocker && ./createimage.sh && cd ..
+      - name: List local docker images
+        run: docker image ls
       - name: Create .gradle dir
         run: mkdir -p $HOME/.gradle
       - name: Install gpg secret key
