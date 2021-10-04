@@ -34,15 +34,22 @@ class CustomizationImageBuildPreparer(private val project: Project,
     companion object {
         const val NAME_DOCKERFILE = "Dockerfile"
         const val DIR_DOCKERFILE = "dockerfile"
-        const val RESOURCE_DOCKERFILE_MAIN = "customization/main/$NAME_DOCKERFILE"
-        const val RESOURCE_DOCKERFILE_TEST = "customization/test/$NAME_DOCKERFILE"
+        const val RESOURCE_DOCKERFILE = "customization/$NAME_DOCKERFILE"
         const val ARG_BASE_IMAGE = "BASE_IMAGE"
+        const val ARG_PACKAGE_FILE = "PACKAGE_FILE"
         const val ARG_NAME = "NAME"
     }
 
     fun prepareImageBuilds() {
 
-        val provideMainDockerfileTask = provideDockerfileTaskOf("main", RESOURCE_DOCKERFILE_MAIN, "${DIR_DOCKERFILE}/main/${NAME_DOCKERFILE}")
+        val provideDockerfileTask = project.tasks.register("provideDockerfile", ProvideResourceFromClasspath::class.java) { task ->
+            task.group = "icm image build"
+            task.description = "Provides the Dockerfile to be used by dependent tasks"
+            task.resourceName.set(RESOURCE_DOCKERFILE)
+            task.targetLocation.set(project.layout.buildDirectory.file("${DIR_DOCKERFILE}/${NAME_DOCKERFILE}"))
+        }
+        val dockerfileProvider = project.provider { provideDockerfileTask.get().outputs.files.singleFile }
+
         val mainPkgTaskName = buildImages.mainImage.pkgTaskName.getOrElse("createMainPkg")
         val mainPkgTask = project.tasks.named(mainPkgTaskName, Tar::class.java)
         val mainBuildImageTask = project.tasks.named(BUILD_MAIN_IMAGE, BuildImage::class.java)
@@ -50,15 +57,14 @@ class CustomizationImageBuildPreparer(private val project: Project,
         mainBuildImageTask.configure { task ->
             task.description = "Creates the ${project.name} customization main image"
 
-            task.dependsOn(mainPkgTask, provideMainDockerfileTask)
+            task.dependsOn(mainPkgTask, provideDockerfileTask)
             task.srcFiles.from(mainPkgTask)
             task.buildArgs.put(ARG_BASE_IMAGE, images.icmcustomizationbase)
+            task.buildArgs.put(ARG_PACKAGE_FILE, project.provider { mainPkgTask.get().outputs.files.singleFile.name })
             task.buildArgs.put(ARG_NAME, project.name)
-            task.dockerfile.set(project.objects.fileProperty().fileProvider(project.provider{ provideMainDockerfileTask.get().outputs.files.first() }))
+            task.dockerfile.set(project.objects.fileProperty().fileProvider(dockerfileProvider))
         }
 
-
-        val provideTestDockerfileTask = provideDockerfileTaskOf("test", RESOURCE_DOCKERFILE_TEST, "${DIR_DOCKERFILE}/test/${NAME_DOCKERFILE}")
         val testPkgTaskName = buildImages.testImage.pkgTaskName.getOrElse("createTestPkg")
         val testPkgTask = project.tasks.named(testPkgTaskName, Tar::class.java)
         val testBuildImageTask = project.tasks.named(BUILD_TEST_IMAGE, BuildImage::class.java)
@@ -66,22 +72,14 @@ class CustomizationImageBuildPreparer(private val project: Project,
         testBuildImageTask.configure { task ->
             task.description = "Creates the ${project.name} customization test image"
 
-            task.dependsOn(testPkgTask, provideTestDockerfileTask)
+            task.dependsOn(testPkgTask, provideDockerfileTask)
 
             task.srcFiles.from(testPkgTask)
             task.buildArgs.put(ARG_BASE_IMAGE, images.icmcustomizationbase)
+            task.buildArgs.put(ARG_PACKAGE_FILE, project.provider { testPkgTask.get().outputs.files.singleFile.name })
             task.buildArgs.put(ARG_NAME, project.name)
-            task.dockerfile.set(project.objects.fileProperty().fileProvider(project.provider{ provideTestDockerfileTask.get().outputs.files.first() }))
+            task.dockerfile.set(project.objects.fileProperty().fileProvider(dockerfileProvider))
         }
     }
 
-    private fun provideDockerfileTaskOf(subject: String,  resourceName : String, targetPath: String) : TaskProvider<ProvideResourceFromClasspath> {
-        val provideMainDockerfileTask: TaskProvider<ProvideResourceFromClasspath> = project.tasks.register("provide${subject} Dockerfile", ProvideResourceFromClasspath::class.java) { task ->
-            task.group = "icm image build"
-            task.description = "Provides the $subject Dockerfile to be used by dependent tasks"
-            task.resourceName.set(resourceName)
-            task.targetLocation.set(project.layout.buildDirectory.file(targetPath))
-        }
-        return provideMainDockerfileTask
-    }
 }
