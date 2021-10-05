@@ -24,6 +24,7 @@ import com.intershop.gradle.icm.docker.tasks.ProvideResourceFromClasspath
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Tar
+import java.nio.file.Files
 import com.intershop.gradle.icm.docker.extension.Images as BaseImages
 import com.intershop.gradle.icm.docker.extension.image.build.Images as BuildImages
 
@@ -52,7 +53,7 @@ class CustomizationImageBuildPreparer(private val project: Project,
         val testPkgTaskName = buildImages.testImage.pkgTaskName.getOrElse("createTestPkg")
         val dockerfileProvider = project.provider {
             val file = provideDockerfileTask.get().outputs.files.first()
-            project.logger.quiet("Using Dockerfile '{}' for tasks {} and {}", file, mainPkgTaskName, testPkgTaskName)
+            project.logger.quiet("Using Dockerfile '{}'(attributes={}) for tasks {} and {}", file, Files.readAttributes(file.toPath(), "*"), mainPkgTaskName, testPkgTaskName)
             file
         }
 
