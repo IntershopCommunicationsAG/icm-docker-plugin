@@ -48,9 +48,14 @@ class CustomizationImageBuildPreparer(private val project: Project,
             task.resourceName.set(RESOURCE_DOCKERFILE)
             task.targetLocation.set(project.layout.buildDirectory.file("${DIR_DOCKERFILE}/${NAME_DOCKERFILE}"))
         }
-        val dockerfileProvider = project.provider { provideDockerfileTask.get().outputs.files.singleFile }
-
         val mainPkgTaskName = buildImages.mainImage.pkgTaskName.getOrElse("createMainPkg")
+        val testPkgTaskName = buildImages.testImage.pkgTaskName.getOrElse("createTestPkg")
+        val dockerfileProvider = project.provider {
+            val file = provideDockerfileTask.get().outputs.files.first()
+            project.logger.quiet("Using Dockerfile '{}' for tasks {} and {}", file, mainPkgTaskName, testPkgTaskName)
+            file
+        }
+
         val mainPkgTask = project.tasks.named(mainPkgTaskName, Tar::class.java)
         val mainBuildImageTask = project.tasks.named(BUILD_MAIN_IMAGE, BuildImage::class.java)
 
@@ -65,7 +70,6 @@ class CustomizationImageBuildPreparer(private val project: Project,
             task.dockerfile.set(project.objects.fileProperty().fileProvider(dockerfileProvider))
         }
 
-        val testPkgTaskName = buildImages.testImage.pkgTaskName.getOrElse("createTestPkg")
         val testPkgTask = project.tasks.named(testPkgTaskName, Tar::class.java)
         val testBuildImageTask = project.tasks.named(BUILD_TEST_IMAGE, BuildImage::class.java)
 

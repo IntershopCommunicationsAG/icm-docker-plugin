@@ -53,7 +53,9 @@ open class ProvideResourceFromClasspath
                        ?: throw GradleException(
                                "Required '${resourceName.get()}' is missing inside the classpath")
         val content = resource.readBytes()
-        Files.write(targetLocation.get().asFile.toPath(), content, StandardOpenOption.CREATE)
+        Files.write(targetLocation.get().asFile.toPath(), content, StandardOpenOption.CREATE).run {
+            project.logger.quiet("Copied resource '{}' to file '{}'", resourceName.get(), this)
+        }
     }
 }
 
