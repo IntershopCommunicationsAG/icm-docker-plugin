@@ -71,7 +71,8 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                     ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
 
-                CustomizationImageBuildPreparer(this, dockerExtension.images, dockerExtension.imageBuild.images).prepareImageBuilds()
+                CustomizationImageBuildPreparer(this, dockerExtension.images,
+                        dockerExtension.imageBuild.images).prepareImageBuilds()
             }
         }
     }
