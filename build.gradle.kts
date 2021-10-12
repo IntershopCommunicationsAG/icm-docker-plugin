@@ -200,6 +200,12 @@ gradlePlugin {
             displayName = "icm-docker-project-plugin"
             description = "This ICM plugin integrate Docker tasks to an ICM project."
         }
+        create("icmDockerCustomizationPlugin") {
+            id = "com.intershop.gradle.icm.docker.customization"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerCustomizationPlugin"
+            displayName = "icm-docker-customization-plugin"
+            description = "This ICM plugin integrate Docker tasks to an ICM customization project."
+        }
         create("icmSolrCloudPlugin") {
             id = "com.intershop.gradle.icm.docker.solrcloud"
             implementationClass = "com.intershop.gradle.icm.docker.ICMSolrCloudPlugin"

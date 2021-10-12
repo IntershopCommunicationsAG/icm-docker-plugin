@@ -37,6 +37,8 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val icmbase: Property<String> = objectFactory.property(String::class.java)
 
+    val icmcustomizationbase: Property<String> = objectFactory.property(String::class.java)
+
     val mssqldb: Property<String> = objectFactory.property(String::class.java)
 
     val oracledb: Property<String> = objectFactory.property(String::class.java)
@@ -47,6 +49,7 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     init {
         icmbase.convention("docker.intershop.de/intershop/icm-as:latest")
+        icmcustomizationbase.convention("intershophub/icm-as-customization-base:latest")
 
         icmsetup.convention("intershophub/icm-base:8.282.3")
         webadapter.convention("intershophub/icm-webadapter:2.1.0")

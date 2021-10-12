@@ -404,13 +404,38 @@ The plugins must be applied to the root project.
 | **Server*         | These tasks orchestrate all ICM server related tasks (web server and app server)
 | *dbPrepare*       | This task starts dbPrepare inside the running "Container" docker container.
 | *ishUnitTestReport*  | This task starts the creation of a report for all ISHUnit test executions.
-| **ISHUnitTest*    | These tasks starts ishUnit tests inside the running "Container" docker container.
+| **ISHUnitTest*    | This task starts ishUnit tests inside the running "Container" docker container.
 
 |===
 
 For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
 The task *startContainer* and *startAS* uses `StartServerContainer`. *pullContainer* and *pullAS* uses `PullImage`.
 With this task it is possible to use an alternative image for these tasks with a command line parameter `--altImage`.
+
+== Intershop Commerce Management Customization Docker Plugin
+This plugin configures additional tasks of an Intershop Commerce Management customization project. It uses the same Gradle
+configuration like the Docker Plugin. With this plugin the task dependencies are
+adapted to build customization images.
+
+The plugins must be applied to the root project.
+
+=== Plugin Configuration
+
+==== Extension 'intershop_docker'
+
+===== Additional Image Configuration `Images`
+
+*Properties*
+
+[cols="25%,10%,10%,55%", width="99%, options="header"]
+|===
+|Property               | Type      | Default value | Description
+
+|`icmcustomizationbase`   | `Property<String>`   | `intershophub/icm-as-customization-base:latest`       | This image is used as a base image for the ICM application server customization image.
+
+|===
+
+For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
 
 == Intershop Commerce Management Test Docker Plugin
 Additional test tasks of an Intershop Commerce Management project will be added by this plugin. It uses the same Gradle
