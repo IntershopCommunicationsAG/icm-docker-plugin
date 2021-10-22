@@ -16,11 +16,19 @@
  */
 package com.intershop.gradle.icm.docker
 
+import com.intershop.gradle.icm.ICMProjectPlugin
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
+import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.utils.CustomizationImageBuildPreparer
+import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
+import com.intershop.gradle.icm.project.TaskName
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
 
 /**
  * Main plugin class of the customization plugin.
@@ -53,7 +61,10 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
         with(project) {
             if (project.rootProject == this) {
                 logger.info("ICM Docker build plugin for customizations will be initialized")
+                // docker tasks required
                 plugins.apply(ICMDockerPlugin::class.java)
+                // project tasks required
+                plugins.apply(ICMProjectPlugin::class.java)
 
                 val dockerExtension = extensions.findByType(
                     IntershopDockerExtension::class.java
@@ -70,6 +81,13 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 extensions.findByName(INTERSHOP_EXTENSION_NAME)
                     ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
+                val prepareNetwork = project.tasks.named(TaskPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
+                val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
+                val mssqlDatabase = tasks.named("start${com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer.extName}")
+                val oracleDatabase = tasks.named("start${com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer.extName}")
+
+                val dbPrepare: TaskProvider<DBPrepareTask> =
+                        getDBPrepare(this, containerPreparer, mssqlDatabase, oracleDatabase)
 
                 CustomizationImageBuildPreparer(this, dockerExtension.images,
                         dockerExtension.imageBuild.images).prepareImageBuilds()
@@ -83,5 +101,20 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
      * __Attention__: extends the class [Project] by this function
      */
     open fun Project.getCustomizationName(): String = name
+
+    private fun getDBPrepare(project: Project,
+                             containerPreparer: ContainerTaskPreparer,
+                             mssqlDatabase: TaskProvider<Task>,
+                             oracleDatabase: TaskProvider<Task>) : TaskProvider<DBPrepareTask> {
+        return project.tasks.register(ICMDockerProjectPlugin.TASK_DBPREPARE, DBPrepareTask::class.java) { task ->
+            task.group = ICMDockerPlugin.GROUP_SERVERBUILD
+            task.description = "Starts dbPrepare in an existing ICM base container."
+            task.containerId.set(project.provider { containerPreparer.startTask.get().containerId.get() })
+
+            task.dependsOn(containerPreparer.startTask)
+            task.finalizedBy(containerPreparer.removeTask)
+            task.mustRunAfter(mssqlDatabase, oracleDatabase)
+        }
+    }
 
 }

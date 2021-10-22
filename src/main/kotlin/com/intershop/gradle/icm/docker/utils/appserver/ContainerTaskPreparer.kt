@@ -30,7 +30,7 @@ class ContainerTaskPreparer(project: Project,
     }
 
     override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override val containerExt: String = extensionName.lowercase()
 
     init {
         initBaseTasks()
@@ -45,7 +45,12 @@ class ContainerTaskPreparer(project: Project,
 
             task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
 
-            task.hostConfig.binds.set(getServerVolumes())
+            task.hostConfig.binds.set(getServerVolumes().apply {
+                project.logger.info("Using the following volume binds for container startup in task {}: {}", task.name, this)
+            })
+            task.hostConfig.portBindings.set(project.provider { getPortMappings().map { pm -> pm.render() }.apply {
+                project.logger.info("Using the following port mappings for container startup in task {}: {}", task.name, this)
+            }} )
             task.hostConfig.network.set(networkId)
 
             task.dependsOn(prepareServer, pullTask, networkTask)

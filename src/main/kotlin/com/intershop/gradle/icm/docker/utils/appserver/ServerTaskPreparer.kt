@@ -20,6 +20,8 @@ package com.intershop.gradle.icm.docker.utils.appserver
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.PortMapping
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -31,7 +33,7 @@ class ServerTaskPreparer(project: Project,
     }
 
     override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override val containerExt: String = extensionName.lowercase()
 
     init {
         initAppTasks()
@@ -43,27 +45,47 @@ class ServerTaskPreparer(project: Project,
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            with(extension.developmentConfig) {
+            val httpASContainerPort = extension.developmentConfig.getConfigProperty(
+                Configuration.AS_CONNECTOR_CONTAINER_PORT,
+                Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
+            )
+            task.envVars.put("INTERSHOP_SERVLETENGINE_CONNECTOR_PORT", httpASContainerPort)
+            task.hostConfig.portBindings.addAll(project.provider { getPortMappings().map { pm -> pm.render() }.apply {
+                project.logger.info("Using the following port mappings for container startup in task {}: {}", task.name, this)
+            }})
 
-                val httpASContainerPort = getConfigProperty(
-                    Configuration.AS_CONNECTOR_CONTAINER_PORT,
-                    Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
-                )
-                val httpASPort = getConfigProperty(
-                    Configuration.AS_EXT_CONNECTOR_PORT,
-                    Configuration.AS_EXT_CONNECTOR_PORT_VALUE
-                )
+            task.hostConfig.network.set(networkId)
 
-                task.envVars.put("INTERSHOP_SERVLETENGINE_CONNECTOR_PORT", httpASContainerPort)
-                task.hostConfig.portBindings.add("${httpASPort}:${httpASContainerPort}")
-
-                task.hostConfig.network.set(networkId)
-            }
-
-            task.hostConfig.binds.set(getServerVolumes())
+            task.hostConfig.binds.set(getServerVolumes().apply {
+                project.logger.info("Using the following volume binds for container startup in task {}: {}", task.name, this)
+            })
             task.finishedCheck = SERVER_READY_STRING
 
             task.dependsOn(pullTask, prepareServer, prepareServer, networkTask)
         }
     }
+
+    override fun getPortMappings(): Set<PortMapping> {
+        with(extension.developmentConfig) {
+
+            val httpASContainerPort = try {
+                getConfigProperty(
+                        Configuration.AS_CONNECTOR_CONTAINER_PORT,
+                        Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
+                ).toInt()
+            } catch (e: NumberFormatException) {
+                throw GradleException("Configuration property ${Configuration.AS_CONNECTOR_CONTAINER_PORT} is not a valid int value", e)
+            }
+            val httpASPort = try {
+                getConfigProperty(
+                        Configuration.AS_EXT_CONNECTOR_PORT,
+                        Configuration.AS_EXT_CONNECTOR_PORT_VALUE
+                ).toInt()
+            } catch (e: NumberFormatException) {
+                throw GradleException("Configuration property ${Configuration.AS_EXT_CONNECTOR_PORT} is not a valid int value", e)
+            }
+            return super.getPortMappings().plus(PortMapping(httpASPort, httpASContainerPort))
+        }
+    }
+
 }

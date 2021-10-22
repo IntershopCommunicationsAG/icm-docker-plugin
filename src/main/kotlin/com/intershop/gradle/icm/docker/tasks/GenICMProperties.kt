@@ -19,7 +19,6 @@ package com.intershop.gradle.icm.docker.tasks
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.IPFinder
-import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
@@ -32,7 +31,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
-import java.net.InetAddress
 import java.net.UnknownHostException
 import javax.inject.Inject
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
@@ -87,8 +85,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                       intershop.CSRFGuard.allowRecovery=true
             """
 
-        const val databaseTypeProp = "intershop.databaseType"
-        const val databaseJDBCUrlProp = "intershop.jdbc.url"
+        const val databaseTypeProp = Configuration.DB_TYPE
+        const val databaseJDBCUrlProp = Configuration.DB_JDBC_URL
 
         const val webserverUrlProp = "intershop.WebServerURL"
         const val webserverSecureUrlProp = "intershop.WebServerSecureURL"
@@ -188,7 +186,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             # The following containers will be started / stopped with
             # startEnv / stopEnv. The container can be configured in 
             # the docker image extension.
-            ${Configuration.COTAINER_ENV_PROP} = ${envListTasks.joinToString(",")}
+            ${Configuration.CONTAINER_ENV_PROP} = ${envListTasks.joinToString(",")}
             """.trimIndent()
 
         outputFile.appendText(text, Charsets.UTF_8)

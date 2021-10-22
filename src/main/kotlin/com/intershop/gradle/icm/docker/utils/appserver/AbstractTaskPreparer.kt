@@ -25,6 +25,8 @@ import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.SITES_FOLDER_PATH
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
+import com.intershop.gradle.icm.docker.utils.PortMapping
+import com.intershop.gradle.icm.tasks.CollectLibraries
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -50,7 +52,6 @@ abstract class AbstractTaskPreparer(project: Project,
         const val TASK_EXTRACARTRIDGES = "setupCartridges"
         const val TASK_CREATECONFIG = "createConfig"
         const val TASK_CREATECLUSTERID = "createClusterID"
-        const val TASK_COPYLIBS = "copyLibs"
     }
 
     override val image: Provider<String> = extension.images.icmbase
@@ -94,32 +95,40 @@ abstract class AbstractTaskPreparer(project: Project,
 
         prepareSitesFolder(project, extension)
 
-        ContainerUtils.transformVolumes(
-            mapOf(
+        val volumes = mutableMapOf(
                 extension.developmentConfig.getConfigProperty(SITES_FOLDER_PATH,
-                    project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath)
+                        project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath)
                         to "/intershop/sites",
-                extension.developmentConfig.licenseDirectory
+                File(extension.developmentConfig.licenseDirectory).absolutePath
                         to "/intershop/license",
                 addDirectories.getValue(SERVERLOGS).get().asFile.absolutePath
                         to "/intershop/logs",
                 addDirectories.getValue(ISHUNITOUT).get().asFile.absolutePath
                         to "/intershop/ishunitrunner/output",
                 project.projectDir.absolutePath
-                        to "/intershop/project/cartridges",
+                        to "/intershop/customizations/${extension.containerPrefix}/cartridges",
                 getOutputPathFor(TASK_EXTRACARTRIDGES, "")
-                        to "/intershop/project/extraCartridges",
-                getOutputPathFor(TASK_COPYLIBS, "")
-                        to "/intershop/project/libs",
+                        to "/intershop/customizations/additional-dependencies/cartridges",
                 getOutputPathFor(TASK_CREATECLUSTERID, "")
                         to "/intershop/clusterid",
-                extension.developmentConfig.configDirectory
+                File(extension.developmentConfig.configDirectory).absolutePath
                         to "/intershop/conf",
                 getOutputPathFor(TASK_CREATECONFIG, "system-conf")
                         to "/intershop/system-conf"
-            )
         )
+        getOutputDirFor(CollectLibraries.DEFAULT_NAME).listFiles { file -> file.isDirectory }?.forEach { dir ->
+            volumes[dir.absolutePath] = "/intershop/customizations/${extension.containerPrefix}-${dir.name}-libs/lib"
+        }
+
+        ContainerUtils.transformVolumes(volumes)
     }
+
+    /**
+     * TODO make configurable
+     */
+    protected open fun getPortMappings(): Set<PortMapping> =
+        setOf(PortMapping(4473, 4473), PortMapping(4476, 4476), PortMapping(4477, 4477))
+
 
     private fun prepareSitesFolder(project: Project, extension: IntershopDockerExtension) {
         with(project) {

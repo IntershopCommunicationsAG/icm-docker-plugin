@@ -296,11 +296,12 @@ dependencies {
 
     implementation(gradleKotlinDsl())
 
-    implementation("com.bmuschko:gradle-docker-plugin:7.1.0")
     implementation("org.apache.solr:solr-solrj:8.4.1")
+    implementation("com.bmuschko:gradle-docker-plugin:7.1.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:5.0.3")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.5")
 
-    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:4.3.0")
+    testImplementation("com.intershop.gradle.icm:icm-gradle-plugin:5.0.3")
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.1")
     testImplementation(gradleTestKit())
 }
