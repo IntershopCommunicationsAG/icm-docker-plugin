@@ -395,6 +395,7 @@ The plugins must be applied to the root project.
 |Property               | Type      | Default value | Description
 
 |`icmbase`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the ICM application server image.
+|`icmbasetest`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as-test:latest`       | This image is used as a base image for the ICM application server image whenever tests are executed.
 
 |===
 
