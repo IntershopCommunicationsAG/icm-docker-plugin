@@ -16,35 +16,42 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareCallback
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
+import javax.inject.Inject
 
 /**
  * Task to run dbinit on a running container.
  */
-open class DBPrepareTask: AbstractContainerTask() {
+open class DBPrepareTask
+        @Inject constructor(project: Project) :
+        AbstractICMASContainerTask<DBPrepareCallback, DBPrepareCallback>(project) {
 
-    @get:Option(option = "mode", description = "Mode in which dbprepare runs: 'init', 'migrate' or 'auto'. " +
-            "The default is 'auto'.")
+    @get:Option(option = "mode", description = "Mode in which dbPrepare runs: 'init', 'migrate' or 'auto'. " +
+                                               "The default is 'auto'.")
     @get:Input
     val mode: Property<String> = project.objects.property(String::class.java)
 
-    @get:Option(option = "clean-db", description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only'," +
-            " only the database is cleaned up. If 'yes' is shown, the database is cleaned up before preparing other " +
-            " steps. If 'no' is displayed, no database cleanup is done.")
+    @get:Option(option = "clean-db",
+            description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only', only the database is " +
+                          "cleaned up. If 'yes' is shown, the database is cleaned up before preparing other steps. " +
+                          "If 'no' is displayed, no database cleanup is done.")
     @get:Input
     val cleanDB: Property<String> = project.objects.property(String::class.java)
 
     @get:Option(option = "cartridges", description = "A comma-separated cartridge list. Executes the cartridges in " +
-            "that list. This is an optional parameter.")
+                                                     "that list. This is an optional parameter.")
     @get:Input
     val cartridges: Property<String> = project.objects.property(String::class.java)
 
     @get:Option(option = "property-keys", description = "Comma-separated list of preparer property keys to execute. " +
-            "This is an optional parameter.")
+                                                        "This is an optional parameter.")
     @get:Input
     val propertyKeys: Property<String> = project.objects.property(String::class.java)
 
@@ -53,59 +60,52 @@ open class DBPrepareTask: AbstractContainerTask() {
         cleanDB.convention("no")
         cartridges.convention("")
         propertyKeys.convention("")
-
-        group = "icm docker project"
     }
 
-    /**
-     * Executes the remote Docker command.
-     */
-    override fun runRemoteCommand() {
-        val execCallback = createCallback()
-
-        val execCmd = dockerClient.execCreateCmd(containerId.get())
-        execCmd.withAttachStderr(true)
-        execCmd.withAttachStdout(true)
-
-        val command = mutableListOf<String>()
-        command.addAll(listOf("/intershop/bin/intershop.sh", "dbprepare", "-classic"))
-
-        val debug = System.getProperty("debug-jvm", "false")
-        if(debug != "false") {
-            execCmd.withEnv(listOf("ENABLE_DEBUG=true"))
-        }
-
-        command.add("--mode=${mode.get()}")
-        command.add("--clean-db=${cleanDB.get()}")
-        if(cartridges.get().trim().isNotEmpty()) {
-            command.add("--cartridges=${cartridges.get().replace(" ", "")}")
-        }
-        if(propertyKeys.get().isNotEmpty()) {
-            command.add("--property-keys=${propertyKeys.get().replace(" ", "")}")
-        }
-
-        execCmd.withCmd(*command.toTypedArray())
-        val localExecId = execCmd.exec().id
-
-        dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback).awaitCompletion()
-
-        if(waitForExit(localExecId) > 0) {
+    override fun processExitCode(exitCode: Long) {
+        super.processExitCode(exitCode)
+        if (exitCode > 0) {
             throw GradleException("DBPrepare failed! Please check your log files")
         }
+    }
 
-        val info = execCallback.getDBInfo()
+    override fun createContainerEnvironment(): ContainerEnvironment {
+        val ownEnv = ContainerEnvironment()
+        ownEnv.add(ENV_IS_DBPREPARE, true)
+        return super.createContainerEnvironment().merge(ownEnv)
+    }
 
-        if(info == null) {
-            throw GradleException("DBPrepare does not finished correctly! Please check your log files")
+    override fun createAdditionalParameters(): AdditionalICMParameters {
+        // add additional parameters to env
+        val ownParameters = AdditionalICMParameters()
+                .add("-classic")
+                .add("--mode", mode)
+                .add("--clean-db", cleanDB)
+
+        if (cartridges.get().trim().isNotEmpty()) {
+            ownParameters.add("--cartridges", cartridges.get().replace(" ", ""))
+        }
+        if (propertyKeys.get().isNotEmpty()) {
+            ownParameters.add("--property-keys", propertyKeys.get().replace(" ", ""))
+        }
+        return super.createAdditionalParameters().merge(ownParameters)
+    }
+
+    override fun postRunRemoteCommand(dbPrepareCallback: DBPrepareCallback) {
+        val info = dbPrepareCallback.getDBInfo()
+
+        if (info == null) {
+            throw GradleException("DBPrepare didn't finish correctly! Please check your log files")
         } else {
-            if(info.failure > 0) {
+            if (info.failure > 0) {
                 throw GradleException("DBPrepare failed with '" + info.failure + "' failures. " +
-                        "Please check your log files")
+                                      "Please check your log files")
             }
         }
     }
 
-    private fun createCallback(): DBPrepareCallback {
+    override fun createCallback(): DBPrepareCallback {
         return DBPrepareCallback(System.out, System.err)
     }
+
 }

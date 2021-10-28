@@ -133,6 +133,10 @@ imageBuild {
             }
         }
     }
+
+    developmentConfig {
+        cartridgeList.set(setOf("ft_starter_store"))
+    }
 }
 ----
 ++++
@@ -180,6 +184,7 @@ imageBuild {
 |`configDirectory`     | `String` | `<GRADLE_USER_HOME>/icm-default/conf` | This directory contains the environment specific development configuration for ICM. See <<PropertiesFile>>.
 |`licenseFilePath`      | `String` | `<licenseDirectory>/license.xml` | The file path of the license file (read only).
 |`configFilePath`      | `String` | `<configDirectory>/icm.properties` | The path of the configuration file (read only).
+|`cartridgeList`      | `SetProperty<String>` | _none_ | The names of the cartridges to be used whenever an ICM-AS server is started inside a container.
 
 |===
 
@@ -390,6 +395,7 @@ The plugins must be applied to the root project.
 |Property               | Type      | Default value | Description
 
 |`icmbase`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the ICM application server image.
+|`icmbasetest`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as-test:latest`       | This image is used as a base image for the ICM application server image whenever tests are executed.
 
 |===
 

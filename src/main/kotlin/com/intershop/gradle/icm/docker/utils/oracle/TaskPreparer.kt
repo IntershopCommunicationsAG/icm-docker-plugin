@@ -31,14 +31,13 @@ class TaskPreparer(project: Project,
         const val extName: String = "Oracle"
     }
 
-    override val image: Provider<String> = extension.images.oracledb
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.oracledb
 
     init {
         initBaseTasks()
 
-        project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
+        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.description = "Starts an Oracle XE server"
 

@@ -49,6 +49,9 @@ object Configuration {
     const val DB_ORACLE_PORT_VALUE = "5500"
     const val DB_ORACLE_CONTAINER_PORT_VALUE = "5500"
 
+    const val DB_TYPE = "intershop.databaseType"
+    const val DB_JDBC_URL = "intershop.jdbc.url"
+
     const val DB_USER_NAME = "intershop.jdbc.user"
     const val DB_USER_PASSWORD = "intershop.jdbc.password"
 
@@ -70,6 +73,10 @@ object Configuration {
     const val AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE = "7747"
     const val AS_JMX_CONNECTOR_PORT = "intershop.as.jmx.connector.port"
     const val AS_JMX_CONNECTOR_PORT_VALUE = "7747"
+
+    const val AS_DEBUG_CONTAINER_PORT_VALUE = "7746"
+    const val AS_DEBUG_PORT = "intershop.as.debug.port"
+    const val AS_DEBUG_PORT_VALUE = "7746"
 
     const val WS_HTTP_PORT = "webserver.http.port"
     const val WS_HTTPS_PORT = "webserver.https.port"
@@ -104,7 +111,7 @@ object Configuration {
     const val GEB_LOCAL_DRIVER = "geb.local.driver"
     const val GEB_LOCAL_ENVIRONMENT = "geb.local.environment"
 
-    const val COTAINER_ENV_PROP = "intershop.environment.container"
+    const val CONTAINER_ENV_PROP = "intershop.environment.container"
 
     const val SITES_FOLDER_PATH = "sites.folder.path"
 
@@ -116,4 +123,6 @@ object Configuration {
 
     const val DATA_FOLDER_VOLUME_VALUE = "/var/opt/mssql/data"
     const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
+
+    const val CARTRIDGE_LIST = "intershop.cartridgeList"
 }

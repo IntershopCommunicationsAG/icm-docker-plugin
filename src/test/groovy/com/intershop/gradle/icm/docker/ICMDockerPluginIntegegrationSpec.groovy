@@ -855,6 +855,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         return repoConf
     }
 
+    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
     def 'pull image from extension'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
@@ -881,6 +882,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
     }
 
+    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
     def 'pull image from extension with force'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
@@ -940,6 +942,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
     def 'run dbprepare'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
@@ -957,6 +960,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
     def 'run dbprepare without parameters'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
@@ -1096,6 +1100,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
     def 'buildImages for projects - complex'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
@@ -1130,6 +1135,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
     def 'buildImages for projects - simple'() {
         prepareSimpleBuildConfig(testProjectDir, settingsFile, buildFile)
 

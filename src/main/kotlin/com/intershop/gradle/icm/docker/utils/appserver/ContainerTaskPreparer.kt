@@ -19,23 +19,25 @@ package com.intershop.gradle.icm.docker.utils.appserver
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
+import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
-class ContainerTaskPreparer(project: Project,
-                            networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
+open class ContainerTaskPreparer(
+        project: Project,
+        networkTask: Provider<PrepareNetwork>,
+) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
         const val extName: String = "Container"
     }
 
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override fun getExtensionName(): String = extName
 
     init {
         initBaseTasks()
 
-        project.tasks.register("start${extensionName}", StartServerContainer::class.java) { task ->
+        project.tasks.register("start${getExtensionName()}", StartServerContainer::class.java) { task ->
             configureContainerTask(task)
 
             task.description = "Start container without any special command (sleep)"
@@ -45,7 +47,18 @@ class ContainerTaskPreparer(project: Project,
 
             task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
 
-            task.hostConfig.binds.set(getServerVolumes())
+            task.hostConfig.binds.set(project.provider {
+                getServerVolumes().apply {
+                    project.logger.quiet("Using the following volume binds for container startup in task {}: {}",
+                            task.name, this)
+                }
+            })
+            task.hostConfig.portBindings.set(project.provider {
+                getPortMappings().map { pm -> pm.render() }.apply {
+                    project.logger.info("Using the following port mappings for container startup in task {}: {}",
+                            task.name, this)
+                }
+            })
             task.hostConfig.network.set(networkId)
 
             task.dependsOn(prepareServer, pullTask, networkTask)

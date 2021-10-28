@@ -186,6 +186,10 @@ open class StartServerContainer
         }
     }
 
+    override fun runRemoteCommand() {
+        super.runRemoteCommand()
+    }
+
     private fun configureDebug() {
         envVars.put("ENABLE_DEBUG", "true")
         hostConfig.portBindings.add("5005:7746")

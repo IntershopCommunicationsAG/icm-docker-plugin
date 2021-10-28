@@ -30,9 +30,8 @@ class SolrPreparer(project: Project,
         const val extName: String = "Solr"
     }
 
-    override val image: Provider<String> = extension.images.solr
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.lowercase()
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.solr
 
     init {
         initBaseTasks()
@@ -47,7 +46,7 @@ class SolrPreparer(project: Project,
             it.group = "icm container solrcloud"
         }
 
-        project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
+        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.group = "icm container solrcloud"
             task.description = "Start Solr component of SolrCloud"

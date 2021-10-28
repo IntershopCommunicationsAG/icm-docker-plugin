@@ -148,7 +148,7 @@ open class ICMDockerPlugin: Plugin<Project> {
     }
 
     private fun createEnvironmentTask(project: Project, extension: IntershopDockerExtension) {
-        val listStr = extension.developmentConfig.getConfigProperty(Configuration.COTAINER_ENV_PROP)
+        val listStr = extension.developmentConfig.getConfigProperty(Configuration.CONTAINER_ENV_PROP)
         val list = listStr.split(",")
 
         project.tasks.register("startEnv") { task ->

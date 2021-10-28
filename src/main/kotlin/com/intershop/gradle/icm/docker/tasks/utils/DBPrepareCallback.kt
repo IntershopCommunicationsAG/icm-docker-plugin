@@ -25,7 +25,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Callback for dbinit execution.
+ * Callback for dbPrepare execution.
  */
 class DBPrepareCallback (
     private val stdout: OutputStream,

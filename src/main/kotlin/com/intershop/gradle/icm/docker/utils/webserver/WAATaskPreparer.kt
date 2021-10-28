@@ -32,9 +32,8 @@ class WAATaskPreparer(project: Project,
         const val extName: String = "WAA"
     }
 
-    override val image: Provider<String> = extension.images.webadapteragent
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.webadapteragent
 
     init{
         initBaseTasks()
@@ -49,7 +48,7 @@ class WAATaskPreparer(project: Project,
             it.group = "icm container webserver"
         }
 
-        project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
+        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.group = "icm container webserver"
             task.description = "Start ICM WebAdapterAgent"

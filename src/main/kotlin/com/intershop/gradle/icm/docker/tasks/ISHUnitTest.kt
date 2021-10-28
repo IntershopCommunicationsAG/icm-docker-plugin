@@ -17,9 +17,12 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
+import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
@@ -28,13 +31,20 @@ import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.internal.resources.ResourceLock
-import java.util.*
+import java.util.Collections
+import javax.inject.Inject
 
 
 /**
  * Task to run ishunit tests on a running container.
  */
-open class ISHUnitTest : AbstractContainerTask() {
+open class ISHUnitTest
+        @Inject constructor(project: Project) :
+        AbstractICMASContainerTask<ISHUnitCallback, ISHUnitCallback>(project) {
+
+    companion object {
+        const val ENV_CARTRIDGE_NAME = "CARTRIDGE_NAME"
+    }
 
     init {
         group = "icm container project"
@@ -64,45 +74,20 @@ open class ISHUnitTest : AbstractContainerTask() {
         return registration.service
     }
 
-    /**
-     * Executes the remote Docker command.
-     */
-    override fun runRemoteCommand() {
-        val execCallback = createCallback()
-
-        val cartridgeProject = project.rootProject.project(testCartridge.get())
-        val buildDirName = cartridgeProject.buildDir.name
-
-        val execCmd = dockerClient.execCreateCmd(containerId.get())
-        execCmd.withAttachStderr(true)
-        execCmd.withAttachStdout(true)
-
-        val debug = System.getProperty("debug-jvm", "false")
-        if(debug != "false") {
-            execCmd.withEnv(listOf("ENABLE_DEBUG=true"))
-        }
-
-        execCmd.withCmd(*listOf("/intershop/bin/ishunitrunner.sh",
-                buildDirName,
-                testCartridge.get(),
-                "-s=${testSuite.get()}").toTypedArray())
-
-        val localExecId = execCmd.exec().id
-
-        dockerClient.execStartCmd(localExecId).withDetach(false).exec(execCallback).awaitCompletion()
-
-        val exitMsg = when (waitForExit(localExecId)) {
+    override fun processExitCode(exitCode: Long) {
+        super.processExitCode(exitCode)
+        val exitMsg = when (exitCode) {
             0L -> ISHUnitTestResult(0L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} finished successfully")
             1L -> ISHUnitTestResult(1L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with failures." +
-                            "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner"))
+                    "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner").get().asFile)
             2L -> ISHUnitTestResult(2L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed. " +
-                            "Please check your test configuration")
+                    "Please check your test configuration")
             else -> ISHUnitTestResult(100L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with unknown result code." +
-                            "Please check your test configuration")
+                    "Please check your test configuration")
         }
 
         project.logger.info(exitMsg.message)
@@ -111,7 +96,34 @@ open class ISHUnitTest : AbstractContainerTask() {
         }
     }
 
-    private fun createCallback(): ISHUnitCallback {
+    override fun createCartridgeList(): Provider<Set<String>> = project.provider {
+        // use normal cartridge list plus testCartridge
+        super.createCartridgeList().get().plus(testCartridge.get())
+    }
+
+    override fun createContainerEnvironment(): ContainerEnvironment {
+        val ownEnv = ContainerEnvironment()
+        // start IshTestrunner instead of ICM-AS
+        ownEnv.add(ENV_MAIN_CLASS, "com.intershop.testrunner.IshTestrunner")
+        // required by classloader, can be removed when
+        // https://dev.azure.com/intershop-com/Products/_git/icm-as/pullrequest/339 is merged
+        ownEnv.add(ENV_ADDITIONAL_VM_PARAMETERS, "-DtestMode=true")
+        // indirectly required by EmbeddedServerRule
+        ownEnv.add(ENV_CARTRIDGE_NAME, testCartridge.get())
+
+        return super.createContainerEnvironment().merge(ownEnv)
+    }
+
+    override fun createAdditionalParameters(): AdditionalICMParameters {
+        val ownParameters = AdditionalICMParameters()
+                .add("-o", "/intershop/ishunitrunner/output/${testSuite.get()}")
+                .add("-s", testSuite.get())
+
+        return super.createAdditionalParameters().merge(ownParameters)
+    }
+
+    override fun createCallback(): ISHUnitCallback {
         return ISHUnitCallback(System.out, System.err)
     }
+
 }

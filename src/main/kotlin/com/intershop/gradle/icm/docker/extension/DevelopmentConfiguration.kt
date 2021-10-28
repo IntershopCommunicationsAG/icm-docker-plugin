@@ -17,13 +17,18 @@
 
 package com.intershop.gradle.icm.docker.extension
 
+import com.intershop.gradle.icm.docker.utils.Configuration
+import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Input
 import org.gradle.wrapper.GradleUserHomeLookup
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.Serializable
 import java.util.*
 import javax.inject.Inject
 
@@ -126,6 +131,11 @@ open class DevelopmentConfiguration
         set(value) = appserverAsContainerProperty.set(value)
 
     /**
+     * Set of cartridges to be started for instance by task startAS
+     */
+    val cartridgeList: SetProperty<String> = objectFactory.setProperty(String::class.java)
+
+    /**
      * License directory path of the project.
      */
     val licenseDirectory: String
@@ -151,5 +161,22 @@ open class DevelopmentConfiguration
         return configProperties.getProperty(property, defaultValue)
     }
 
+    /**
+     * The database configuration
+     */
+    val databaseConfiguration : DatabaseParameters by lazy {
+        val config = DatabaseParameters(objectFactory)
+        config.type.set(getConfigProperty(Configuration.DB_TYPE))
+        config.jdbcUrl.set(getConfigProperty(Configuration.DB_JDBC_URL))
+        config.jdbcUser.set(getConfigProperty(Configuration.DB_USER_NAME))
+        config.jdbcPassword.set(getConfigProperty(Configuration.DB_USER_PASSWORD))
+        config
+    }
 
+    class DatabaseParameters(objectFactory: ObjectFactory) : Serializable {
+        val type : Property<String> = objectFactory.property(String::class.java)
+        val jdbcUrl : Property<String> = objectFactory.property(String::class.java)
+        val jdbcUser : Property<String> = objectFactory.property(String::class.java)
+        val jdbcPassword : Property<String> = objectFactory.property(String::class.java)
+    }
 }

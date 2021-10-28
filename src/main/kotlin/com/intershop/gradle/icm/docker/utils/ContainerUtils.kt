@@ -29,7 +29,7 @@ object ContainerUtils {
     fun transformVolumes(volumes: Map<String,String>) : Map<String, String> {
         val tv = mutableMapOf<String, String>()
         volumes.forEach { (k, v) ->
-            if(k.contains('\\')) {
+            if(k.contains('\\') || k.contains(':')) {
                 tv["//${k.replace('\\','/')}".replace(":", "")] = v
             } else {
                 tv[k] = v
