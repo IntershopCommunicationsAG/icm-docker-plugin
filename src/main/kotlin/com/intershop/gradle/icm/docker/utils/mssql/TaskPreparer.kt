@@ -32,14 +32,13 @@ class TaskPreparer(project: Project,
         const val extName: String = "MSSQL"
     }
 
-    override val image: Provider<String> = extension.images.mssqldb
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.lowercase()
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.mssqldb
 
     init {
         initBaseTasks()
 
-        project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
+        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.description = "Starts an MSSQL server"
 

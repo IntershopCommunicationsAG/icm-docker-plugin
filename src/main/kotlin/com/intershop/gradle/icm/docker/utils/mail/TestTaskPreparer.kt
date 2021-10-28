@@ -31,14 +31,13 @@ class TestTaskPreparer(project: Project,
         const val extName: String = "TestMailSrv"
     }
 
-    override val image: Provider<String> = extension.images.testmailsrv
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.testmailsrv
 
     init {
         initBaseTasks()
 
-        project.tasks.register ("start${extensionName}", StartExtraContainer::class.java) { task ->
+        project.tasks.register ("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.description = "Starts an special test mail server for ISHUnitTests"
 

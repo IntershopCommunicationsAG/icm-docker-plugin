@@ -131,7 +131,7 @@ open class DevelopmentConfiguration
         set(value) = appserverAsContainerProperty.set(value)
 
     /**
-     * Set of cartridges to be started (used by task startAS)
+     * Set of cartridges to be started for instance by task startAS
      */
     val cartridgeList: SetProperty<String> = objectFactory.setProperty(String::class.java)
 

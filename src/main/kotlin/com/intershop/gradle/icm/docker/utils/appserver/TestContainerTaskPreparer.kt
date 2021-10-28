@@ -14,27 +14,22 @@
  * limitations under the License.
  *
  */
+package com.intershop.gradle.icm.docker.utils.appserver
 
-package com.intershop.gradle.icm.docker.utils
+import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 
-class PortMapping(val hostPort:Int, val containerPort:Int) {
-    fun render() : String = "$hostPort:$containerPort"
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+class TestContainerTaskPreparer(
+        project: Project,
+        networkTask: Provider<PrepareNetwork>,
+) : ContainerTaskPreparer(project, networkTask) {
 
-        other as PortMapping
-
-        if (hostPort != other.hostPort) return false
-        if (containerPort != other.containerPort) return false
-
-        return true
+    companion object {
+        const val extName: String = "TestContainer"
     }
 
-    override fun hashCode(): Int {
-        var result = hostPort
-        result = 31 * result + containerPort
-        return result
-    }
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.icmbasetest
 
 }

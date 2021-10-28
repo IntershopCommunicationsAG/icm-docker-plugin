@@ -21,7 +21,6 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
-import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.SITES_FOLDER_PATH
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
@@ -36,8 +35,10 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
-abstract class AbstractTaskPreparer(project: Project,
-                           networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
+abstract class AbstractTaskPreparer(
+        project: Project,
+        networkTask: Provider<PrepareNetwork>,
+) : com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer(project, networkTask) {
 
     companion object {
         const val SERVER_READY_STRING = "Servlet engine successfully started"
@@ -54,26 +55,26 @@ abstract class AbstractTaskPreparer(project: Project,
         const val TASK_CREATECLUSTERID = "createClusterID"
     }
 
-    override val image: Provider<String> = extension.images.icmbase
+    override fun getImage(): Provider<String> = extension.images.icmbase
 
     fun initAppTasks() {
-        project.tasks.register("pull${extensionName}", PullImage::class.java) { task ->
-            task.group = "icm container $containerExt"
+        project.tasks.register("pull${getExtensionName()}", PullImage::class.java) { task ->
+            task.group = "icm container ${getContainerExt()}"
             task.description = "Pull image from registry"
-            task.image.set(image)
+            task.image.set(getImage())
         }
 
-        project.tasks.register("stop${extensionName}", StopExtraContainer::class.java) { task ->
-            task.group = "icm container $containerExt"
+        project.tasks.register("stop${getExtensionName()}", StopExtraContainer::class.java) { task ->
+            task.group = "icm container ${getContainerExt()}"
             task.description = "Stop running container"
-            task.containerName.set("${extension.containerPrefix}-${containerExt}")
+            task.containerName.set("${extension.containerPrefix}-${getContainerExt()}")
         }
 
-        project.tasks.register("remove${extensionName}", RemoveContainerByName::class.java) { task ->
-            task.group = "icm container $containerExt"
+        project.tasks.register("remove${getExtensionName()}", RemoveContainerByName::class.java) { task ->
+            task.group = "icm container ${getContainerExt()}"
             task.description = "Remove container from Docker"
 
-            task.containerName.set("${extension.containerPrefix}-${containerExt}")
+            task.containerName.set("${extension.containerPrefix}-${getContainerExt()}")
         }
     }
 
@@ -88,7 +89,7 @@ abstract class AbstractTaskPreparer(project: Project,
         )
     }
 
-    protected fun getServerVolumes(): Provider<Map<String,String>> = project.provider {
+    protected fun getServerVolumes(): Map<String,String> {
         addDirectories.forEach { _, path ->
             path.get().asFile.mkdirs()
         }
@@ -120,14 +121,15 @@ abstract class AbstractTaskPreparer(project: Project,
             volumes[dir.absolutePath] = "/intershop/customizations/${extension.containerPrefix}-${dir.name}-libs/lib"
         }
 
-        ContainerUtils.transformVolumes(volumes)
+        return ContainerUtils.transformVolumes(volumes)
     }
 
     /**
-     * TODO make configurable
+     * TODO SKR make configurable
      */
     protected open fun getPortMappings(): Set<PortMapping> =
-        setOf(PortMapping(4473, 4473), PortMapping(4476, 4476), PortMapping(4477, 4477))
+        setOf(PortMapping(7743, 7743), PortMapping(7746, 7746),
+                PortMapping(7747, 7747))
 
 
     private fun prepareSitesFolder(project: Project, extension: IntershopDockerExtension) {

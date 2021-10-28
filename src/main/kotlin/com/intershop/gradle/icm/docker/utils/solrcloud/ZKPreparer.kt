@@ -29,9 +29,8 @@ class ZKPreparer(project: Project,
         const val extName: String = "ZK"
     }
 
-    override val image: Provider<String> = extension.images.zookeeper
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.zookeeper
 
     init {
         initBaseTasks()
@@ -46,7 +45,7 @@ class ZKPreparer(project: Project,
             it.group = "icm container solrcloud"
         }
 
-        project.tasks.register("start${extensionName}", StartExtraContainer::class.java) { task ->
+        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.group = "icm container solrcloud"
             task.description = "Start Zookeeper component of SolrCloud"
@@ -63,7 +62,7 @@ class ZKPreparer(project: Project,
                     "ZOO_MY_ID" to "1",
                     "ZOO_PORT" to "2181",
                     "ZOO_SERVERS" to
-                            "server.1=${extension.containerPrefix}-${containerExt.toLowerCase()}:2888:3888;2181",
+                            "server.1=${extension.containerPrefix}-${getContainerExt()}:2888:3888;2181",
                     "ZOO_4LW_COMMANDS_WHITELIST" to "mntr, conf, ruok",
                     "ZOO_CFG_EXTRA" to
                             "metricsProvider.className=org.apache.zookeeper.metrics.prometheus." +

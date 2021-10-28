@@ -30,14 +30,13 @@ class TaskPreparer(project: Project,
         const val extName: String = "MailSrv"
     }
 
-    override val image: Provider<String> = extension.images.mailsrv
-    override val extensionName: String = extName
-    override val containerExt: String = extensionName.toLowerCase()
+    override fun getExtensionName(): String = extName
+    override fun getImage(): Provider<String> = extension.images.mailsrv
 
     init {
         initBaseTasks()
 
-        project.tasks.register ("start${extensionName}", StartExtraContainer::class.java) { task ->
+        project.tasks.register ("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.description = "Starts an local mail server for testing"
 
