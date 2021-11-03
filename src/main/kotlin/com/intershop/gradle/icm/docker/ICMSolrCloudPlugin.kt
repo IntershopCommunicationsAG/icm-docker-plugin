@@ -63,14 +63,14 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                 with(extension.developmentConfig) {
                     val wsUrl = getConfigProperty(WS_SECURE_URL, WS_SECURE_URL_VALUE)
                     val assrvHost = getConfigProperty(LOCAL_CONNECTOR_HOST, LOCAL_CONNECTOR_HOST_VALUE)
-                    val assrvPort = getConfigProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
+                    val assrvPort = getIntProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
 
                     val uri = URIBuilder(wsUrl)
 
                     val wfsTask = project.tasks.register("waitForServer", WaitForServer::class.java ) { wfs ->
                         wfs.webServerPort.set(uri.port.toString())
                         wfs.webServerHost.set(uri.host)
-                        wfs.appServerPort.set(assrvPort)
+                        wfs.appServerPort.set(assrvPort.toString())
                         wfs.appServerHost.set(assrvHost)
 
                         wfs.mustRunAfter(startServer)

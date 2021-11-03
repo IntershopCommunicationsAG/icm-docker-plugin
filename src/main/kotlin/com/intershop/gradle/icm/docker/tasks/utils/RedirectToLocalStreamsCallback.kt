@@ -25,13 +25,13 @@ import java.io.IOException
 import java.io.OutputStream
 
 /**
- * Callback for ishunit execution.
+ * Callback that just writes the container's output to `stdout` respectively `stderr`
  */
-class ISHUnitCallback (
+class RedirectToLocalStreamsCallback (
     private val stdout: OutputStream,
-    private val stderr: OutputStream): ResultCallbackTemplate<ISHUnitCallback, Frame>() {
+    private val stderr: OutputStream): ResultCallbackTemplate<RedirectToLocalStreamsCallback, Frame>() {
 
-    private val logger: Logger = LoggerFactory.getLogger(ISHUnitCallback::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(RedirectToLocalStreamsCallback::class.java)
 
     /**
      * Main method of callback class.

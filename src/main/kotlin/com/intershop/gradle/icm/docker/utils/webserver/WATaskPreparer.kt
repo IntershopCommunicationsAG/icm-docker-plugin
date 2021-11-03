@@ -96,12 +96,12 @@ class WATaskPreparer(project: Project,
                 task.hostConfig.network.set(networkId)
 
                 val asHTTPPort = if (appserverAsContainer) {
-                    getConfigProperty(
+                    getIntProperty(
                         Configuration.AS_CONNECTOR_CONTAINER_PORT,
                         Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
                     )
                 } else {
-                    getConfigProperty(
+                    getIntProperty(
                         Configuration.AS_CONNECTOR_PORT,
                         Configuration.AS_CONNECTOR_PORT_VALUE
                     )

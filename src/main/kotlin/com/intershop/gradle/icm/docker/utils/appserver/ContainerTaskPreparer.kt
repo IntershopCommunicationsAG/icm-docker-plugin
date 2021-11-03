@@ -55,7 +55,7 @@ open class ContainerTaskPreparer(
             })
             task.hostConfig.portBindings.set(project.provider {
                 getPortMappings().map { pm -> pm.render() }.apply {
-                    project.logger.info("Using the following port mappings for container startup in task {}: {}",
+                    project.logger.quiet("Using the following port mappings for container startup in task {}: {}",
                             task.name, this)
                 }
             })

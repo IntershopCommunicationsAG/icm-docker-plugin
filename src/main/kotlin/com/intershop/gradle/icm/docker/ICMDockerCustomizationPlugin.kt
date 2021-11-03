@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartASTask
 import com.intershop.gradle.icm.docker.utils.CustomizationImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
@@ -54,6 +55,13 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
 
     companion object {
         const val INTERSHOP_EXTENSION_NAME = "intershop"
+        const val ISHUNIT_REGISTRY = "ishUnitTestTegistry"
+        const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
+        const val ISHUNIT_TEST = "ISHUnitTest"
+
+        const val TASK_DBPREPARE = "dbPrepare"
+        const val TASK_STARTAS = "startAS"
+        const val TASK_ISHUNIT_REPORT = "ishUnitTestReport"
     }
 
     /**
@@ -93,6 +101,9 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val oracleDatabase =
                         tasks.named("start${com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer.extName}")
 
+                val startAS: TaskProvider<StartASTask> =
+                        getStartAS(this, containerPreparer, mssqlDatabase, oracleDatabase)
+
                 val dbPrepare: TaskProvider<DBPrepareTask> =
                         getDBPrepare(this, containerPreparer, mssqlDatabase, oracleDatabase)
                 configureISHUnitTest(this, dockerExtension, testContainerPreparer, dbPrepare, mssqlDatabase,
@@ -112,13 +123,30 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
      */
     open fun Project.getCustomizationName(): String = name
 
+    private fun getStartAS(
+            project: Project,
+            containerPreparer: ContainerTaskPreparer,
+            mssqlDatabase: TaskProvider<Task>,
+            oracleDatabase: TaskProvider<Task>,
+    ): TaskProvider<StartASTask> {
+        return project.tasks.register(TASK_STARTAS, StartASTask::class.java) { task ->
+            task.group = ICMDockerPlugin.GROUP_SERVERBUILD
+            task.description = "Starts the ICM-AS in an existing ICM base container."
+            task.containerId.set(project.provider { containerPreparer.startTask.get().containerId.get() })
+
+            task.dependsOn(containerPreparer.startTask)
+            task.finalizedBy(containerPreparer.removeTask)
+            task.mustRunAfter(mssqlDatabase, oracleDatabase)
+        }
+    }
+
     private fun getDBPrepare(
             project: Project,
             containerPreparer: ContainerTaskPreparer,
             mssqlDatabase: TaskProvider<Task>,
             oracleDatabase: TaskProvider<Task>,
     ): TaskProvider<DBPrepareTask> {
-        return project.tasks.register(ICMDockerProjectPlugin.TASK_DBPREPARE, DBPrepareTask::class.java) { task ->
+        return project.tasks.register(TASK_DBPREPARE, DBPrepareTask::class.java) { task ->
             task.group = ICMDockerPlugin.GROUP_SERVERBUILD
             task.description = "Starts dbPrepare in an existing ICM base container."
             task.containerId.set(project.provider { containerPreparer.startTask.get().containerId.get() })
@@ -137,19 +165,19 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
             mssqlDatabase: TaskProvider<Task>,
             oracleDatabase: TaskProvider<Task>,
     ) {
-        project.gradle.sharedServices.registerIfAbsent(ICMDockerProjectPlugin.ISHUNIT_REGISTRY,
+        project.gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY,
                 ISHUnitTestRegistry::class.java) {
             it.maxParallelUsages.set(1)
         }
 
-        val ishUnitTest = project.tasks.register(ICMDockerProjectPlugin.TASK_ISHUNIT_REPORT,
+        val ishUnitTest = project.tasks.register(TASK_ISHUNIT_REPORT,
                 ISHUnitHTMLTestReport::class.java) { task ->
             task.group = ICMDockerPlugin.GROUP_SERVERBUILD
             task.description = "Generates report for ISHUnitTest execution"
         }
 
         extension.ishUnitTests.all { suite ->
-            val ishunitTest = project.tasks.register(suite.name + ICMDockerProjectPlugin.ISHUNIT_TEST,
+            val ishunitTest = project.tasks.register(suite.name + ISHUNIT_TEST,
                     ISHUnitTest::class.java) { task ->
                 task.group = ICMDockerPlugin.GROUP_SERVERBUILD
                 task.description = "Starts ISHUnitTest suite '" + suite.name + "' in an existing ICM base container."
@@ -170,7 +198,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
     }
 
     private fun addTestReportConfiguration(project: Project) {
-        val configuration = project.configurations.maybeCreate(ICMDockerProjectPlugin.HTML_ANT_TESTREPORT_CONFIG)
+        val configuration = project.configurations.maybeCreate(HTML_ANT_TESTREPORT_CONFIG)
         configuration
                 .setVisible(false)
                 .setTransitive(false)
@@ -181,7 +209,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                     dependencies.add(dependencyHandler.create("org.apache.ant:ant-junit:1.9.7"))
                 }
 
-        project.configurations.maybeCreate(ICMDockerProjectPlugin.HTML_ANT_TESTREPORT_CONFIG)
+        project.configurations.maybeCreate(HTML_ANT_TESTREPORT_CONFIG)
     }
 
 }

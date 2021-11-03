@@ -16,10 +16,11 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
-import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitCallback
+import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -40,7 +41,7 @@ import javax.inject.Inject
  */
 open class ISHUnitTest
         @Inject constructor(project: Project) :
-        AbstractICMASContainerTask<ISHUnitCallback, ISHUnitCallback>(project) {
+        AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
 
     companion object {
         const val ENV_CARTRIDGE_NAME = "CARTRIDGE_NAME"
@@ -74,8 +75,8 @@ open class ISHUnitTest
         return registration.service
     }
 
-    override fun processExitCode(exitCode: Long) {
-        super.processExitCode(exitCode)
+    override fun processExecutionResult(exitCode: Long) {
+        super.processExecutionResult(exitCode)
         val exitMsg = when (exitCode) {
             0L -> ISHUnitTestResult(0L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} finished successfully")
@@ -102,6 +103,7 @@ open class ISHUnitTest
     }
 
     override fun createContainerEnvironment(): ContainerEnvironment {
+        // TODO SKR move knowledge about these 3 env-vars to ishunitrunner.sh
         val ownEnv = ContainerEnvironment()
         // start IshTestrunner instead of ICM-AS
         ownEnv.add(ENV_MAIN_CLASS, "com.intershop.testrunner.IshTestrunner")
@@ -115,6 +117,7 @@ open class ISHUnitTest
     }
 
     override fun createAdditionalParameters(): AdditionalICMParameters {
+        // TODO SKR move knowledge about these 2 parameters to ishunitrunner.sh
         val ownParameters = AdditionalICMParameters()
                 .add("-o", "/intershop/ishunitrunner/output/${testSuite.get()}")
                 .add("-s", testSuite.get())
@@ -122,8 +125,11 @@ open class ISHUnitTest
         return super.createAdditionalParameters().merge(ownParameters)
     }
 
-    override fun createCallback(): ISHUnitCallback {
-        return ISHUnitCallback(System.out, System.err)
+    override fun createCallback(): RedirectToLocalStreamsCallback {
+        return RedirectToLocalStreamsCallback(System.out, System.err)
     }
 
+    override fun waitForCompletion(execResponse: ExecCreateCmdResponse): Long {
+        return waitForExit(execResponse.id)
+    }
 }

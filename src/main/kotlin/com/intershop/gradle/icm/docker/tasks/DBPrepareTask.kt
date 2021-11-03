@@ -16,6 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareCallback
@@ -31,7 +32,7 @@ import javax.inject.Inject
  */
 open class DBPrepareTask
         @Inject constructor(project: Project) :
-        AbstractICMASContainerTask<DBPrepareCallback, DBPrepareCallback>(project) {
+        AbstractICMASContainerTask<DBPrepareCallback, DBPrepareCallback, Long>(project) {
 
     @get:Option(option = "mode", description = "Mode in which dbPrepare runs: 'init', 'migrate' or 'auto'. " +
                                                "The default is 'auto'.")
@@ -62,8 +63,8 @@ open class DBPrepareTask
         propertyKeys.convention("")
     }
 
-    override fun processExitCode(exitCode: Long) {
-        super.processExitCode(exitCode)
+    override fun processExecutionResult(exitCode: Long) {
+        super.processExecutionResult(exitCode)
         if (exitCode > 0) {
             throw GradleException("DBPrepare failed! Please check your log files")
         }
@@ -108,4 +109,7 @@ open class DBPrepareTask
         return DBPrepareCallback(System.out, System.err)
     }
 
+    override fun waitForCompletion(execResponse: ExecCreateCmdResponse): Long {
+        return waitForExit(execResponse.id)
+    }
 }

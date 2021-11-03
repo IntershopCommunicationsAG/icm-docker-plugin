@@ -18,18 +18,18 @@
 package com.intershop.gradle.icm.docker.extension
 
 import com.intershop.gradle.icm.docker.utils.Configuration
-import org.gradle.api.Project
+import com.intershop.gradle.icm.docker.utils.PortMapping
+import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.SetProperty
-import org.gradle.api.tasks.Input
 import org.gradle.wrapper.GradleUserHomeLookup
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Serializable
-import java.util.*
+import java.util.Properties
 import javax.inject.Inject
 
 /**
@@ -161,8 +161,18 @@ open class DevelopmentConfiguration
         return configProperties.getProperty(property, defaultValue)
     }
 
+    fun getIntProperty(property: String, defaultValue: Int): Int {
+        val strValue = configProperties.getProperty(property, defaultValue.toString())
+        try {
+            return strValue.toInt()
+        } catch (e: NumberFormatException) {
+            throw GradleException(
+                    "Configuration property ${Configuration.AS_CONNECTOR_CONTAINER_PORT} is not a valid int value", e)
+        }
+    }
+
     /**
-     * The database configuration
+     * The database configuration (initialized lazily)
      */
     val databaseConfiguration : DatabaseParameters by lazy {
         val config = DatabaseParameters(objectFactory)
@@ -173,10 +183,35 @@ open class DevelopmentConfiguration
         config
     }
 
+    /**
+     * The port configuration (initialized lazily)
+     */
+    val asPortConfiguration : ASPortConfiguration by lazy {
+        val config = ASPortConfiguration(objectFactory)
+        config.servletEngine.value(getPortMapping(Configuration.AS_CONNECTOR_CONTAINER_PORT, Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE, Configuration.AS_EXT_CONNECTOR_PORT, Configuration.AS_EXT_CONNECTOR_PORT_VALUE))
+        config.debug.value(getPortMapping(Configuration.AS_DEBUG_CONTAINER_PORT_VALUE, Configuration.AS_DEBUG_PORT, Configuration.AS_DEBUG_PORT_VALUE))
+        config.jmx.value(getPortMapping(Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE, Configuration.AS_JMX_CONNECTOR_PORT, Configuration.AS_JMX_CONNECTOR_PORT_VALUE))
+        config
+    }
+
     class DatabaseParameters(objectFactory: ObjectFactory) : Serializable {
         val type : Property<String> = objectFactory.property(String::class.java)
         val jdbcUrl : Property<String> = objectFactory.property(String::class.java)
         val jdbcUser : Property<String> = objectFactory.property(String::class.java)
         val jdbcPassword : Property<String> = objectFactory.property(String::class.java)
     }
+
+    class ASPortConfiguration(objectFactory: ObjectFactory) : Serializable {
+        val servletEngine : Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+        val debug : Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+        val jmx : Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+    }
+
+    private fun getPortMapping(containerValue : Int, hostKey: String, hostDefaultValue : Int) : PortMapping =
+            PortMapping(containerValue, getIntProperty(hostKey, hostDefaultValue))
+
+    @Suppress("SameParameterValue")
+    private fun getPortMapping(containerKey: String, containerDefaultValue : Int, hostKey: String, hostDefaultValue : Int) : PortMapping =
+            getPortMapping(getIntProperty(containerKey, containerDefaultValue), hostKey, hostDefaultValue)
+
 }
