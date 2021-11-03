@@ -54,7 +54,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
 
     companion object {
         const val ENV_IS_DBPREPARE = "IS_DBPREPARE"
-        const val ENV_ENABLE_DEBUG = "ENABLE_DEBUG"
+        const val ENV_DEBUG_ICM = "DEBUG_ICM"
         const val ENV_DB_TYPE = "INTERSHOP_DATABASETYPE"
         const val ENV_DB_JDBC_URL = "INTERSHOP_JDBC_URL"
         const val ENV_DB_JDBC_USER = "INTERSHOP_JDBC_USER"
@@ -70,8 +70,6 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         const val ENV_VALUE_CARTRIDGE_CLASSPATH_LAYOUT = "release,source"
         const val ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT = "INTERSHOP_SERVLETENGINE_CONNECTOR_PORT"
         const val COMMAND = "/intershop/bin/intershop.sh"
-
-        const val SYSPROP_DEBUG_JVM = "debug-jvm"
     }
 
     private val debugProperty: Property<JavaDebugSupport> = project.objects.property(JavaDebugSupport::class.java)
@@ -203,7 +201,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         env.add(ENV_ADDITIONAL_PARAMETERS, additionalParameters.render())
 
         // configure debugging
-        env.add(ENV_ENABLE_DEBUG, renderDebugOption(debugProperty.get()))
+        env.add(ENV_DEBUG_ICM, renderDebugOption(debugProperty.get()))
 
         // add database config to env
         databaseConfiguration.get().run {
