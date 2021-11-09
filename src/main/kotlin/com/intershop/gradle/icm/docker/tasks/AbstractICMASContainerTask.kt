@@ -37,6 +37,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
@@ -69,7 +70,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         const val ENV_MAIN_CLASS = "MAIN_CLASS"
         const val ENV_VALUE_CARTRIDGE_CLASSPATH_LAYOUT = "release,source"
         const val ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT = "INTERSHOP_SERVLETENGINE_CONNECTOR_PORT"
-        const val COMMAND = "/intershop/bin/intershop.sh"
+        const val DEFAULT_COMMAND = "/intershop/bin/intershop.sh"
     }
 
     private val debugProperty: Property<JavaDebugSupport> = project.objects.property(JavaDebugSupport::class.java)
@@ -148,13 +149,13 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * [postRunRemoteCommand] is executed.
      */
     override fun runRemoteCommand() {
-        val execCallback = createCallback()
+        val callback = createCallback()
 
         val execCmd = dockerClient.execCreateCmd(containerId.get())
         execCmd.withAttachStderr(true)
         execCmd.withAttachStdout(true)
-        val command = arrayOf("/bin/sh", "-c", COMMAND)
-        execCmd.withCmd(*command)
+        val command = getCommand()
+        execCmd.withCmd(*command.toTypedArray())
 
         val env = createContainerEnvironment()
         execCmd.withEnv(env.toList())
@@ -164,14 +165,20 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
 
         val execResponse: ExecCreateCmdResponse = execCmd.exec()
 
-        dockerClient.execStartCmd(execResponse.id).withDetach(false).exec(execCallback).awaitCompletion()
+        val execCallback = dockerClient.execStartCmd(execResponse.id).withDetach(false).exec(callback)
 
-        val exitCode = waitForCompletion(execResponse)
+        val exitCode = waitForCompletion(execCallback, execResponse)
 
         processExecutionResult(exitCode)
 
         postRunRemoteCommand(execCallback)
     }
+
+    /**
+     * Returns the command to be executed inside the container
+     */
+    @Internal
+    protected open fun getCommand() : List<String> = listOf("/bin/sh", "-c", DEFAULT_COMMAND)
 
     /**
      * Processes the exit code of the command executed inside the container. This function is executed right after
@@ -223,7 +230,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         return env
     }
 
-    protected abstract fun waitForCompletion(execResponse : ExecCreateCmdResponse) : ER
+    protected abstract fun waitForCompletion(resultCallbackTemplate : RCT, execResponse : ExecCreateCmdResponse) : ER
 
     /**
      * Creates the list of cartridges to be used for the ICM-AS.
@@ -243,7 +250,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
     protected abstract fun createCallback(): RCT
 
     /**
-     * Renders the value for the environment variable [ENV_ENABLE_DEBUG] used inside the ´intershop.sh´
+     * Renders the value for the environment variable [ENV_DEBUG_ICM] used inside the ´intershop.sh´
      * @see intershop.sh
      */
     private fun renderDebugOption(debugSupport: JavaDebugSupport): String =

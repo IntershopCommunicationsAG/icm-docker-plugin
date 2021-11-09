@@ -17,17 +17,56 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration
+import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
+import com.intershop.gradle.icm.docker.utils.Configuration.AS_READINESS_PROBE_INTERVAL
+import com.intershop.gradle.icm.docker.utils.Configuration.AS_READINESS_PROBE_INTERVAL_VALUE
+import com.intershop.gradle.icm.docker.utils.Configuration.AS_READINESS_PROBE_TIMEOUT
+import com.intershop.gradle.icm.docker.utils.Configuration.AS_READINESS_PROBE_TIMEOUT_VALUE
+import com.intershop.gradle.icm.utils.HttpProbe
+import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import java.net.URI
+import java.time.Duration
 import javax.inject.Inject
+
 
 /**
  * Task to start an ICM-AS on a running container.
  */
 open class StartASTask
-        @Inject constructor(project: Project) :
+@Inject constructor(project: Project) :
         AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Unit>(project) {
+
+    companion object {
+        const val PATTERN_READINESS_PROBE_URL = "http://localhost:%d/status/ReadinessProbe"
+    }
+
+    private val developmentConfig: DevelopmentConfiguration by lazy {
+        project.extensions.getByType(IntershopDockerExtension::class.java).developmentConfig
+    }
+
+    @get:Input
+    val readinessProbeInterval: Property<Duration> = project.objects.property(Duration::class.java)
+            .convention(project.provider {
+                Duration.ofSeconds(
+                        developmentConfig.getIntProperty(AS_READINESS_PROBE_INTERVAL, AS_READINESS_PROBE_INTERVAL_VALUE)
+                                .toLong()
+                )
+            })
+
+    @get:Input
+    val readinessProbeTimeout: Property<Duration> = project.objects.property(Duration::class.java)
+            .convention(project.provider {
+                Duration.ofSeconds(
+                        developmentConfig.getIntProperty(AS_READINESS_PROBE_TIMEOUT, AS_READINESS_PROBE_TIMEOUT_VALUE)
+                                .toLong()
+                )
+            })
 
     override fun createContainerEnvironment(): ContainerEnvironment {
         val ownEnv = ContainerEnvironment()
@@ -39,8 +78,26 @@ open class StartASTask
         return RedirectToLocalStreamsCallback(System.out, System.err)
     }
 
-    override fun waitForCompletion(execResponse: ExecCreateCmdResponse) {
-        // check readiness probe
+    override fun waitForCompletion(
+            resultCallbackTemplate: RedirectToLocalStreamsCallback,
+            execResponse: ExecCreateCmdResponse,
+    ) {
+        // don't wait for callback template completion or exit instead wait for readiness probe
+        val readinessProbe = createReadinessProbe()
+        val success = readinessProbe.execute()
+        if (success) {
+            project.logger.quiet("AS now is ready to accept requests")
+        } else {
+            throw GradleException("AS failed to start (not ready) until timeout was reached. Check the logs and/or" +
+                                  " manually check readiness using URI '${readinessProbe.request.uri()}'.")
+        }
     }
 
+    private fun createReadinessProbe(): HttpProbe {
+        val probeUri = URI.create(
+                PATTERN_READINESS_PROBE_URL.format(developmentConfig.asPortConfiguration.servletEngine.get().hostPort)
+        )
+        return HttpProbe(probeUri).withRetryInterval(readinessProbeInterval.get())
+                .withRetryTimeout(readinessProbeTimeout.get())
+    }
 }

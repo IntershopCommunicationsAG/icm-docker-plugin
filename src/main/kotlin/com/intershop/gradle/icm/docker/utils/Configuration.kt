@@ -125,5 +125,8 @@ object Configuration {
     const val DATA_FOLDER_VOLUME_VALUE = "/var/opt/mssql/data"
     const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
 
-    const val CARTRIDGE_LIST = "intershop.cartridgeList"
+    const val AS_READINESS_PROBE_INTERVAL = "intershop.as.readinessProbe.interval"
+    const val AS_READINESS_PROBE_INTERVAL_VALUE = 30 // 30 secs
+    const val AS_READINESS_PROBE_TIMEOUT = "intershop.as.readinessProbe.timeout"
+    const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins
 }

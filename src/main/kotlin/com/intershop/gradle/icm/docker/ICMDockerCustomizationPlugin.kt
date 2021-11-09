@@ -28,28 +28,30 @@ import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.TestContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
+import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.DependencySet
+import org.gradle.api.internal.tasks.TaskExecutionOutcome
 import org.gradle.api.tasks.TaskProvider
 
 /**
  * Main plugin class of the customization plugin.
  *
- * Configures the build to create customization images. That's in detail:
- *
- * - set the following fields to values matching the actual customization
- *   - [com.intershop.gradle.icm.docker.extension.image.build.Images.mainImage.nameExtension]
- *   - [com.intershop.gradle.icm.docker.extension.image.build.Images.mainImage.description]
- *   - [com.intershop.gradle.icm.docker.extension.image.build.Images.testImage.nameExtension]
- *   - [com.intershop.gradle.icm.docker.extension.image.build.Images.testImage.description]
- * - configure the tasks referenced by
- *   - [com.intershop.gradle.icm.docker.extension.image.build.Images.mainImage.pkgTaskName]
- *   - [com.intershop.gradle.icm.docker.extension.image.build.Images.testImage.pkgTaskName]
+ * Configures the build to:
+ * - create customization images
+ * - execute a dbPrepare using the ICM-AS (test) images plus customization cartridges
+ * - execute ishUnit test using the ICM-AS (test) images plus customization cartridges
+ * - start and stop an AS using the ICM-AS (test) images plus customization cartridges
  *
  * @see CustomizationImageBuildPreparer
+ * @see StartASTask
+ * @see DBPrepareTask
+ * @see ISHUnitTest
+ * @see ISHUnitHTMLTestReport
  */
 open class ICMDockerCustomizationPlugin : Plugin<Project> {
 
@@ -82,14 +84,6 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                         IntershopDockerExtension::class.java
                 ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java, project)
 
-                val customizationName = project.getCustomizationName()
-                with(dockerExtension.imageBuild.images) {
-                    mainImage.nameExtension.set("")
-                    mainImage.description.set("customization $customizationName")
-                    testImage.nameExtension.set("test")
-                    testImage.description.set("test for customization $customizationName")
-                }
-
                 extensions.findByName(INTERSHOP_EXTENSION_NAME)
                 ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
@@ -101,15 +95,69 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val oracleDatabase =
                         tasks.named("start${com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer.extName}")
 
+                try {
+                    tasks.named("containerClean").configure {
+                        it.dependsOn(
+                                containerPreparer.removeTask,
+                                testContainerPreparer.removeTask
+                        )
+                    }
+                } catch (ex: UnknownTaskException) {
+                    logger.info("Task containerClean is not available.")
+                }
+
                 val startAS: TaskProvider<StartASTask> =
                         getStartAS(this, containerPreparer, mssqlDatabase, oracleDatabase)
 
+                // TODO startAS.mustRunAfter(solrCloudTask & mailSrvTask)
+
+                val startWA = tasks.named("start${WATaskPreparer.extName}")
+                val startWS = tasks.named("start${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
+
+                tasks.register(ICMDockerProjectPlugin.TASK_START_SERVER) { task ->
+                    task.group = ICMDockerPlugin.GROUP_SERVERBUILD
+                    task.description = "Start app server container with webserver containers"
+                    task.dependsOn(startWS)
+                    task.dependsOn(startAS)
+                }
+
+                startWS.configure {
+                    it.mustRunAfter(startAS)
+                }
+
+                startWA.configure {
+                    it.mustRunAfter(startAS)
+                }
+
+                val stopWS = tasks.named("stop${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
+
+                tasks.register(ICMDockerProjectPlugin.TASK_STOP_SERVER) { task ->
+                    task.group = ICMDockerPlugin.GROUP_SERVERBUILD
+                    task.description = "Stop app server container and webserver containers"
+                    task.dependsOn(containerPreparer.stopTask, stopWS)
+                }
+
+                val removeWS = tasks.named("remove${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
+
+                tasks.register(ICMDockerProjectPlugin.TASK_REMOVE_SERVER) { task ->
+                    task.group = ICMDockerPlugin.GROUP_SERVERBUILD
+                    task.description = "Removes app server container and webserver containers"
+                    task.dependsOn(containerPreparer.removeTask, removeWS)
+                }
+
                 val dbPrepare: TaskProvider<DBPrepareTask> =
-                        getDBPrepare(this, containerPreparer, mssqlDatabase, oracleDatabase)
+                        getDBPrepare(this, testContainerPreparer, mssqlDatabase, oracleDatabase)
                 configureISHUnitTest(this, dockerExtension, testContainerPreparer, dbPrepare, mssqlDatabase,
                         oracleDatabase)
                 addTestReportConfiguration(this)
 
+                val customizationName = project.getCustomizationName()
+                with(dockerExtension.imageBuild.images) {
+                    mainImage.nameExtension.set("")
+                    mainImage.description.set("customization $customizationName")
+                    testImage.nameExtension.set("test")
+                    testImage.description.set("test for customization $customizationName")
+                }
                 CustomizationImageBuildPreparer(this, dockerExtension.images,
                         dockerExtension.imageBuild.images).prepareImageBuilds()
             }
@@ -129,14 +177,19 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
             mssqlDatabase: TaskProvider<Task>,
             oracleDatabase: TaskProvider<Task>,
     ): TaskProvider<StartASTask> {
-        return project.tasks.register(TASK_STARTAS, StartASTask::class.java) { task ->
-            task.group = ICMDockerPlugin.GROUP_SERVERBUILD
-            task.description = "Starts the ICM-AS in an existing ICM base container."
-            task.containerId.set(project.provider { containerPreparer.startTask.get().containerId.get() })
+        return project.tasks.register(TASK_STARTAS, StartASTask::class.java) { startASTask ->
+            startASTask.group = ICMDockerPlugin.GROUP_SERVERBUILD
+            startASTask.description = "Starts the ICM-AS in an existing ICM base container."
+            startASTask.containerId.set(project.provider { containerPreparer.startTask.get().containerId.get() })
 
-            task.dependsOn(containerPreparer.startTask)
-            task.finalizedBy(containerPreparer.removeTask)
-            task.mustRunAfter(mssqlDatabase, oracleDatabase)
+            startASTask.dependsOn(containerPreparer.startTask)
+            /* TODO ensure container is removed if startASTask fails
+            startASTask.finalizedBy(containerPreparer.removeTask.configure { removeContainer ->
+                removeContainer.onlyIf {
+                    startASTask.state.failure != null
+                }
+            })*/
+            startASTask.mustRunAfter(mssqlDatabase, oracleDatabase)
         }
     }
 
