@@ -23,15 +23,16 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.OutputStream
+import java.util.function.BiConsumer
 
 /**
- * Callback for ishunit execution.
+ * Callback that just writes the container's output to `stdout` respectively `stderr`
  */
-class ISHUnitCallback (
+class RedirectToLocalStreamsCallback (
     private val stdout: OutputStream,
-    private val stderr: OutputStream): ResultCallbackTemplate<ISHUnitCallback, Frame>() {
-
-    private val logger: Logger = LoggerFactory.getLogger(ISHUnitCallback::class.java)
+    private val stderr: OutputStream): ResultCallbackTemplate<RedirectToLocalStreamsCallback, Frame>() {
+    private val logger: Logger = LoggerFactory.getLogger(RedirectToLocalStreamsCallback::class.java)
+    private var frameHandler : BiConsumer<StreamType, ByteArray>? = null
 
     /**
      * Main method of callback class.
@@ -43,10 +44,12 @@ class ISHUnitCallback (
                     StreamType.STDOUT, StreamType.RAW -> {
                         stdout.write(frame.payload)
                         stdout.flush()
+                        frameHandler?.accept(frame.streamType, frame.payload)
                     }
                     StreamType.STDERR -> {
                         stderr.write(frame.payload)
                         stderr.flush()
+                        frameHandler?.accept(frame.streamType, frame.payload)
                     }
                     else -> logger.error("unknown stream type:" + frame.streamType)
                 }
@@ -55,5 +58,10 @@ class ISHUnitCallback (
             }
             logger.debug(frame.toString())
         }
+    }
+
+    fun onWriteToStream(handler : BiConsumer<StreamType, ByteArray> ) : RedirectToLocalStreamsCallback {
+        frameHandler = handler
+        return this
     }
 }

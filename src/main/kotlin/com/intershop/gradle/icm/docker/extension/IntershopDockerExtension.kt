@@ -158,6 +158,6 @@ open class IntershopDockerExtension @Inject constructor(val project: Project,
     }
 
     private fun trimString(s: String): String
-            = s.replace("\\s+".toRegex(), "").replace("_", "-").toLowerCase()
+            = s.replace("\\s+".toRegex(), "").replace("_", "-").lowercase()
 
 }

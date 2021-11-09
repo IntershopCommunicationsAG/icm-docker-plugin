@@ -38,7 +38,6 @@ class ServerTaskPreparer(
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.webadapteragent
 
     init {
         initAppTasks()
@@ -50,11 +49,11 @@ class ServerTaskPreparer(
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            val httpASContainerPort = extension.developmentConfig.getConfigProperty(
+            val httpASContainerPort = extension.developmentConfig.getIntProperty(
                     AS_CONNECTOR_CONTAINER_PORT,
                     AS_CONNECTOR_CONTAINER_PORT_VALUE
             )
-            task.envVars.put("INTERSHOP_SERVLETENGINE_CONNECTOR_PORT", httpASContainerPort)
+            task.envVars.put("INTERSHOP_SERVLETENGINE_CONNECTOR_PORT", httpASContainerPort.toString())
             task.hostConfig.portBindings.addAll(project.provider {
                 getPortMappings().map { pm -> pm.render() }.apply {
                     project.logger.info("Using the following port bindings for container startup in task {}: {}",
@@ -77,24 +76,8 @@ class ServerTaskPreparer(
     override fun getPortMappings(): Set<PortMapping> {
         with(extension.developmentConfig) {
 
-            val httpASContainerPort = try {
-                getConfigProperty(
-                        AS_CONNECTOR_CONTAINER_PORT,
-                        AS_CONNECTOR_CONTAINER_PORT_VALUE
-                ).toInt()
-            } catch (e: NumberFormatException) {
-                throw GradleException(
-                        "Configuration property $AS_CONNECTOR_CONTAINER_PORT is not a valid int value", e)
-            }
-            val httpASPort = try {
-                getConfigProperty(
-                        AS_EXT_CONNECTOR_PORT,
-                        AS_EXT_CONNECTOR_PORT_VALUE
-                ).toInt()
-            } catch (e: NumberFormatException) {
-                throw GradleException(
-                        "Configuration property $AS_EXT_CONNECTOR_PORT is not a valid int value", e)
-            }
+            val httpASContainerPort = getIntProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
+            val httpASPort = getIntProperty(AS_EXT_CONNECTOR_PORT, AS_EXT_CONNECTOR_PORT_VALUE)
             return super.getPortMappings().plus(PortMapping(httpASPort, httpASContainerPort))
         }
     }

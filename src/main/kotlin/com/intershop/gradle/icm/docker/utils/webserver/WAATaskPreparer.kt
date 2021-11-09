@@ -58,12 +58,12 @@ class WAATaskPreparer(project: Project,
 
             with(extension.developmentConfig) {
                 val asHTTPPort = if (appserverAsContainer) {
-                    getConfigProperty(
+                    getIntProperty(
                         Configuration.AS_CONNECTOR_CONTAINER_PORT,
                         Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
                     )
                 } else {
-                    getConfigProperty(
+                    getIntProperty(
                         Configuration.AS_CONNECTOR_PORT,
                         Configuration.AS_CONNECTOR_PORT_VALUE
                     )

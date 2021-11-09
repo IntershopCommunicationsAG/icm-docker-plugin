@@ -16,10 +16,9 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
-import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
-import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
-import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitCallback
+import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -40,10 +39,10 @@ import javax.inject.Inject
  */
 open class ISHUnitTest
         @Inject constructor(project: Project) :
-        AbstractICMASContainerTask<ISHUnitCallback, ISHUnitCallback>(project) {
+        AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
 
     companion object {
-        const val ENV_CARTRIDGE_NAME = "CARTRIDGE_NAME"
+        const val COMMAND = "/intershop/bin/ishunitrunner.sh"
     }
 
     init {
@@ -74,9 +73,9 @@ open class ISHUnitTest
         return registration.service
     }
 
-    override fun processExitCode(exitCode: Long) {
-        super.processExitCode(exitCode)
-        val exitMsg = when (exitCode) {
+    override fun processExecutionResult(executionResult: Long) {
+        super.processExecutionResult(executionResult)
+        val exitMsg = when (executionResult) {
             0L -> ISHUnitTestResult(0L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} finished successfully")
             1L -> ISHUnitTestResult(1L,
@@ -86,8 +85,8 @@ open class ISHUnitTest
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed. " +
                     "Please check your test configuration")
             else -> ISHUnitTestResult(100L,
-                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with unknown result code." +
-                    "Please check your test configuration")
+                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with unknown result " +
+                    "code. Please check your test configuration")
         }
 
         project.logger.info(exitMsg.message)
@@ -101,29 +100,18 @@ open class ISHUnitTest
         super.createCartridgeList().get().plus(testCartridge.get())
     }
 
-    override fun createContainerEnvironment(): ContainerEnvironment {
-        val ownEnv = ContainerEnvironment()
-        // start IshTestrunner instead of ICM-AS
-        ownEnv.add(ENV_MAIN_CLASS, "com.intershop.testrunner.IshTestrunner")
-        // required by classloader, can be removed when
-        // https://dev.azure.com/intershop-com/Products/_git/icm-as/pullrequest/339 is merged
-        ownEnv.add(ENV_ADDITIONAL_VM_PARAMETERS, "-DtestMode=true")
-        // indirectly required by EmbeddedServerRule
-        ownEnv.add(ENV_CARTRIDGE_NAME, testCartridge.get())
-
-        return super.createContainerEnvironment().merge(ownEnv)
+    override fun getCommand(): List<String> {
+        return listOf("/bin/sh", "-c", COMMAND, testCartridge.get(), testSuite.get())
     }
 
-    override fun createAdditionalParameters(): AdditionalICMParameters {
-        val ownParameters = AdditionalICMParameters()
-                .add("-o", "/intershop/ishunitrunner/output/${testSuite.get()}")
-                .add("-s", testSuite.get())
-
-        return super.createAdditionalParameters().merge(ownParameters)
+    override fun createCallback(): RedirectToLocalStreamsCallback {
+        return RedirectToLocalStreamsCallback(System.out, System.err)
     }
 
-    override fun createCallback(): ISHUnitCallback {
-        return ISHUnitCallback(System.out, System.err)
+    override fun waitForCompletion(
+            resultCallbackTemplate : RedirectToLocalStreamsCallback,
+            execResponse: ExecCreateCmdResponse): Long {
+        resultCallbackTemplate.awaitCompletion()
+        return waitForExit(execResponse.id)
     }
-
 }

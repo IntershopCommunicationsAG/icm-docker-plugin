@@ -19,7 +19,6 @@ package com.intershop.gradle.icm.docker.utils.appserver
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
-import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -55,7 +54,7 @@ open class ContainerTaskPreparer(
             })
             task.hostConfig.portBindings.set(project.provider {
                 getPortMappings().map { pm -> pm.render() }.apply {
-                    project.logger.info("Using the following port mappings for container startup in task {}: {}",
+                    project.logger.quiet("Using the following port mappings for container startup in task {}: {}",
                             task.name, this)
                 }
             })

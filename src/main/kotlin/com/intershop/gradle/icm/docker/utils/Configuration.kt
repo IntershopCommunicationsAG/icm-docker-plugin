@@ -59,24 +59,25 @@ object Configuration {
     const val DB_USER_PASSWORD_VALUE = "intershop"
 
     const val AS_CONNECTOR_PORT = "intershop.servletEngine.connector.port"
-    const val AS_CONNECTOR_PORT_VALUE = "7743"
+    const val AS_CONNECTOR_PORT_VALUE = 7743
 
     const val LOCAL_CONNECTOR_HOST = "intershop.local.hostname"
     const val LOCAL_CONNECTOR_HOST_VALUE = "localhost"
 
     const val AS_CONNECTOR_CONTAINER_PORT = "intershop.servletEngine.connector.container.port"
-    const val AS_CONNECTOR_CONTAINER_PORT_VALUE = "7743"
+    const val AS_CONNECTOR_CONTAINER_PORT_VALUE = 7743
     const val AS_EXT_CONNECTOR_PORT = "intershop.as.connector.port"
-    const val AS_EXT_CONNECTOR_PORT_VALUE = "7743"
+    const val AS_EXT_CONNECTOR_PORT_VALUE = 7743
 
+    @Deprecated("JMX port inside the container is no more configurable")
     const val AS_JMX_CONNECTOR_CONTAINER_PORT = "intershop.as.jmx.connector.container.port"
-    const val AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE = "7747"
+    const val AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE = 7747
     const val AS_JMX_CONNECTOR_PORT = "intershop.as.jmx.connector.port"
-    const val AS_JMX_CONNECTOR_PORT_VALUE = "7747"
+    const val AS_JMX_CONNECTOR_PORT_VALUE = 7747
 
-    const val AS_DEBUG_CONTAINER_PORT_VALUE = "7746"
+    const val AS_DEBUG_CONTAINER_PORT_VALUE = 7746
     const val AS_DEBUG_PORT = "intershop.as.debug.port"
-    const val AS_DEBUG_PORT_VALUE = "7746"
+    const val AS_DEBUG_PORT_VALUE = 7746
 
     const val WS_HTTP_PORT = "webserver.http.port"
     const val WS_HTTPS_PORT = "webserver.https.port"
@@ -124,5 +125,8 @@ object Configuration {
     const val DATA_FOLDER_VOLUME_VALUE = "/var/opt/mssql/data"
     const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
 
-    const val CARTRIDGE_LIST = "intershop.cartridgeList"
+    const val AS_READINESS_PROBE_INTERVAL = "intershop.as.readinessProbe.interval"
+    const val AS_READINESS_PROBE_INTERVAL_VALUE = 30 // 30 secs
+    const val AS_READINESS_PROBE_TIMEOUT = "intershop.as.readinessProbe.timeout"
+    const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins
 }

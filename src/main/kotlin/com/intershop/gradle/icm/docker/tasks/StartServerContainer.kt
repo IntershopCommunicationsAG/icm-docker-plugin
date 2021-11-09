@@ -80,11 +80,11 @@ open class StartServerContainer
 
                 val httpJMXContainerPort = extension.developmentConfig.getConfigProperty(
                     Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT,
-                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
+                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE.toString()
                 )
                 val httpJMXPort = extension.developmentConfig.getConfigProperty(
                     Configuration.AS_JMX_CONNECTOR_PORT,
-                    Configuration.AS_JMX_CONNECTOR_PORT_VALUE
+                    Configuration.AS_JMX_CONNECTOR_PORT_VALUE.toString()
                 )
 
                 hostConfig.portBindings.add("${httpJMXPort}:${httpJMXContainerPort}")

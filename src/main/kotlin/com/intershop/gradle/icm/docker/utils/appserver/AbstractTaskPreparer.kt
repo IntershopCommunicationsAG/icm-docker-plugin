@@ -112,8 +112,8 @@ abstract class AbstractTaskPreparer(
                         to "/intershop/customizations/additional-dependencies/cartridges",
                 getOutputPathFor(TASK_CREATECLUSTERID, "")
                         to "/intershop/clusterid",
-                File(extension.developmentConfig.configDirectory).absolutePath
-                        to "/intershop/conf",
+                /* FIXME SKR remove File(extension.developmentConfig.configDirectory).absolutePath
+                        to "/intershop/conf",*/
                 getOutputPathFor(TASK_CREATECONFIG, "system-conf")
                         to "/intershop/system-conf"
         )
@@ -125,12 +125,13 @@ abstract class AbstractTaskPreparer(
     }
 
     /**
-     * TODO SKR make configurable
+     * Determines the port mappings using
+     * [com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.asPortConfiguration]
      */
     protected open fun getPortMappings(): Set<PortMapping> =
-        setOf(PortMapping(7743, 7743), PortMapping(7746, 7746),
-                PortMapping(7747, 7747))
-
+        with(extension.developmentConfig.asPortConfiguration){
+            setOf( servletEngine.get(), debug.get(), jmx.get() )
+        }
 
     private fun prepareSitesFolder(project: Project, extension: IntershopDockerExtension) {
         with(project) {

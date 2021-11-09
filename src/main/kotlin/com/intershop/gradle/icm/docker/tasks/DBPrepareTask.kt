@@ -16,34 +16,48 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
-import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareCallback
+import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
+import org.gradle.api.tasks.options.OptionValues
 import javax.inject.Inject
 
 /**
- * Task to run dbinit on a running container.
+ * Task to run dbPrepare on a running container.
  */
 open class DBPrepareTask
         @Inject constructor(project: Project) :
-        AbstractICMASContainerTask<DBPrepareCallback, DBPrepareCallback>(project) {
+        AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
 
     @get:Option(option = "mode", description = "Mode in which dbPrepare runs: 'init', 'migrate' or 'auto'. " +
                                                "The default is 'auto'.")
     @get:Input
     val mode: Property<String> = project.objects.property(String::class.java)
 
-    @get:Option(option = "clean-db",
-            description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only', only the database is " +
-                          "cleaned up. If 'yes' is shown, the database is cleaned up before preparing other steps. " +
-                          "If 'no' is displayed, no database cleanup is done.")
+    /**
+     * Return the possible values for the task option [mode]
+     */
+    @OptionValues("mode")
+    fun getNodeValues() : Collection<String> = listOf("init", "migrate", "auto")
+
+    @get:Option(option = "clean",
+            description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only', only the database+sites " +
+                          "are cleaned up. If 'yes' the database is cleaned up before preparing other steps. " +
+                          "If 'no' no database cleanup is done.")
     @get:Input
-    val cleanDB: Property<String> = project.objects.property(String::class.java)
+    val clean: Property<String> = project.objects.property(String::class.java)
+
+    /**
+     * Return the possible values for the task option [clean]
+     */
+    @OptionValues("clean")
+    fun getCleanDBValues() : Collection<String> = listOf("only", "yes", "no")
 
     @get:Option(option = "cartridges", description = "A comma-separated cartridge list. Executes the cartridges in " +
                                                      "that list. This is an optional parameter.")
@@ -57,15 +71,15 @@ open class DBPrepareTask
 
     init {
         mode.convention("auto")
-        cleanDB.convention("no")
+        clean.convention("no")
         cartridges.convention("")
         propertyKeys.convention("")
     }
 
-    override fun processExitCode(exitCode: Long) {
-        super.processExitCode(exitCode)
-        if (exitCode > 0) {
-            throw GradleException("DBPrepare failed! Please check your log files")
+    override fun processExecutionResult(executionResult: Long) {
+        super.processExecutionResult(executionResult)
+        if (executionResult > 0) {
+            throw GradleException("DBPrepare failed! Please check the log.")
         }
     }
 
@@ -80,7 +94,7 @@ open class DBPrepareTask
         val ownParameters = AdditionalICMParameters()
                 .add("-classic")
                 .add("--mode", mode)
-                .add("--clean-db", cleanDB)
+                .add("--clean", clean)
 
         if (cartridges.get().trim().isNotEmpty()) {
             ownParameters.add("--cartridges", cartridges.get().replace(" ", ""))
@@ -91,21 +105,14 @@ open class DBPrepareTask
         return super.createAdditionalParameters().merge(ownParameters)
     }
 
-    override fun postRunRemoteCommand(dbPrepareCallback: DBPrepareCallback) {
-        val info = dbPrepareCallback.getDBInfo()
-
-        if (info == null) {
-            throw GradleException("DBPrepare didn't finish correctly! Please check your log files")
-        } else {
-            if (info.failure > 0) {
-                throw GradleException("DBPrepare failed with '" + info.failure + "' failures. " +
-                                      "Please check your log files")
-            }
-        }
+    override fun createCallback(): RedirectToLocalStreamsCallback {
+        return RedirectToLocalStreamsCallback(System.out, System.err)
     }
 
-    override fun createCallback(): DBPrepareCallback {
-        return DBPrepareCallback(System.out, System.err)
+    override fun waitForCompletion(
+            resultCallbackTemplate : RedirectToLocalStreamsCallback,
+            execResponse: ExecCreateCmdResponse): Long {
+        resultCallbackTemplate.awaitCompletion()
+        return waitForExit(execResponse.id)
     }
-
 }
