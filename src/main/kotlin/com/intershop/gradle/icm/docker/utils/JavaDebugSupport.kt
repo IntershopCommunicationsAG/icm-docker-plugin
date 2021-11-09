@@ -66,7 +66,8 @@ class JavaDebugSupport(private val options : JavaDebugOptions) : JavaDebugOption
          * Parses a `taskOptionValue` to a new instance of [JavaDebugSupport]:
          * + flags `enabled` and `suspend` are parsed from `taskOptionValue`
          * + flag `server` always is `true`
-         * + value `port` is determined from [com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.asPortConfiguration] (`debug.hostPort`)
+         * + value `port` is determined from
+         * [com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.asPortConfiguration] (`debug.hostPort`)
          *
          * @see describe
          */

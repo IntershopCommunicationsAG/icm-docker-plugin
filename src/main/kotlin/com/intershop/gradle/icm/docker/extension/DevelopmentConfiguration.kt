@@ -39,7 +39,7 @@ import javax.inject.Inject
  * @constructor creates a configuration from environment variables.
  */
 open class DevelopmentConfiguration
-    @Inject constructor(objectFactory: ObjectFactory, providerFactory: ProviderFactory) {
+@Inject constructor(objectFactory: ObjectFactory, providerFactory: ProviderFactory) {
 
     private val logger: Logger = LoggerFactory.getLogger(DevelopmentConfiguration::class.java)
 
@@ -78,35 +78,35 @@ open class DevelopmentConfiguration
         var configDirPath = providerFactory.environmentVariable(CONFIG_DIR_ENV).forUseAtConfigurationTime().orNull
 
         // read system if necessary
-        if(licDirPath == null) {
+        if (licDirPath == null) {
             licDirPath = providerFactory.systemProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
         }
 
-        if(configDirPath == null) {
+        if (configDirPath == null) {
             configDirPath = providerFactory.systemProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
         }
 
-        if(licDirPath == null) {
+        if (licDirPath == null) {
             try {
                 licDirPath = providerFactory.gradleProperty(LICENSE_DIR_SYS).forUseAtConfigurationTime().orNull
-            } catch ( ise: IllegalStateException ) {
+            } catch (ise: IllegalStateException) {
                 log.error(ise.message)
             }
         }
 
-        if(configDirPath == null) {
+        if (configDirPath == null) {
             try {
                 configDirPath = providerFactory.gradleProperty(CONFIG_DIR_SYS).forUseAtConfigurationTime().orNull
-            } catch ( ise: IllegalStateException ) {
+            } catch (ise: IllegalStateException) {
                 log.error(ise.message)
             }
         }
 
-        if(licDirPath == null) {
+        if (licDirPath == null) {
             licDirPath = File(File(gradleUserHomePath), DEFAULT_LIC_PATH).absolutePath
         }
 
-        if(configDirPath == null) {
+        if (configDirPath == null) {
             configDirPath = File(File(gradleUserHomePath), DEFAULT_CONFIG_PATH).absolutePath
         }
 
@@ -114,7 +114,7 @@ open class DevelopmentConfiguration
         configDirectoryProperty.set(configDirPath)
 
         val configFile = File(configDirectory, CONFIG_FILE_NAME)
-        if(configFile.exists() && configFile.canRead()) {
+        if (configFile.exists() && configFile.canRead()) {
             configProperties.load(configFile.inputStream())
         } else {
             logger.warn("File '{}' does not exists!", configFile.absolutePath)
@@ -174,7 +174,7 @@ open class DevelopmentConfiguration
     /**
      * The database configuration (initialized lazily)
      */
-    val databaseConfiguration : DatabaseParameters by lazy {
+    val databaseConfiguration: DatabaseParameters by lazy {
         val config = DatabaseParameters(objectFactory)
         config.type.set(getConfigProperty(Configuration.DB_TYPE))
         config.jdbcUrl.set(getConfigProperty(Configuration.DB_JDBC_URL))
@@ -186,32 +186,45 @@ open class DevelopmentConfiguration
     /**
      * The port configuration (initialized lazily)
      */
-    val asPortConfiguration : ASPortConfiguration by lazy {
+    val asPortConfiguration: ASPortConfiguration by lazy {
         val config = ASPortConfiguration(objectFactory)
-        config.servletEngine.value(getPortMapping(Configuration.AS_CONNECTOR_CONTAINER_PORT, Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE, Configuration.AS_EXT_CONNECTOR_PORT, Configuration.AS_EXT_CONNECTOR_PORT_VALUE))
-        config.debug.value(getPortMapping(Configuration.AS_DEBUG_CONTAINER_PORT_VALUE, Configuration.AS_DEBUG_PORT, Configuration.AS_DEBUG_PORT_VALUE))
-        config.jmx.value(getPortMapping(Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE, Configuration.AS_JMX_CONNECTOR_PORT, Configuration.AS_JMX_CONNECTOR_PORT_VALUE))
+        config.servletEngine.value(getPortMapping(
+                Configuration.AS_CONNECTOR_CONTAINER_PORT,
+                Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE,
+                Configuration.AS_EXT_CONNECTOR_PORT,
+                Configuration.AS_EXT_CONNECTOR_PORT_VALUE))
+        config.debug.value(getPortMapping(
+                Configuration.AS_DEBUG_CONTAINER_PORT_VALUE,
+                Configuration.AS_DEBUG_PORT,
+                Configuration.AS_DEBUG_PORT_VALUE))
+        config.jmx.value(getPortMapping(
+                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE,
+                Configuration.AS_JMX_CONNECTOR_PORT,
+                Configuration.AS_JMX_CONNECTOR_PORT_VALUE))
         config
     }
 
     class DatabaseParameters(objectFactory: ObjectFactory) : Serializable {
-        val type : Property<String> = objectFactory.property(String::class.java)
-        val jdbcUrl : Property<String> = objectFactory.property(String::class.java)
-        val jdbcUser : Property<String> = objectFactory.property(String::class.java)
-        val jdbcPassword : Property<String> = objectFactory.property(String::class.java)
+        val type: Property<String> = objectFactory.property(String::class.java)
+        val jdbcUrl: Property<String> = objectFactory.property(String::class.java)
+        val jdbcUser: Property<String> = objectFactory.property(String::class.java)
+        val jdbcPassword: Property<String> = objectFactory.property(String::class.java)
     }
 
     class ASPortConfiguration(objectFactory: ObjectFactory) : Serializable {
-        val servletEngine : Property<PortMapping> = objectFactory.property(PortMapping::class.java)
-        val debug : Property<PortMapping> = objectFactory.property(PortMapping::class.java)
-        val jmx : Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+        val servletEngine: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+        val debug: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+        val jmx: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
     }
 
-    private fun getPortMapping(containerValue : Int, hostKey: String, hostDefaultValue : Int) : PortMapping =
+    private fun getPortMapping(containerValue: Int, hostKey: String, hostDefaultValue: Int): PortMapping =
             PortMapping(containerValue, getIntProperty(hostKey, hostDefaultValue))
 
     @Suppress("SameParameterValue")
-    private fun getPortMapping(containerKey: String, containerDefaultValue : Int, hostKey: String, hostDefaultValue : Int) : PortMapping =
+    private fun getPortMapping(
+            containerKey: String, containerDefaultValue: Int, hostKey: String,
+            hostDefaultValue: Int,
+    ): PortMapping =
             getPortMapping(getIntProperty(containerKey, containerDefaultValue), hostKey, hostDefaultValue)
 
 }

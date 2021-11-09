@@ -186,7 +186,8 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Subclasses may overwrite this method to do same custom stuff.
      */
     protected open fun processExecutionResult(executionResult: ER) {
-        project.logger.quiet("Command execution inside the container finished with execution result {}", executionResult)
+        project.logger.quiet("Command execution inside the container finished with execution result {}",
+                executionResult)
     }
 
     /**

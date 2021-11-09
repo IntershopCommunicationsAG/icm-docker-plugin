@@ -47,8 +47,8 @@ open class DBPrepareTask
     fun getNodeValues() : Collection<String> = listOf("init", "migrate", "auto")
 
     @get:Option(option = "clean",
-            description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only', only the database+sites are " +
-                          "cleaned up. If 'yes' the database is cleaned up before preparing other steps. " +
+            description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only', only the database+sites " +
+                          "are cleaned up. If 'yes' the database is cleaned up before preparing other steps. " +
                           "If 'no' no database cleanup is done.")
     @get:Input
     val clean: Property<String> = project.objects.property(String::class.java)
@@ -109,7 +109,9 @@ open class DBPrepareTask
         return RedirectToLocalStreamsCallback(System.out, System.err)
     }
 
-    override fun waitForCompletion(resultCallbackTemplate : RedirectToLocalStreamsCallback, execResponse: ExecCreateCmdResponse): Long {
+    override fun waitForCompletion(
+            resultCallbackTemplate : RedirectToLocalStreamsCallback,
+            execResponse: ExecCreateCmdResponse): Long {
         resultCallbackTemplate.awaitCompletion()
         return waitForExit(execResponse.id)
     }

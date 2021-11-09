@@ -85,8 +85,8 @@ open class ISHUnitTest
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed. " +
                     "Please check your test configuration")
             else -> ISHUnitTestResult(100L,
-                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with unknown result code." +
-                    "Please check your test configuration")
+                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with unknown result " +
+                    "code. Please check your test configuration")
         }
 
         project.logger.info(exitMsg.message)
@@ -108,7 +108,9 @@ open class ISHUnitTest
         return RedirectToLocalStreamsCallback(System.out, System.err)
     }
 
-    override fun waitForCompletion(resultCallbackTemplate : RedirectToLocalStreamsCallback, execResponse: ExecCreateCmdResponse): Long {
+    override fun waitForCompletion(
+            resultCallbackTemplate : RedirectToLocalStreamsCallback,
+            execResponse: ExecCreateCmdResponse): Long {
         resultCallbackTemplate.awaitCompletion()
         return waitForExit(execResponse.id)
     }

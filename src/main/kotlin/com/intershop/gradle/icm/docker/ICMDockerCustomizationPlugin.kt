@@ -28,6 +28,7 @@ import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.TestContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
+import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.Companion
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -112,7 +113,8 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 // TODO startAS.mustRunAfter(solrCloudTask & mailSrvTask)
 
                 val startWA = tasks.named("start${WATaskPreparer.extName}")
-                val startWS = tasks.named("start${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
+                val startWS = tasks.named(
+                        "start${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
 
                 tasks.register(ICMDockerProjectPlugin.TASK_START_SERVER) { task ->
                     task.group = ICMDockerPlugin.GROUP_SERVERBUILD
@@ -129,7 +131,8 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                     it.mustRunAfter(startAS)
                 }
 
-                val stopWS = tasks.named("stop${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
+                val stopWS = tasks.named(
+                        "stop${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
 
                 tasks.register(ICMDockerProjectPlugin.TASK_STOP_SERVER) { task ->
                     task.group = ICMDockerPlugin.GROUP_SERVERBUILD
@@ -137,7 +140,8 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                     task.dependsOn(containerPreparer.stopTask, stopWS)
                 }
 
-                val removeWS = tasks.named("remove${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
+                val removeWS = tasks.named(
+                        "remove${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
 
                 tasks.register(ICMDockerProjectPlugin.TASK_REMOVE_SERVER) { task ->
                     task.group = ICMDockerPlugin.GROUP_SERVERBUILD
