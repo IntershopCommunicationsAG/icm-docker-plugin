@@ -79,7 +79,7 @@ open class ISHUnitTest
             0L -> ISHUnitTestResult(0L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} finished successfully")
             1L -> ISHUnitTestResult(1L,
-                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with failures." +
+                    "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with failures. " +
                     "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner").get().asFile)
             2L -> ISHUnitTestResult(2L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed. " +
@@ -101,7 +101,7 @@ open class ISHUnitTest
     }
 
     override fun getCommand(): List<String> {
-        return listOf("/bin/sh", "-c", COMMAND, testCartridge.get(), testSuite.get())
+        return listOf("/bin/sh", "-c", "$COMMAND ${testCartridge.get()} ${testSuite.get()}")
     }
 
     override fun createCallback(): RedirectToLocalStreamsCallback {
