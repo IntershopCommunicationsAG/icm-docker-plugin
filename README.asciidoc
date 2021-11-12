@@ -853,8 +853,8 @@ e.g. zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/solr
 
 
 == Configuration properties file [[PropertiesFile]]
-For the configuration on a special local maschine it is necessary to provide an Intershop licence file and a
-`imc.properties` file in file structure. It is possible to configure the location with environment properties.
+For the configuration on a special local machine it is necessary to provide an Intershop licence file and a
+`icm.properties` file in file structure. It is possible to configure the location with environment properties.
 This is a minimum set of properties.
 
 icm.properties
@@ -897,6 +897,12 @@ disable.ssl.verification = true
 # geb.local.environment = chromePC
 # geb.local.driver = chromeDriver
 
+# Readiness probe during startAS-task
+# number of seconds between requests to http://<hostname>:<port>/status/ReadinessProbe (optional, default=30)
+#intershop.as.readinessProbe.interval = 30
+# max. number of seconds between start of probing and finally given up assuming that the start failed
+# (optional, default=6000)
+#intershop.as.readinessProbe.timeout = 30
 ----
 
 == License
