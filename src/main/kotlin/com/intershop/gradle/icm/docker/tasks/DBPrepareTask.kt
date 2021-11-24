@@ -23,6 +23,7 @@ import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallbac
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
@@ -32,7 +33,7 @@ import javax.inject.Inject
  * Task to run dbPrepare on a running container.
  */
 open class DBPrepareTask
-        @Inject constructor(project: Project) :
+@Inject constructor(project: Project) :
         AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
 
     @get:Option(option = "mode", description = "Mode in which dbPrepare runs: 'init', 'migrate' or 'auto'. " +
@@ -44,7 +45,7 @@ open class DBPrepareTask
      * Return the possible values for the task option [mode]
      */
     @OptionValues("mode")
-    fun getNodeValues() : Collection<String> = listOf("init", "migrate", "auto")
+    fun getNodeValues(): Collection<String> = listOf("init", "migrate", "auto")
 
     @get:Option(option = "clean",
             description = "can be 'only', 'yes' or 'no', default is 'no'. In case of 'only', only the database+sites " +
@@ -57,7 +58,7 @@ open class DBPrepareTask
      * Return the possible values for the task option [clean]
      */
     @OptionValues("clean")
-    fun getCleanDBValues() : Collection<String> = listOf("only", "yes", "no")
+    fun getCleanDBValues(): Collection<String> = listOf("only", "yes", "no")
 
     @get:Option(option = "cartridges", description = "A comma-separated cartridge list. Executes the cartridges in " +
                                                      "that list. This is an optional parameter.")
@@ -105,13 +106,16 @@ open class DBPrepareTask
         return super.createAdditionalParameters().merge(ownParameters)
     }
 
+    override fun createCartridgeList(): Provider<Set<String>> = testCartridgeList
+
     override fun createCallback(): RedirectToLocalStreamsCallback {
         return RedirectToLocalStreamsCallback(System.out, System.err)
     }
 
     override fun waitForCompletion(
-            resultCallbackTemplate : RedirectToLocalStreamsCallback,
-            execResponse: ExecCreateCmdResponse): Long {
+            resultCallbackTemplate: RedirectToLocalStreamsCallback,
+            execResponse: ExecCreateCmdResponse,
+    ): Long {
         resultCallbackTemplate.awaitCompletion()
         return waitForExit(execResponse.id)
     }

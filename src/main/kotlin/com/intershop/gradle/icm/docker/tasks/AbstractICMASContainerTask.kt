@@ -110,6 +110,21 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
     }
 
     /**
+     * The cartridge list to be used to start the ICM-AS server for tests
+     */
+    @get: Input
+    val testCartridgeList: SetProperty<String> by lazy {
+        val cartListProvider =
+                project.extensions.getByType<IntershopDockerExtension>().developmentConfig.testCartridgeList
+        if (cartListProvider.get().isEmpty()) {
+            throw GradleException(
+                    "Build property intershop_docker.developmentConfig.testCartridgeList denotes an empty " +
+                    "set. Please provide a non-empty set.")
+        }
+        cartListProvider
+    }
+
+    /**
      * Enable debugging for the JVM running the ICM-AS inside the container. This option defaults to the value
      * of the JVM property [SYSPROP_DEBUG_JVM] respectively `false` if not set.
      * The port on the host can be configured using the property `icm.properties/intershop.as.debug.port`
@@ -133,7 +148,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Return the possible values for the task option [debug]
      */
     @OptionValues("debug-icm")
-    fun getDebugOptionValues() : Collection<String> = listOf(TASK_OPTION_VALUE_TRUE, TASK_OPTION_VALUE_YES,
+    fun getDebugOptionValues(): Collection<String> = listOf(TASK_OPTION_VALUE_TRUE, TASK_OPTION_VALUE_YES,
             TASK_OPTION_VALUE_SUSPEND, TASK_OPTION_VALUE_FALSE, TASK_OPTION_VALUE_NO)
 
     init {
@@ -178,7 +193,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Returns the command to be executed inside the container
      */
     @Internal
-    protected open fun getCommand() : List<String> = listOf("/bin/sh", "-c", DEFAULT_COMMAND)
+    protected open fun getCommand(): List<String> = listOf("/bin/sh", "-c", DEFAULT_COMMAND)
 
     /**
      * Processes the exit code of the command executed inside the container. This function is executed right after
@@ -231,7 +246,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         return env
     }
 
-    protected abstract fun waitForCompletion(resultCallbackTemplate : RCT, execResponse : ExecCreateCmdResponse) : ER
+    protected abstract fun waitForCompletion(resultCallbackTemplate: RCT, execResponse: ExecCreateCmdResponse): ER
 
     /**
      * Creates the list of cartridges to be used for the ICM-AS.

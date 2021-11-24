@@ -136,6 +136,11 @@ open class DevelopmentConfiguration
     val cartridgeList: SetProperty<String> = objectFactory.setProperty(String::class.java)
 
     /**
+     * Set of cartridges for tests to be started for instance by task dbPrepare
+     */
+    val testCartridgeList: SetProperty<String> = objectFactory.setProperty(String::class.java)
+
+    /**
      * License directory path of the project.
      */
     val licenseDirectory: String
