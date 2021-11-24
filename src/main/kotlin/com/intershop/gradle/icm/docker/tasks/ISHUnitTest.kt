@@ -18,8 +18,8 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
-import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
+import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
@@ -38,7 +38,7 @@ import javax.inject.Inject
  * Task to run ishunit tests on a running container.
  */
 open class ISHUnitTest
-        @Inject constructor(project: Project) :
+@Inject constructor(project: Project) :
         AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
 
     companion object {
@@ -49,9 +49,15 @@ open class ISHUnitTest
         group = "icm container project"
     }
 
+    /**
+     * The name of the cartridge to be tested
+     */
     @get:Input
     val testCartridge: Property<String> = project.objects.property(String::class.java)
 
+    /**
+     * The name of the test suite to be executed
+     */
     @get:Input
     val testSuite: Property<String> = project.objects.property(String::class.java)
 
@@ -68,7 +74,7 @@ open class ISHUnitTest
 
     private fun getBuildService(registry: BuildServiceRegistry, name: String): Provider<out BuildService<*>> {
         val registration = registry.registrations.findByName(name)
-                ?: throw GradleException ("Unable to find build service with name '$name'.")
+                           ?: throw GradleException("Unable to find build service with name '$name'.")
 
         return registration.service
     }
@@ -90,7 +96,7 @@ open class ISHUnitTest
         }
 
         project.logger.info(exitMsg.message)
-        if(exitMsg.returnValue > 0L) {
+        if (exitMsg.returnValue > 0L) {
             throw GradleException(exitMsg.message)
         }
     }
@@ -109,8 +115,9 @@ open class ISHUnitTest
     }
 
     override fun waitForCompletion(
-            resultCallbackTemplate : RedirectToLocalStreamsCallback,
-            execResponse: ExecCreateCmdResponse): Long {
+            resultCallbackTemplate: RedirectToLocalStreamsCallback,
+            execResponse: ExecCreateCmdResponse,
+    ): Long {
         resultCallbackTemplate.awaitCompletion()
         return waitForExit(execResponse.id)
     }
