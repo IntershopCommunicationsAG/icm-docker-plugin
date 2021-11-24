@@ -34,7 +34,7 @@ open class ContainerEnvironment {
         return entries.map { entry -> "${entry.key}=${entry.value}" }.toList()
     }
 
-    fun merge(other: ContainerEnvironment) : ContainerEnvironment {
+    fun merge(other: ContainerEnvironment): ContainerEnvironment {
         val merged = ContainerEnvironment()
         merged.entries.putAll(this.entries)
         merged.entries.putAll(other.entries)
@@ -42,7 +42,19 @@ open class ContainerEnvironment {
     }
 
     override fun toString(): String {
-        return "Env(entries=$entries)"
+        return "ContainerEnvironment(${
+            // render [entries]
+            entries.map { (key, value) ->
+                "$key = ${
+                    // star out passwords etc.
+                    if (key.matches(Regex("(?i).*PASSWORD.*"))) {
+                        "<present>"
+                    } else {
+                        "'$value'"
+                    }
+                }"
+            }.joinToString(separator = ", ")
+        })"
     }
 
 }
