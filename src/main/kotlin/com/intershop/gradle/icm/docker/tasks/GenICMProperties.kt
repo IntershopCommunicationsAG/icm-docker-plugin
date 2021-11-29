@@ -348,7 +348,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
     private fun writeServerProps(file: File) {
         with(Configuration) {
-            val confDir = File(extension.developmentConfig.configFilePath)
+            val confDir = File(extension.developmentConfig.configDirectory)
             val systemIP = IPFinder.getSystemIP()
 
             val hostname = if(systemIP.second != null) {
