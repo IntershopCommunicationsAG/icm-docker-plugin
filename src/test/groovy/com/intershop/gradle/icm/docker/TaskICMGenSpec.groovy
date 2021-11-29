@@ -17,7 +17,11 @@
 
 package com.intershop.gradle.icm.docker
 
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration
 import com.intershop.gradle.test.AbstractIntegrationGroovySpec
+import org.gradle.wrapper.GradleUserHomeLookup
+
+import java.nio.file.Paths
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
@@ -318,6 +322,53 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result4.task(":showICMASConfig").outcome == SUCCESS
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'verify certificate path'() {
+        settingsFile << settingsfileContent
+        buildFile << buildfileContent
+
+        String gradleUserHomePath = GradleUserHomeLookup.gradleUserHome().absolutePath
+        String expectedCertPath = Paths.get(gradleUserHomePath, DevelopmentConfiguration.DEFAULT_CONFIG_PATH, "certs").toString()
+
+        when:
+        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
+
+        def result1 = getPreparedGradleRunner()
+                .withArguments("generateICMProps", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result1.task(":generateICMProps").outcome == SUCCESS
+        file.exists()
+        file.text.contains("webServer.cert.path = ${expectedCertPath}")
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'verify certificate path - new config path'() {
+        settingsFile << settingsfileContent
+        buildFile << buildfileContent
+
+        File targetCertPath = new File(testProjectDir, "build/targetPath/certs")
+        String confPath = targetCertPath.getParentFile().absolutePath
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("generateICMProps", "-PconfigDir=${confPath}", "-s")
+                .withGradleVersion(gradleVersion)
+                .build()
+        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
+
+        then:
+        result1.task(":generateICMProps").outcome == SUCCESS
+        file.exists()
+        file.text.contains("webServer.cert.path = ${targetCertPath.absolutePath}")
 
         where:
         gradleVersion << supportedGradleVersions
