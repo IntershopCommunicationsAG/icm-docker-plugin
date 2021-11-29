@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
@@ -70,6 +71,12 @@ open class DBPrepareTask
     @get:Input
     val propertyKeys: Property<String> = project.objects.property(String::class.java)
 
+    @set:Option(option = "additional-parameter", description = "Additional command line parameters to be passed to " +
+                                                               "the dbPrepare tool. For more than 1 parameter use " +
+                                                               "this task option as often as needed.")
+    @get:Input
+    var additionalParameters: List<String> = listOf()
+
     init {
         mode.convention("auto")
         clean.convention("no")
@@ -103,6 +110,12 @@ open class DBPrepareTask
         if (propertyKeys.get().isNotEmpty()) {
             ownParameters.add("--property-keys", propertyKeys.get().replace(" ", ""))
         }
+        if (additionalParameters.isNotEmpty()){
+            additionalParameters.forEach { parameter ->
+                ownParameters.add(parameter)
+            }
+        }
+
         return super.createAdditionalParameters().merge(ownParameters)
     }
 
