@@ -23,6 +23,7 @@ import com.intershop.gradle.icm.docker.tasks.AbstractPullImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
@@ -71,8 +72,8 @@ abstract class AbstractTaskPreparer(protected val project: Project,
         project.tasks.named("remove${getExtensionName()}", RemoveContainerByName::class.java)
     }
 
-    val startTask: TaskProvider<DockerCreateContainer> by lazy {
-        project.tasks.named("start${getExtensionName()}", DockerCreateContainer::class.java)
+    val startTask: TaskProvider<StartExtraContainer> by lazy {
+        project.tasks.named("start${getExtensionName()}", StartExtraContainer::class.java)
     }
 
     protected val networkId: Property<String> = networkTask.get().networkId

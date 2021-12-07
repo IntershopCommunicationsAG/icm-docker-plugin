@@ -19,14 +19,18 @@ package com.intershop.gradle.icm.docker.utils.solrcloud
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.Configuration
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
 class ZKPreparer(project: Project,
                  networkTask: Provider<PrepareNetwork>): AbstractTaskPreparer(project, networkTask) {
+    val renderedHostList : String
 
     companion object {
         const val extName: String = "ZK"
+        const val CONTAINER_PORT = 2181
+        const val CONTAINER_METRICS_PORT = 7000
     }
 
     override fun getExtensionName(): String = extName
@@ -45,6 +49,21 @@ class ZKPreparer(project: Project,
             it.group = "icm container solrcloud"
         }
 
+        val portMapping = extension.developmentConfig.getPortMapping(
+                "CONTAINER",
+                CONTAINER_PORT,
+                Configuration.ZOOKEEPER_HOST_PORT,
+                Configuration.ZOOKEEPER_HOST_PORT_VALUE,
+                true
+        )
+        val metricsPortMapping = extension.developmentConfig.getPortMapping(
+                "METRICS",
+                CONTAINER_METRICS_PORT,
+                Configuration.ZOOKEEPER_METRICS_HOST_PORT,
+                Configuration.ZOOKEEPER_METRICS_HOST_PORT_VALUE
+        )
+        renderedHostList = "${extension.containerPrefix}-${extName.lowercase()}:${portMapping.containerPort}"
+
         project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
             task.group = "icm container solrcloud"
@@ -53,27 +72,30 @@ class ZKPreparer(project: Project,
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            task.hostConfig.portBindings.set(
-                listOf("2181:2181", "7000:7000")
-            )
+            task.withPortMappings(portMapping, metricsPortMapping)
 
+            val zooServers = "${extension.containerPrefix}-${getContainerExt()}:2888:3888;${portMapping.containerPort}"
             task.envVars.set(
                 mutableMapOf(
                     "ZOO_MY_ID" to "1",
-                    "ZOO_PORT" to "2181",
-                    "ZOO_SERVERS" to
-                            "server.1=${extension.containerPrefix}-${getContainerExt()}:2888:3888;2181",
+                    "ZOO_PORT" to portMapping.containerPort.toString(),
+                    "ZOO_SERVERS" to "server.1=$zooServers",
                     "ZOO_4LW_COMMANDS_WHITELIST" to "mntr, conf, ruok",
                     "ZOO_CFG_EXTRA" to
                             "metricsProvider.className=org.apache.zookeeper.metrics.prometheus." +
-                            "PrometheusMetricsProvider metricsProvider.httpPort=7000 " +
+                            "PrometheusMetricsProvider metricsProvider.httpPort=${metricsPortMapping.containerPort} " +
                             "metricsProvider.exportJvmInfo=true"
                 )
             )
 
             task.hostConfig.network.set(networkId)
-            task.logger.quiet("The ZK for SolrCloud can be connected with {}:2181", task.containerName)
+            task.logger.quiet(
+                    "The ZK for SolrCloud can be connected with {}:{}",
+                    task.containerName,
+                    portMapping.containerPort
+            )
             task.dependsOn(pullTask, networkTask)
         }
     }
+
 }

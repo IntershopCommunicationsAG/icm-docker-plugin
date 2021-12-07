@@ -24,6 +24,7 @@ import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.GenICMProperties
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
+import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.ShowICMASConfig
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import com.intershop.gradle.icm.docker.utils.Configuration
@@ -111,11 +112,8 @@ open class ICMDockerPlugin: Plugin<Project> {
             }
 
             networkTasks.removeNetworkTask.configure {
-                it.mustRunAfter(mssqlTasks.removeTask,
-                    mailSrvTask.removeTask,
-                    webServerTasks.removeTask,
-                    oracleTasks.removeTask,
-                    solrcloudPreparer.removeTask)
+                // ensure network is not removed before containers are removed
+                it.mustRunAfter(tasks.withType(RemoveContainerByName::class.java))
             }
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
@@ -125,14 +123,6 @@ open class ICMDockerPlugin: Plugin<Project> {
             createImageTasks(project, extension)
 
             createEnvironmentTask(project, extension)
-
-            try {
-                tasks.named("publish").configure {
-                    it.finalizedBy(ccTask)
-                }
-            } catch(ex: UnknownTaskException) {
-                logger.info("Publish task is not available.")
-            }
         }
     }
 

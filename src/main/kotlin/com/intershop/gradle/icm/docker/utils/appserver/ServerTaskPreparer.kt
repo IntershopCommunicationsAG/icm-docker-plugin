@@ -21,10 +21,7 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_CONTAINER_PORT
 import com.intershop.gradle.icm.docker.utils.Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
-import com.intershop.gradle.icm.docker.utils.Configuration.AS_EXT_CONNECTOR_PORT
-import com.intershop.gradle.icm.docker.utils.Configuration.AS_EXT_CONNECTOR_PORT_VALUE
 import com.intershop.gradle.icm.docker.utils.PortMapping
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -54,12 +51,10 @@ class ServerTaskPreparer(
                     AS_CONNECTOR_CONTAINER_PORT_VALUE
             )
             task.envVars.put("INTERSHOP_SERVLETENGINE_CONNECTOR_PORT", httpASContainerPort.toString())
-            task.hostConfig.portBindings.addAll(project.provider {
-                getPortMappings().map { pm -> pm.render() }.apply {
-                    project.logger.info("Using the following port bindings for container startup in task {}: {}",
-                            task.name, this)
-                }
-            })
+            task.withPortMappings(*getPortMappings().apply {
+                project.logger.info("Using the following port bindings for container startup in task {}: {}",
+                        task.name,this)
+            }.toTypedArray())
 
             task.hostConfig.network.set(networkId)
 
@@ -75,10 +70,7 @@ class ServerTaskPreparer(
 
     override fun getPortMappings(): Set<PortMapping> {
         with(extension.developmentConfig) {
-
-            val httpASContainerPort = getIntProperty(AS_CONNECTOR_CONTAINER_PORT, AS_CONNECTOR_CONTAINER_PORT_VALUE)
-            val httpASPort = getIntProperty(AS_EXT_CONNECTOR_PORT, AS_EXT_CONNECTOR_PORT_VALUE)
-            return super.getPortMappings().plus(PortMapping(httpASPort, httpASContainerPort))
+            return super.getPortMappings().plus(asPortConfiguration.servletEngine.get())
         }
     }
 

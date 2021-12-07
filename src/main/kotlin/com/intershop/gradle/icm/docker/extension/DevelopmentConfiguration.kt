@@ -63,6 +63,10 @@ open class DevelopmentConfiguration
 
         const val LICENSE_FILE_NAME = "license.xml"
         const val CONFIG_FILE_NAME = "icm.properties"
+
+        const val PORT_MAPPING_AS_CONNECTOR = "CONNECTOR"
+        const val PORT_MAPPING_AS_DEBUG = "DEBUG"
+        const val PORT_MAPPING_AS_JMX = "JMX"
     }
 
     private val licenseDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
@@ -194,15 +198,19 @@ open class DevelopmentConfiguration
     val asPortConfiguration: ASPortConfiguration by lazy {
         val config = ASPortConfiguration(objectFactory)
         config.servletEngine.value(getPortMapping(
+                PORT_MAPPING_AS_CONNECTOR,
                 Configuration.AS_CONNECTOR_CONTAINER_PORT,
                 Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE,
                 Configuration.AS_EXT_CONNECTOR_PORT,
-                Configuration.AS_EXT_CONNECTOR_PORT_VALUE))
+                Configuration.AS_EXT_CONNECTOR_PORT_VALUE,
+                true))
         config.debug.value(getPortMapping(
+                PORT_MAPPING_AS_DEBUG,
                 Configuration.AS_DEBUG_CONTAINER_PORT_VALUE,
                 Configuration.AS_DEBUG_PORT,
                 Configuration.AS_DEBUG_PORT_VALUE))
         config.jmx.value(getPortMapping(
+                PORT_MAPPING_AS_JMX,
                 Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE,
                 Configuration.AS_JMX_CONNECTOR_PORT,
                 Configuration.AS_JMX_CONNECTOR_PORT_VALUE))
@@ -222,14 +230,35 @@ open class DevelopmentConfiguration
         val jmx: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
     }
 
-    private fun getPortMapping(containerValue: Int, hostKey: String, hostDefaultValue: Int): PortMapping =
-            PortMapping(containerValue, getIntProperty(hostKey, hostDefaultValue))
+    fun getPortMapping(
+            name: String,
+            containerValue: Int,
+            hostKey: String,
+            hostDefaultValue: Int,
+            primary: Boolean = false
+    ): PortMapping =
+            PortMapping(
+                    name,
+                    containerValue,
+                    getIntProperty(hostKey, hostDefaultValue),
+                    primary
+            )
 
     @Suppress("SameParameterValue")
-    private fun getPortMapping(
-            containerKey: String, containerDefaultValue: Int, hostKey: String,
+    fun getPortMapping(
+            name: String,
+            containerKey: String,
+            containerDefaultValue: Int,
+            hostKey: String,
             hostDefaultValue: Int,
+            primary: Boolean = false
     ): PortMapping =
-            getPortMapping(getIntProperty(containerKey, containerDefaultValue), hostKey, hostDefaultValue)
+            getPortMapping(
+                    name,
+                    getIntProperty(containerKey, containerDefaultValue),
+                    hostKey,
+                    hostDefaultValue,
+                    primary
+            )
 
 }

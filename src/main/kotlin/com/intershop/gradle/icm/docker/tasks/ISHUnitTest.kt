@@ -18,6 +18,7 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
 import org.gradle.api.GradleException
@@ -29,6 +30,7 @@ import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.internal.resources.ResourceLock
 import java.util.Collections
 import javax.inject.Inject
@@ -60,6 +62,14 @@ open class ISHUnitTest
      */
     @get:Input
     val testSuite: Property<String> = project.objects.property(String::class.java)
+
+    /**
+     * Additional environment variables
+     */
+    @get:Input
+    @Optional
+    val additionalEnvironment: Property<ContainerEnvironment> =
+            project.objects.property(ContainerEnvironment::class.java)
 
     @Internal
     override fun getSharedResources(): List<ResourceLock> {
@@ -104,6 +114,13 @@ open class ISHUnitTest
     override fun createCartridgeList(): Provider<Set<String>> = project.provider {
         // use normal cartridge list plus testCartridge
         super.createCartridgeList().get().plus(testCartridge.get())
+    }
+
+    override fun createContainerEnvironment(): ContainerEnvironment {
+        if (additionalEnvironment.isPresent) {
+            return super.createContainerEnvironment().merge(additionalEnvironment.get())
+        }
+        return super.createContainerEnvironment()
     }
 
     override fun getCommand(): List<String> {

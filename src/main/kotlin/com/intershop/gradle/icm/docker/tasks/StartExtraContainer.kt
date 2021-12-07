@@ -21,10 +21,13 @@ import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
+import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -35,6 +38,8 @@ open class StartExtraContainer
 
     private val finishedCheckProperty: Property<String> = objectFactory.property(String::class.java)
     private val timeoutProperty: Property<Long> = objectFactory.property(Long::class.java)
+    private val portMappings : MapProperty<String, PortMapping> =
+            objectFactory.mapProperty(String::class.java, PortMapping::class.java)
 
     /**
      * Set an string for log file check. Log is displayed as long
@@ -54,6 +59,35 @@ open class StartExtraContainer
     var timeout: Long
         get() = timeoutProperty.get()
         set(value) = timeoutProperty.set(value)
+
+    /**
+     * Returns the primary port mapping if there is such a port mapping
+     */
+    @Internal
+    fun getPrimaryPortMapping() : PortMapping? =
+        this.portMappings.get().values.firstOrNull { mapping -> mapping.primary }
+
+    /**
+     * Returns all port mappings
+     */
+    @Internal
+    fun getPortMappings() : Set<PortMapping> =
+            this.portMappings.get().values.toSet()
+
+    /**
+     * Adds port mapping to be used with the container
+     */
+    fun withPortMappings(vararg portMappings: PortMapping) {
+        portMappings.forEach{ portMapping ->
+            // check if there's already a primary port mapping
+            if (portMapping.primary && getPrimaryPortMapping() != null) {
+                throw GradleException("Duplicate primary port mapping detected for task $name")
+            }
+
+            this.portMappings.put(portMapping.name, portMapping)
+            hostConfig.portBindings.add(project.provider { portMapping.render() })
+        }
+    }
 
     init {
         finishedCheckProperty.convention("")

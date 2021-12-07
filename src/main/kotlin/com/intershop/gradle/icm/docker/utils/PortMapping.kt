@@ -17,24 +17,34 @@
 
 package com.intershop.gradle.icm.docker.utils
 
-class PortMapping(val hostPort:Int, val containerPort:Int) {
+/**
+ * Encapsulates a container-port-mapping (container port to host port). Such a mapping also contains a symbolic name.
+ */
+class PortMapping(val name: String, val hostPort:Int, val containerPort:Int, val primary: Boolean = false) {
+    /**
+     * Renders the contained port numbers following the pattern: `hostPort`:`containerPort`
+     * as it is understood by [com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer.HostConfig.portBindings]
+     */
     fun render() : String = "$hostPort:$containerPort"
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
         other as PortMapping
 
-        if (hostPort != other.hostPort) return false
-        if (containerPort != other.containerPort) return false
+        if (name != other.name) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = hostPort
-        result = 31 * result + containerPort
-        return result
+        return name.hashCode()
+    }
+
+    override fun toString(): String {
+        val prim = if(primary) { ", PRIMARY" }else{""}
+        return "PortMapping($name = $hostPort:${containerPort}${prim})"
     }
 
 }

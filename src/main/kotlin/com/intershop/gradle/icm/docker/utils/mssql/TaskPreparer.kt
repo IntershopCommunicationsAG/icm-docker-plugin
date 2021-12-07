@@ -46,19 +46,14 @@ class TaskPreparer(project: Project,
             task.image.set(pullTask.get().image)
 
             with(extension.developmentConfig) {
-                val port = getConfigProperty(
+                val portMapping = getPortMapping("JDBC",
                     Configuration.DB_MSSQL_PORT,
-                    Configuration.DB_MSSQL_PORT_VALUE
-                )
-                val containerPort = getConfigProperty(
+                    Configuration.DB_MSSQL_PORT_VALUE,
                     Configuration.DB_MSSQL_CONTAINER_PORT,
-                    Configuration.DB_MSSQL_CONTAINER_PORT_VALUE
+                    Configuration.DB_MSSQL_CONTAINER_PORT_VALUE,
+                    true
                 )
-
-                task.hostConfig.portBindings.set(
-                    listOf("${port}:${containerPort}")
-                )
-
+                task.withPortMappings(portMapping)
                 task.hostConfig.network.set(networkId)
 
                 task.envVars.set(
@@ -136,7 +131,7 @@ class TaskPreparer(project: Project,
                 project.logger.quiet(
                     "The database can be connected with jdbc:sqlserver://{}:{};databaseName={}",
                     task.containerName.get(),
-                    getConfigProperty(
+                    getIntProperty(
                         Configuration.DB_MSSQL_PORT,
                         Configuration.DB_MSSQL_PORT_VALUE
                     ),

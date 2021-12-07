@@ -28,7 +28,7 @@ import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.TestContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
-import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.Companion
+import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -36,7 +36,6 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.DependencySet
-import org.gradle.api.internal.tasks.TaskExecutionOutcome
 import org.gradle.api.tasks.TaskProvider
 
 /**
@@ -91,11 +90,6 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val prepareNetwork = project.tasks.named(TaskPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
                 val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
                 val testContainerPreparer = TestContainerTaskPreparer(project, prepareNetwork)
-                val mssqlDatabase =
-                        tasks.named("start${com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer.extName}")
-                val oracleDatabase =
-                        tasks.named("start${com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer.extName}")
-
                 try {
                     tasks.named("containerClean").configure {
                         it.dependsOn(
@@ -107,10 +101,25 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                     logger.info("Task containerClean is not available.")
                 }
 
-                val startAS: TaskProvider<StartASTask> =
-                        getStartAS(this, containerPreparer, mssqlDatabase, oracleDatabase)
+                val mssqlDatabase = tasks.named(
+                        "start${com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer.extName}")
+                val oracleDatabase = tasks.named(
+                        "start${com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer.extName}")
+                val mailSrvTask = tasks.named(
+                        "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.extName}")
+                val startSolrCloud = tasks.named(
+                        "start${com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer.TASK_EXT_SERVER}",
+                        StartSolrCloudTask::class.java)
 
-                // TODO startAS.mustRunAfter(solrCloudTask & mailSrvTask)
+
+                val startAS: TaskProvider<StartASTask> = getStartAS(
+                        this,
+                        containerPreparer,
+                        mssqlDatabase,
+                        oracleDatabase,
+                        mailSrvTask,
+                        startSolrCloud
+                )
 
                 val startWA = tasks.named("start${WATaskPreparer.extName}")
                 val startWS = tasks.named(
@@ -152,7 +161,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val dbPrepare: TaskProvider<DBPrepareTask> =
                         getDBPrepare(this, testContainerPreparer, mssqlDatabase, oracleDatabase)
                 configureISHUnitTest(this, dockerExtension, testContainerPreparer, dbPrepare, mssqlDatabase,
-                        oracleDatabase)
+                        oracleDatabase, startSolrCloud)
                 addTestReportConfiguration(this)
 
                 val customizationName = project.getCustomizationName()
@@ -180,6 +189,8 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
             containerPreparer: ContainerTaskPreparer,
             mssqlDatabase: TaskProvider<Task>,
             oracleDatabase: TaskProvider<Task>,
+            mailSrv: TaskProvider<Task>,
+            startSolrCloud: TaskProvider<StartSolrCloudTask>,
     ): TaskProvider<StartASTask> {
         return project.tasks.register(TASK_STARTAS, StartASTask::class.java) { startASTask ->
             startASTask.group = ICMDockerPlugin.GROUP_SERVERBUILD
@@ -193,7 +204,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                     startASTask.state.failure != null
                 }
             })*/
-            startASTask.mustRunAfter(mssqlDatabase, oracleDatabase)
+            startASTask.mustRunAfter(mssqlDatabase, oracleDatabase, mailSrv, startSolrCloud)
         }
     }
 
@@ -221,6 +232,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
             dbPrepare: TaskProvider<DBPrepareTask>,
             mssqlDatabase: TaskProvider<Task>,
             oracleDatabase: TaskProvider<Task>,
+            startSolrCloud: TaskProvider<StartSolrCloudTask>,
     ) {
         project.gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY,
                 ISHUnitTestRegistry::class.java) {
@@ -246,6 +258,11 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 task.dependsOn(containerPreparer.startTask)
                 task.finalizedBy(containerPreparer.removeTask)
                 task.mustRunAfter(dbPrepare, mssqlDatabase, oracleDatabase)
+
+                // use environment required by solrCloud
+                task.additionalEnvironment.set(project.provider {
+                    startSolrCloud.get().requiredContainerEnvironment
+                })
             }
 
             ishUnitTest.configure { task ->

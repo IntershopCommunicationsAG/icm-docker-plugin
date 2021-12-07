@@ -93,8 +93,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
         const val asConnectorAdressProp = "intershop.servletEngine.connector.address"
 
-        const val asSolrZKListProp =  "solr.zooKeeperHostList"
-        const val asSolrPrefixProp = "solr.clusterIndexPrefix"
+        const val asSolrZKListProp = Configuration.SOLR_CLOUD_HOSTLIST
+        const val asSolrPrefixProp = Configuration.SOLR_CLOUD_INDEXPREFIX
 
         const val asMailHostProp = "mail.smtp.host"
         const val asMailPortProp = "mail.smtp.port"

@@ -22,8 +22,8 @@ object Configuration {
     const val DB_MSSQL_PORT = "intershop.db.mssql.hostport"
     const val DB_MSSQL_CONTAINER_PORT  = "intershop.db.container.mssql.hostport"
 
-    const val DB_MSSQL_PORT_VALUE = "1433"
-    const val DB_MSSQL_CONTAINER_PORT_VALUE = "1433"
+    const val DB_MSSQL_PORT_VALUE = 1433
+    const val DB_MSSQL_CONTAINER_PORT_VALUE = 1433
 
     const val DB_MSSQL_SA_PASSWORD = "intershop.db.mssql.sa.password"
     const val DB_MSSQL_SA_PASSWORD_VALUE = "1ntershop5A"
@@ -104,6 +104,13 @@ object Configuration {
 
     const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
+    const val SOLR_CLOUD_HOST_PORT = "solr.port"
+    const val SOLR_CLOUD_HOST_PORT_VALUE = 8983
+
+    const val ZOOKEEPER_HOST_PORT = "zookeeper.port"
+    const val ZOOKEEPER_HOST_PORT_VALUE = 2181
+    const val ZOOKEEPER_METRICS_HOST_PORT = "zookeeper.metrics.port"
+    const val ZOOKEEPER_METRICS_HOST_PORT_VALUE = 7000
 
     const val SSL_VERIFICATION = "ssl.verification"
 
