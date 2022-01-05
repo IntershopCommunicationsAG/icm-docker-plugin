@@ -17,6 +17,7 @@
 package com.intershop.gradle.icm.docker.utils.solrcloud
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Internal
 import javax.inject.Inject
 
 /**
@@ -25,6 +26,7 @@ import javax.inject.Inject
  */
 open class StartSolrCloudTask @Inject constructor(solrPreparer:SolrPreparer) : DefaultTask() {
 
+    @Internal
     val requiredContainerEnvironment = solrPreparer.requiredContainerEnvironment
 
 }
