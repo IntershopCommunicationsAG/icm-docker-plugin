@@ -20,7 +20,7 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
-import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
+import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLoggerCallback
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
@@ -41,7 +41,7 @@ import javax.inject.Inject
  */
 open class ISHUnitTest
 @Inject constructor(project: Project) :
-        AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
+        AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
 
     companion object {
         const val COMMAND = "/intershop/bin/ishunitrunner.sh"
@@ -127,12 +127,12 @@ open class ISHUnitTest
         return listOf("/bin/sh", "-c", "$COMMAND ${testCartridge.get()} ${testSuite.get()}")
     }
 
-    override fun createCallback(): RedirectToLocalStreamsCallback {
-        return RedirectToLocalStreamsCallback(System.out, System.err)
+    override fun createCallback(): RedirectToLoggerCallback {
+        return RedirectToLoggerCallback(project.logger)
     }
 
     override fun waitForCompletion(
-            resultCallbackTemplate: RedirectToLocalStreamsCallback,
+            resultCallbackTemplate: RedirectToLoggerCallback,
             execResponse: ExecCreateCmdResponse,
     ): Long {
         resultCallbackTemplate.awaitCompletion()

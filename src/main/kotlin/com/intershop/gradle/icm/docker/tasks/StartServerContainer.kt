@@ -18,180 +18,135 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.utils.JavaDebugSupport
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
+import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
+import java.net.URI
+import java.time.Duration
 import javax.inject.Inject
 
 open class StartServerContainer
-    @Inject constructor(objectFactory: ObjectFactory) : StartExtraContainer(objectFactory) {
+@Inject constructor(objectFactory: ObjectFactory) : StartExtraContainer(objectFactory) {
 
-    private val debugProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
-    private val jmxProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
-    private val gclogProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
-    private val heapdumpProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
-    private val appserverProperty: Property<String> = objectFactory.property(String::class.java)
-    private val envpropsProperty: ListProperty<String> = objectFactory.listProperty(String::class.java)
+    private val debugProperty: Property<JavaDebugSupport> = objectFactory.property(JavaDebugSupport::class.java)
+    private val gcLogProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    private val heapDumpProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    private val appserverNameProperty: Property<String> = objectFactory.property(String::class.java)
+    private val readinessProbeInterval: Property<Duration> = objectFactory.property(Duration::class.java)
+    private val readinessProbeTimeout: Property<Duration> = objectFactory.property(Duration::class.java)
+
+    companion object {
+        const val PATTERN_READINESS_PROBE_URL = "http://localhost:%d/status/ReadinessProbe"
+    }
 
     /**
-     * Enable debugging for the process. The process is started suspended and listening on port 5005.
-     * This can be configured also over the gradle parameter "debug-java".
+     * Enable debugging for the JVM running the ICM-AS inside the container. This option defaults to the value
+     * of the JVM property [SYSPROP_DEBUG_JVM] respectively `false` if not set.
+     * The port on the host can be configured using the property `icm.properties/intershop.as.debug.port`
      *
      * @property debug is the task property
+     * @see com.intershop.gradle.icm.docker.utils.Configuration.AS_DEBUG_PORT
      */
     @set:Option(
-            option = "debug-jvm",
-            description = "Enable debugging for the process." +
-                    "The process is started suspended and listening on port 5005."
+            option = "debug-icm",
+            description = "Enable/control debugging for the process. The following values are supported: " +
+                          "${JavaDebugSupport.TASK_OPTION_VALUE_TRUE}/${JavaDebugSupport.TASK_OPTION_VALUE_YES} - " +
+                          "enable debugging, ${JavaDebugSupport.TASK_OPTION_VALUE_SUSPEND} - enable debugging in " +
+                          "suspend-mode, every other value - disable debugging. The debugging port is controlled by " +
+                          "icm-property '${Configuration.AS_DEBUG_PORT}'."
     )
     @get:Input
-    var debug: Boolean
-        get() = debugProperty.get()
+    var debug: String
+        get() = debugProperty.map { it.renderTaskOptionValue() }.getOrElse("")
         set(value) {
-            debugProperty.set(value)
-            if(value) {
-                configureDebug()
-            }
+            val debugOptions = JavaDebugSupport.parse(project, value)
+            debugProperty.set(debugOptions)
+            withEnvironment(ICMContainerEnvironmentBuilder().withDebugOptions(debugOptions).build())
         }
 
     /**
-     * Enable jmx port for the process. The process listening on port 7747.
-     * This can be configured also over the gradle parameter "jmx".
-     *
-     * @property jmx is the task property
+     * Return the possible values for the task option [debug]
      */
-    @set:Option(
-            option = "jmx",
-            description = "Enable jmx for the process. The process listening on port 7747."
-    )
-    @get:Input
-    var jmx: Boolean
-        get() = jmxProperty.get()
-        set(value) {
-            jmxProperty.set(value)
-            if(value) {
-                envVars.put("ENABLE_JMX", "true")
-
-                val extension = project.extensions.getByType<IntershopDockerExtension>()
-
-                val httpJMXContainerPort = extension.developmentConfig.getConfigProperty(
-                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT,
-                    Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE.toString()
-                )
-                val httpJMXPort = extension.developmentConfig.getConfigProperty(
-                    Configuration.AS_JMX_CONNECTOR_PORT,
-                    Configuration.AS_JMX_CONNECTOR_PORT_VALUE.toString()
-                )
-
-                hostConfig.portBindings.add("${httpJMXPort}:${httpJMXContainerPort}")
-            }
-        }
+    @OptionValues("debug-icm")
+    fun getDebugOptionValues(): Collection<String> = listOf(JavaDebugSupport.TASK_OPTION_VALUE_TRUE,
+            JavaDebugSupport.TASK_OPTION_VALUE_YES,
+            JavaDebugSupport.TASK_OPTION_VALUE_SUSPEND, JavaDebugSupport.TASK_OPTION_VALUE_FALSE,
+            JavaDebugSupport.TASK_OPTION_VALUE_NO)
 
     /**
-     * Enable gclog for the process.
-     * This can be configured also over the gradle parameter "gclog".
+     * Enable GC logging for the process.
      *
-     * @property gclog is the task property
+     * @property gcLog is the task property
      */
     @set:Option(
             option = "gclog",
             description = "Enable gclog for the process."
     )
     @get:Input
-    var gclog: Boolean
-        get() = gclogProperty.get()
+    var gcLog: Boolean
+        get() = gcLogProperty.get()
         set(value) {
-            gclogProperty.set(value)
-            if(value) {
-                envVars.put("ENABLE_GCLOG", "true")
-            }
+            gcLogProperty.set(value)
+            withEnvironment(ICMContainerEnvironmentBuilder().enableGCLog(value).build())
         }
 
     /**
-     * Enable heapdump for the process.
-     * This can be configured also over the gradle parameter "heapdump".
+     * Enable heap dumps for the process.
      *
-     * @property heapdump is the task property
+     * @property heapDump is the task property
      */
     @set:Option(
             option = "heapdump",
             description = "Enable heapdump creation for the process."
     )
     @get:Input
-    var heapdump: Boolean
-        get() = heapdumpProperty.get()
+    var heapDump: Boolean
+        get() = heapDumpProperty.get()
         set(value) {
-            heapdumpProperty.set(value)
-            if(value) {
-                this.envVars.put("ENABLE_HEAPDUMP", "true")
-            }
+            heapDumpProperty.set(value)
+            withEnvironment(ICMContainerEnvironmentBuilder().enableHeapDump(value).build())
         }
 
     /**
-     * Set an special name for an appserver over
-     * environment variable SERVER_NAME.
+     * Set a special name for the appserver
      */
     @set:Option(
-            option = "appserver",
+            option = "appserver-name",
             description = "Provide a special name for the appserver."
     )
     @get:Input
-    var appserver: String
-        get() = appserverProperty.get()
+    var appserverName: String
+        get() = appserverNameProperty.get()
         set(value) {
-            appserverProperty.set(value)
-            if(value.isNotEmpty()) {
-                envVars.put("SERVER_NAME", appserverProperty.get())
-            }
-        }
-
-    /**
-     * Set environment properties to provide additional
-     * environment variables.
-     */
-    @set:Option(
-            option = "envprops",
-            description = "Provide a additional environment parameters for the appserver."
-    )
-    @get:Input
-    var envprops: List<String>
-        get() = envpropsProperty.get()
-        set(list) {
-            envpropsProperty.set(list)
-            list.forEach {  prop ->
-                val pl = prop.split("=")
-                if(pl.size > 2) {
-                    envVars.put(pl[0], pl[1])
-                } else {
-                    project.logger.quiet("This is not a correct parameter: {}", prop)
-                }
-            }
+            appserverNameProperty.set(value)
+            withEnvironment(ICMContainerEnvironmentBuilder().withServerName(value).build())
         }
 
     init {
-        debugProperty.convention(false)
-        jmxProperty.convention(false)
-        gclogProperty.convention(false)
-        heapdumpProperty.convention(false)
-        appserverProperty.convention("")
-        envpropsProperty.empty()
+        debugProperty.convention(JavaDebugSupport.defaults(project))
+        gcLogProperty.convention(false)
+        heapDumpProperty.convention(false)
+        appserverNameProperty.convention("")
+        enableLogWatcher.convention(true)
 
-        val debug = System.getProperty("debug-jvm", "false")
-        if(debug != "false") {
-            configureDebug()
-        }
+        val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+        withEnvironment(
+                ICMContainerEnvironmentBuilder()
+                        .withDatabaseConfig(devConfig.databaseConfiguration)
+                        .withPortConfig(devConfig.asPortConfiguration)
+                        .withCartridgeList(devConfig.cartridgeList.get())
+                        .withClasspathLayout(setOf(
+                                ICMContainerEnvironmentBuilder.ClasspathLayout.SOURCE,
+                                ICMContainerEnvironmentBuilder.ClasspathLayout.RELEASE
+                        ))
+                        .build()
+        )
     }
 
-    override fun runRemoteCommand() {
-        super.runRemoteCommand()
-    }
-
-    private fun configureDebug() {
-        envVars.put("ENABLE_DEBUG", "true")
-        hostConfig.portBindings.add("5005:7746")
-    }
 }

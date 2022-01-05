@@ -20,25 +20,34 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerLogWatcher
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
 import com.intershop.gradle.icm.docker.utils.PortMapping
+import com.intershop.gradle.icm.utils.HttpProbe
+import com.intershop.gradle.icm.utils.Probe
+import com.intershop.gradle.icm.utils.SocketProbe
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
+import java.net.URI
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.thread
 
 open class StartExtraContainer
-    @Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
+@Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
 
     private val finishedCheckProperty: Property<String> = objectFactory.property(String::class.java)
     private val timeoutProperty: Property<Long> = objectFactory.property(Long::class.java)
-    private val portMappings : MapProperty<String, PortMapping> =
+    private val portMappings: MapProperty<String, PortMapping> =
             objectFactory.mapProperty(String::class.java, PortMapping::class.java)
 
     /**
@@ -61,33 +70,64 @@ open class StartExtraContainer
         set(value) = timeoutProperty.set(value)
 
     /**
-     * Returns the primary port mapping if there is such a port mapping
+     * Returns a [Provider] that provides the primary port mapping if there is such a port mapping otherwise
+     * [Provider.get] will fail
      */
     @Internal
-    fun getPrimaryPortMapping() : PortMapping? =
+    fun getPrimaryPortMapping(): Provider<PortMapping> = project.provider {
         this.portMappings.get().values.firstOrNull { mapping -> mapping.primary }
+    }
 
     /**
      * Returns all port mappings
      */
     @Internal
-    fun getPortMappings() : Set<PortMapping> =
+    fun getPortMappings(): Set<PortMapping> =
             this.portMappings.get().values.toSet()
 
     /**
-     * Adds port mapping to be used with the container
+     * Adds port mappings to be used with the container
      */
     fun withPortMappings(vararg portMappings: PortMapping) {
-        portMappings.forEach{ portMapping ->
+        portMappings.forEach { currPortMapping ->
             // check if there's already a primary port mapping
-            if (portMapping.primary && getPrimaryPortMapping() != null) {
+            if (currPortMapping.primary && getPrimaryPortMapping().isPresent) {
                 throw GradleException("Duplicate primary port mapping detected for task $name")
             }
 
-            this.portMappings.put(portMapping.name, portMapping)
-            hostConfig.portBindings.add(project.provider { portMapping.render() })
+            this.portMappings.put(currPortMapping.name, currPortMapping)
+            hostConfig.portBindings.add(project.provider { currPortMapping.render() })
         }
     }
+
+    /**
+     * Applies the given `environment` to this tasks [DockerCreateContainer.envVars] (using [MapProperty.putAll])
+     */
+    fun withEnvironment(environment: ContainerEnvironment) {
+        envVars.putAll(environment.toMap())
+    }
+
+    @get:Input
+    val probes: ListProperty<Probe> = project.objects.listProperty(Probe::class.java)
+
+    fun withHttpProbe(uri: URI, retryInterval: Duration, retryTimeout: Duration) {
+        withProbes(HttpProbe(project, uri).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout))
+    }
+
+    fun withSocketProbe(port: Int, retryInterval: Duration, retryTimeout: Duration) {
+        withProbes(
+                SocketProbe.toLocalhost(project, port).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout))
+    }
+
+    /**
+     * Configures this task to (additionally) use the given `probes`
+     */
+    fun withProbes(vararg probes: Probe) {
+        this.probes.addAll(probes.toList())
+    }
+
+    @get:Input
+    val enableLogWatcher: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(false)
 
     init {
         finishedCheckProperty.convention("")
@@ -98,17 +138,18 @@ open class StartExtraContainer
         var containerCreated = false
         var containerRunning = false
 
-        val iterator = dockerClient.listContainersCmd().withShowAll(true).
-                            withNameFilter(listOf("/${containerName.get()}")).exec().iterator()
+        val iterator =
+                dockerClient.listContainersCmd().withShowAll(true).withNameFilter(listOf("/${containerName.get()}"))
+                        .exec().iterator()
 
         while (iterator.hasNext()) {
             val container = iterator.next()
-            if(container.names.contains("/${containerName.get()}")) {
+            if (container.names.contains("/${containerName.get()}")) {
                 if (container.image != image.get()) {
                     throw GradleException(
-                        "The running container was started with image '" + container.image +
-                                "', but the configured image is '" + image.get() +
-                                "'. Please remove running containers!"
+                            "The running container was started with image '" + container.image +
+                            "', but the configured image is '" + image.get() +
+                            "'. Please remove running containers!"
                     )
                 }
 
@@ -118,28 +159,57 @@ open class StartExtraContainer
             }
         }
 
-        if(! containerRunning) {
+        if (!containerRunning) {
             if (!containerCreated) {
                 super.runRemoteCommand()
             } else {
-                logger.quiet("Container '{}' still exists.", "/${containerName.get()}")
+                logger.quiet("Container '{}' still exists.", containerName.get())
             }
 
-            logger.quiet("Starting container with ID '${containerId.get()}'.")
+            logger.quiet("Starting container '{}' with ID '{}' using the following port mappings {}.",
+                    containerName.get(), containerId.get(), getPortMappings())
             val startCommand = dockerClient.startContainerCmd(containerId.get())
             startCommand.exec()
 
-            if(finishedCheckProperty.get().isNotBlank()) {
-                try {
-                    Thread.sleep(5000)
-                } catch (e: Exception) {
-                    throw e
+            val logWatcherHandle: AutoCloseable? = if (enableLogWatcher.get()) {
+                ContainerLogWatcher(project, dockerClient).start(containerId.get())
+            } else {
+                null
+            }
+
+            try {
+                with(probes.get()) {
+                    forEach { probe ->
+                        val success = probe.execute()
+                        if (!success) {
+                            throw GradleException(
+                                    "Container '${containerName.get()}' failed to start properly probe $probe failed")
+                        }
+                        project.logger.debug("Probe '{}' was executed successfully on container '{}'.",
+                                probe, containerName.get())
+                    }
+                    project.logger.quiet("Container '{}' started properly.", containerName.get())
                 }
 
-                waitForLogout()
+
+                // TODO remove when all containers use probes
+                if (finishedCheckProperty.get().isNotBlank()) {
+                    try {
+                        Thread.sleep(5000)
+                    } catch (e: Exception) {
+                        throw e
+                    }
+
+                    waitForLogout()
+                }
+            } catch (e: Exception) {
+                onFailure(e)
+            } finally {
+                logWatcherHandle?.close()
             }
+
         } else {
-            logger.quiet("Container '{}' is still running.", "/${containerName.get()}")
+            logger.quiet("Container '{}' is still running.", containerName.get())
         }
     }
 
@@ -192,13 +262,19 @@ open class StartExtraContainer
                 }
 
                 if (!containerCallback.startSuccessful) {
-                    logger.error("Container not startet successfully in a expected time.")
+                    logger.error("Container not started successfully in a expected time.")
                     containerCallback.close()
-                    throw GradleException("Container not startet successfully in a expected time.")
+                    throw GradleException("Container not started successfully in a expected time.")
                 }
             } finally {
                 progressLogger.completed()
             }
         }
+    }
+
+    protected fun onFailure(cause: Exception) {
+        project.logger.quiet("Stopping failed container '{}'", containerName.get())
+        dockerClient.stopContainerCmd(containerId.get()).exec()
+        throw cause
     }
 }

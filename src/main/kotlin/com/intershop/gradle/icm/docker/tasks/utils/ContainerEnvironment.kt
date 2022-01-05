@@ -16,8 +16,10 @@
  */
 package com.intershop.gradle.icm.docker.tasks.utils
 
+import org.gradle.api.GradleException
 import org.gradle.api.provider.Provider
 import java.io.Serializable
+import java.lang.IllegalStateException
 
 /**
  * Encapsulates environment variables to be used when starting a container. If [Provider]s are added they are stored
@@ -48,7 +50,11 @@ open class ContainerEnvironment : Serializable {
     }
 
     fun toList(): List<String> {
-        return entries.map { entry -> "${entry.key}=${valueToString(entry.value)}" }.toList()
+        return toMap().map { entry -> "${entry.key}=${entry.value}" }.toList()
+    }
+
+    fun toMap(): Map<String, String> {
+        return entries.mapValues { entry -> valueToString(entry.key, entry.value) }
     }
 
     fun merge(other: ContainerEnvironment): ContainerEnvironment {
@@ -58,11 +64,15 @@ open class ContainerEnvironment : Serializable {
         return merged
     }
 
-    private fun valueToString(value: Any) : String? {
+    private fun valueToString(key: String, value: Any) : String {
         if (value !is Provider<*>){
             return value.toString()
         }
-        return value.map { v -> v.toString() }.orNull
+        val renderedValueProvider = value.map { v -> v.toString() }
+        if (renderedValueProvider.isPresent){
+            return renderedValueProvider.get()
+        }
+        throw IllegalStateException("Provider mapped to ContainerEnvironment entry '$key' must not be empty.")
     }
 
     override fun toString(): String {
@@ -74,7 +84,7 @@ open class ContainerEnvironment : Serializable {
                     if (key.matches(Regex("(?i).*PASSWORD.*"))) {
                         "<present>"
                     } else {
-                        "'${valueToString(value)}'"
+                        "'${valueToString(key, value)}'"
                     }
                 }"
             }.joinToString(separator = ", ")

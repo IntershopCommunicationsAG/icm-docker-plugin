@@ -25,10 +25,11 @@ import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
-class SolrPreparer(project: Project,
-                   networkTask: Provider<PrepareNetwork>,
-                   zkPreparer: ZKPreparer
-                  ): AbstractTaskPreparer(project, networkTask) {
+class SolrPreparer(
+        project: Project,
+        networkTask: Provider<PrepareNetwork>,
+        zkPreparer: ZKPreparer,
+) : AbstractTaskPreparer(project, networkTask) {
     val requiredContainerEnvironment = ContainerEnvironment()
 
     companion object {
@@ -70,19 +71,19 @@ class SolrPreparer(project: Project,
 
             val portMapping = extension.developmentConfig.getPortMapping(
                     "SOLR",
-                    CONTAINER_PORT,
                     Configuration.SOLR_CLOUD_HOST_PORT,
                     Configuration.SOLR_CLOUD_HOST_PORT_VALUE,
+                    CONTAINER_PORT,
                     true)
             task.withPortMappings(portMapping)
 
             task.envVars.set(
-                mutableMapOf(
-                    "SOLR_PORT" to portMapping.containerPort.toString(),
-                    "ZK_HOST" to hostList,
-                    "SOLR_HOST" to "${ IPFinder.getSystemIP().first }",
-                    "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
-                )
+                    mutableMapOf(
+                            "SOLR_PORT" to portMapping.containerPort.toString(),
+                            "ZK_HOST" to hostList,
+                            "SOLR_HOST" to "${IPFinder.getSystemIP().first}",
+                            "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
+                    )
             )
 
             task.hostConfig.network.set(networkId)

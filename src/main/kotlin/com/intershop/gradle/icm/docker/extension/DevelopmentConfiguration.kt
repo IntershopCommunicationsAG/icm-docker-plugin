@@ -29,6 +29,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Serializable
+import java.time.Duration
 import java.util.Properties
 import javax.inject.Inject
 
@@ -180,6 +181,10 @@ open class DevelopmentConfiguration
         }
     }
 
+    fun getDurationProperty(property: String, defaultSeconds: Int): Duration {
+        return Duration.ofSeconds(getIntProperty (property, defaultSeconds).toLong())
+    }
+
     /**
      * The database configuration (initialized lazily)
      */
@@ -199,21 +204,23 @@ open class DevelopmentConfiguration
         val config = ASPortConfiguration(objectFactory)
         config.servletEngine.value(getPortMapping(
                 PORT_MAPPING_AS_CONNECTOR,
+                Configuration.AS_CONNECTOR_HOST_PORT,
+                Configuration.AS_CONNECTOR_HOST_PORT_VALUE,
                 Configuration.AS_CONNECTOR_CONTAINER_PORT,
                 Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE,
-                Configuration.AS_EXT_CONNECTOR_PORT,
-                Configuration.AS_EXT_CONNECTOR_PORT_VALUE,
                 true))
         config.debug.value(getPortMapping(
                 PORT_MAPPING_AS_DEBUG,
-                Configuration.AS_DEBUG_CONTAINER_PORT_VALUE,
                 Configuration.AS_DEBUG_PORT,
-                Configuration.AS_DEBUG_PORT_VALUE))
+                Configuration.AS_DEBUG_PORT_VALUE,
+                Configuration.AS_DEBUG_CONTAINER_PORT_VALUE
+        ))
         config.jmx.value(getPortMapping(
                 PORT_MAPPING_AS_JMX,
-                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE,
                 Configuration.AS_JMX_CONNECTOR_PORT,
-                Configuration.AS_JMX_CONNECTOR_PORT_VALUE))
+                Configuration.AS_JMX_CONNECTOR_PORT_VALUE,
+                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE,
+        ))
         config
     }
 
@@ -232,33 +239,33 @@ open class DevelopmentConfiguration
 
     fun getPortMapping(
             name: String,
-            containerValue: Int,
             hostKey: String,
             hostDefaultValue: Int,
+            containerValue: Int,
             primary: Boolean = false
     ): PortMapping =
             PortMapping(
-                    name,
-                    containerValue,
-                    getIntProperty(hostKey, hostDefaultValue),
-                    primary
+                    name = name,
+                    hostPort = getIntProperty(hostKey, hostDefaultValue),
+                    containerPort = containerValue,
+                    primary = primary
             )
 
     @Suppress("SameParameterValue")
     fun getPortMapping(
             name: String,
-            containerKey: String,
-            containerDefaultValue: Int,
             hostKey: String,
             hostDefaultValue: Int,
+            containerKey: String,
+            containerDefaultValue: Int,
             primary: Boolean = false
     ): PortMapping =
             getPortMapping(
-                    name,
-                    getIntProperty(containerKey, containerDefaultValue),
-                    hostKey,
-                    hostDefaultValue,
-                    primary
+                    name = name,
+                    hostKey = hostKey,
+                    hostDefaultValue = hostDefaultValue,
+                    containerValue = getIntProperty(containerKey, containerDefaultValue),
+                    primary = primary
             )
 
 }

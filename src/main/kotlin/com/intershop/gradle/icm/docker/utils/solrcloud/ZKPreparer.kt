@@ -23,9 +23,11 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
-class ZKPreparer(project: Project,
-                 networkTask: Provider<PrepareNetwork>): AbstractTaskPreparer(project, networkTask) {
-    val renderedHostList : String
+class ZKPreparer(
+        project: Project,
+        networkTask: Provider<PrepareNetwork>,
+) : AbstractTaskPreparer(project, networkTask) {
+    val renderedHostList: String
 
     companion object {
         const val extName: String = "ZK"
@@ -51,18 +53,18 @@ class ZKPreparer(project: Project,
 
         val portMapping = extension.developmentConfig.getPortMapping(
                 "CONTAINER",
-                CONTAINER_PORT,
                 Configuration.ZOOKEEPER_HOST_PORT,
                 Configuration.ZOOKEEPER_HOST_PORT_VALUE,
+                CONTAINER_PORT,
                 true
         )
         val metricsPortMapping = extension.developmentConfig.getPortMapping(
                 "METRICS",
-                CONTAINER_METRICS_PORT,
                 Configuration.ZOOKEEPER_METRICS_HOST_PORT,
-                Configuration.ZOOKEEPER_METRICS_HOST_PORT_VALUE
+                Configuration.ZOOKEEPER_METRICS_HOST_PORT_VALUE,
+                CONTAINER_METRICS_PORT,
         )
-        renderedHostList = "${extension.containerPrefix}-${extName.lowercase()}:${portMapping.containerPort}"
+        renderedHostList = "${getContainerName()}:${portMapping.containerPort}"
 
         project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
@@ -74,18 +76,19 @@ class ZKPreparer(project: Project,
 
             task.withPortMappings(portMapping, metricsPortMapping)
 
-            val zooServers = "${extension.containerPrefix}-${getContainerExt()}:2888:3888;${portMapping.containerPort}"
+            val zooServers = "${getContainerName()}:2888:3888;${portMapping.containerPort}"
             task.envVars.set(
-                mutableMapOf(
-                    "ZOO_MY_ID" to "1",
-                    "ZOO_PORT" to portMapping.containerPort.toString(),
-                    "ZOO_SERVERS" to "server.1=$zooServers",
-                    "ZOO_4LW_COMMANDS_WHITELIST" to "mntr, conf, ruok",
-                    "ZOO_CFG_EXTRA" to
-                            "metricsProvider.className=org.apache.zookeeper.metrics.prometheus." +
-                            "PrometheusMetricsProvider metricsProvider.httpPort=${metricsPortMapping.containerPort} " +
-                            "metricsProvider.exportJvmInfo=true"
-                )
+                    mutableMapOf(
+                            "ZOO_MY_ID" to "1",
+                            "ZOO_PORT" to portMapping.containerPort.toString(),
+                            "ZOO_SERVERS" to "server.1=$zooServers",
+                            "ZOO_4LW_COMMANDS_WHITELIST" to "mntr, conf, ruok",
+                            "ZOO_CFG_EXTRA" to
+                                    "metricsProvider.className=org.apache.zookeeper.metrics.prometheus." +
+                                    "PrometheusMetricsProvider metricsProvider.httpPort=" +
+                                    "${metricsPortMapping.containerPort} " +
+                                    "metricsProvider.exportJvmInfo=true"
+                    )
             )
 
             task.hostConfig.network.set(networkId)

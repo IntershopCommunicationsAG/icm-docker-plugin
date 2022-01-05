@@ -31,7 +31,7 @@ import org.gradle.process.internal.DefaultJavaDebugOptions
  * The internal values are backed by a [org.gradle.process.internal.DefaultJavaDebugOptions] to it used it's
  * defaults.
  */
-class JavaDebugSupport(private val options : JavaDebugOptions) : JavaDebugOptions {
+class JavaDebugSupport(private val options: JavaDebugOptions) : JavaDebugOptions {
 
     companion object {
         const val PATTERN_COMMAND_LINE = "-agentlib:jdwp=transport=dt_socket,server=%s,suspend=%s,address=*:%d"
@@ -71,7 +71,7 @@ class JavaDebugSupport(private val options : JavaDebugOptions) : JavaDebugOption
          *
          * @see describe
          */
-        fun parse(project: Project, taskOptionValue: String) : JavaDebugSupport {
+        fun parse(project: Project, taskOptionValue: String): JavaDebugSupport {
 
             val javaDebugOptions = project.objects.newInstance(DefaultJavaDebugOptions::class.java)
             val intershopDockerExtension = project.extensions.getByType(IntershopDockerExtension::class.java)
@@ -111,16 +111,30 @@ class JavaDebugSupport(private val options : JavaDebugOptions) : JavaDebugOption
         return PATTERN_COMMAND_LINE.format(renderYesNo(server), renderYesNo(suspend), port.get())
     }
 
-    fun renderTaskOptionValue() : String =
-        if(enabled.get()){
-            if (suspend.get()){
-                TASK_OPTION_VALUE_SUSPEND
+    /**
+     * Renders the value for usage with an environment variable
+     */
+    fun renderEnvVariableValue(): String =
+            if (enabled.get()) {
+                if (suspend.get()) {
+                    "suspend"
+                } else {
+                    "true"
+                }
             } else {
-                TASK_OPTION_VALUE_TRUE
+                "false" // something else then suspend or true
             }
-        }else{
-            TASK_OPTION_VALUE_FALSE // something else then TASK_OPTION_VALUE_SUSPEND or TASK_OPTION_VALUE_TRUE
-        }
+
+    fun renderTaskOptionValue(): String =
+            if (enabled.get()) {
+                if (suspend.get()) {
+                    TASK_OPTION_VALUE_SUSPEND
+                } else {
+                    TASK_OPTION_VALUE_TRUE
+                }
+            } else {
+                TASK_OPTION_VALUE_FALSE // something else then TASK_OPTION_VALUE_SUSPEND or TASK_OPTION_VALUE_TRUE
+            }
 
     override fun getEnabled(): Property<Boolean> = options.enabled.convention(false)
 

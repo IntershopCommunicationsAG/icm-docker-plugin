@@ -32,8 +32,14 @@ import javax.inject.Inject
 /**
  * Generates a HTML report from JUnit xml report files.
  */
-open class ISHUnitHTMLTestReport @Inject constructor(projectLayout: ProjectLayout,
-                                                     objectFactory: ObjectFactory) : DefaultTask() {
+open class ISHUnitHTMLTestReport @Inject constructor(
+        projectLayout: ProjectLayout,
+        objectFactory: ObjectFactory,
+) : DefaultTask() {
+    companion object {
+        const val TASK_NAME = "ishUnitTestReport"
+    }
+
     @get:InputDirectory
     val testResultDirectory: DirectoryProperty = objectFactory.directoryProperty()
 
@@ -41,7 +47,7 @@ open class ISHUnitHTMLTestReport @Inject constructor(projectLayout: ProjectLayou
     val outputDirectory: DirectoryProperty = objectFactory.directoryProperty()
 
     @get:InputFiles
-    val taskClassPath : FileCollection by lazy {
+    val taskClassPath: FileCollection by lazy {
         val returnFiles = project.files()
         // find files of original JASPER and Eclipse compiler
         returnFiles.from(project.configurations.findByName(HTML_ANT_TESTREPORT_CONFIG))
@@ -60,16 +66,16 @@ open class ISHUnitHTMLTestReport @Inject constructor(projectLayout: ProjectLayou
     fun createReport() {
         ant.withGroovyBuilder {
             "taskdef"(
-                "name" to "ishUnitReport",
-                "classname" to "org.apache.tools.ant.taskdefs.optional.junit.XMLResultAggregator",
-                "classpath" to taskClassPath.asPath)
+                    "name" to "ishUnitReport",
+                    "classname" to "org.apache.tools.ant.taskdefs.optional.junit.XMLResultAggregator",
+                    "classpath" to taskClassPath.asPath)
 
-            "ishUnitReport" (
-                "todir"  to outputDirectory.get().asFile.absolutePath,
-                "tofile" to "ishunit-results.xml"
+            "ishUnitReport"(
+                    "todir" to outputDirectory.get().asFile.absolutePath,
+                    "tofile" to "ishunit-results.xml"
             ) {
-                "fileset"( "dir" to testResultDirectory.get().asFile.absolutePath) {
-                        "include"("name" to "**/*.xml")
+                "fileset"("dir" to testResultDirectory.get().asFile.absolutePath) {
+                    "include"("name" to "**/*.xml")
                 }
 
                 "report"("format" to "frames", "todir" to outputDirectory.get().asFile.absolutePath)
