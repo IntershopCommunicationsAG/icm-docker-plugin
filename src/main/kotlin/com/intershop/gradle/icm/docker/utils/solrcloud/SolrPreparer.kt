@@ -89,7 +89,7 @@ class SolrPreparer(
             task.hostConfig.network.set(networkId)
             task.logger.quiet(
                     "The Solr server can be connected with {}:{}",
-                    task.containerName,
+                    task.containerName.get(),
                     portMapping.containerPort
             )
 

@@ -46,7 +46,7 @@ class ContainerLogWatcher(
         logCommand.withFollowStream(true)
         val containerCallback = RedirectToLoggerCallback(project.logger)
 
-        thread(start = true) {
+        val thread = thread(start = true) {
             try {
                 logCommand.exec(containerCallback).awaitCompletion()
             } catch (ex: Exception) {
@@ -56,6 +56,7 @@ class ContainerLogWatcher(
 
         return object : Handle {
             override fun close() {
+                thread.interrupt() // ensure thread is stopped
                 containerCallback.close()
             }
         }

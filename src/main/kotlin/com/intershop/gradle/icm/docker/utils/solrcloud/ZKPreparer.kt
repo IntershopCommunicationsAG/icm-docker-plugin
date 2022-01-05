@@ -94,7 +94,7 @@ class ZKPreparer(
             task.hostConfig.network.set(networkId)
             task.logger.quiet(
                     "The ZK for SolrCloud can be connected with {}:{}",
-                    task.containerName,
+                    task.containerName.get(),
                     portMapping.containerPort
             )
             task.dependsOn(pullTask, networkTask)
