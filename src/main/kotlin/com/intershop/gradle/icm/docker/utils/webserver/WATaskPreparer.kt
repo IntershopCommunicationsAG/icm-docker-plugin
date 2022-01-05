@@ -136,21 +136,15 @@ class WATaskPreparer(
 
             // add socketProbes to http and https ports
             with(extension.developmentConfig) {
-                task.withProbes(
-                    SocketProbe.toLocalhost(project, httpPortMapping.hostPort)
-                        .withRetryInterval(
-                                getDurationProperty(WS_READINESS_PROBE_INTERVAL, WS_READINESS_PROBE_INTERVAL_VALUE)
-                        )
-                        .withRetryTimeout(
-                                getDurationProperty(WS_READINESS_PROBE_TIMEOUT, WS_READINESS_PROBE_TIMEOUT_VALUE)
-                        ),
-                    SocketProbe.toLocalhost(project, httpsPortMapping.hostPort)
-                        .withRetryInterval(
-                                getDurationProperty(WS_READINESS_PROBE_INTERVAL, WS_READINESS_PROBE_INTERVAL_VALUE)
-                        )
-                        .withRetryTimeout(
-                                getDurationProperty(WS_READINESS_PROBE_TIMEOUT, WS_READINESS_PROBE_TIMEOUT_VALUE)
-                        )
+                task.withSocketProbe(
+                        httpPortMapping.hostPort,
+                        getDurationProperty(WS_READINESS_PROBE_INTERVAL, WS_READINESS_PROBE_INTERVAL_VALUE),
+                        getDurationProperty(WS_READINESS_PROBE_TIMEOUT, WS_READINESS_PROBE_TIMEOUT_VALUE)
+                )
+                task.withSocketProbe(
+                        httpsPortMapping.hostPort,
+                        getDurationProperty(WS_READINESS_PROBE_INTERVAL, WS_READINESS_PROBE_INTERVAL_VALUE),
+                        getDurationProperty(WS_READINESS_PROBE_TIMEOUT, WS_READINESS_PROBE_TIMEOUT_VALUE)
                 )
             }
             task.dependsOn(pullTask, networkTask)

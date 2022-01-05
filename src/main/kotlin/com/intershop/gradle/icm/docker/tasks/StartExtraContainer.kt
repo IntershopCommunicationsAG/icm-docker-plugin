@@ -111,12 +111,19 @@ open class StartExtraContainer
     val probes: ListProperty<Probe> = project.objects.listProperty(Probe::class.java)
 
     fun withHttpProbe(uri: URI, retryInterval: Duration, retryTimeout: Duration) {
-        withProbes(HttpProbe(project, uri).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout))
+        withProbes(
+                HttpProbe(project, { services }, uri).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout)
+        )
     }
 
     fun withSocketProbe(port: Int, retryInterval: Duration, retryTimeout: Duration) {
         withProbes(
-                SocketProbe.toLocalhost(project, port).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout))
+                SocketProbe.toLocalhost(
+                        project,
+                        { services },
+                        port
+                ).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout)
+        )
     }
 
     /**
