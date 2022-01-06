@@ -23,6 +23,7 @@ import com.intershop.gradle.icm.docker.tasks.AbstractPullImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
@@ -30,14 +31,18 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 
-abstract class AbstractTaskPreparer(protected val project: Project,
-                                    networkTask: Provider<PrepareNetwork>) {
+abstract class AbstractTaskPreparer(
+        protected val project: Project,
+        networkTask: Provider<PrepareNetwork>,
+) {
 
     protected abstract fun getExtensionName(): String
     protected open fun getContainerExt(): String = getExtensionName().lowercase()
     protected abstract fun getImage(): Provider<String>
 
     protected val extension = project.extensions.getByType<IntershopDockerExtension>()
+
+    fun getContainerName(): String = "${extension.containerPrefix}-${getContainerExt()}"
 
     protected fun initBaseTasks() {
         project.tasks.register("pull${getExtensionName()}", PullExtraImage::class.java) { task ->
@@ -49,19 +54,19 @@ abstract class AbstractTaskPreparer(protected val project: Project,
         project.tasks.register("stop${getExtensionName()}", StopExtraContainer::class.java) { task ->
             task.group = "icm container ${getContainerExt()}"
             task.description = "Stop running container"
-            task.containerName.set("${extension.containerPrefix}-${getContainerExt()}")
+            task.containerName.set(getContainerName())
         }
 
         project.tasks.register("remove${getExtensionName()}", RemoveContainerByName::class.java) { task ->
             task.group = "icm container ${getContainerExt()}"
             task.description = "Remove container from Docker"
-
-            task.containerName.set("${extension.containerPrefix}-${getContainerExt()}")
+            task.containerName.set(getContainerName())
         }
     }
 
     val pullTask: TaskProvider<AbstractPullImage> by lazy {
-        project.tasks.named("pull${getExtensionName()}", AbstractPullImage::class.java) }
+        project.tasks.named("pull${getExtensionName()}", AbstractPullImage::class.java)
+    }
 
     val stopTask: TaskProvider<StopExtraContainer> by lazy {
         project.tasks.named("stop${getExtensionName()}", StopExtraContainer::class.java)
@@ -71,8 +76,8 @@ abstract class AbstractTaskPreparer(protected val project: Project,
         project.tasks.named("remove${getExtensionName()}", RemoveContainerByName::class.java)
     }
 
-    val startTask: TaskProvider<DockerCreateContainer> by lazy {
-        project.tasks.named("start${getExtensionName()}", DockerCreateContainer::class.java)
+    val startTask: TaskProvider<StartExtraContainer> by lazy {
+        project.tasks.named("start${getExtensionName()}", StartExtraContainer::class.java)
     }
 
     protected val networkId: Property<String> = networkTask.get().networkId
@@ -83,6 +88,6 @@ abstract class AbstractTaskPreparer(protected val project: Project,
         task.attachStdout.set(true)
         task.hostConfig.autoRemove.set(true)
 
-        task.containerName.set("${extension.containerPrefix}-${getContainerExt()}")
+        task.containerName.set(getContainerName())
     }
 }

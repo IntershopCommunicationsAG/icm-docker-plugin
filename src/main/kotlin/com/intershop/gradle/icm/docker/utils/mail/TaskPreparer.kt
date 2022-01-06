@@ -20,6 +20,7 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
+import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -47,7 +48,12 @@ class TaskPreparer(project: Project,
                 "MH_STORAGE" to "maildir",
                 "MH_MAILDIR_PATH" to "/maildir"))
 
-            task.hostConfig.portBindings.set(listOf("25:1025", "8025:8025"))
+            task.withPortMappings(
+                // TODO make host ports configurable
+                PortMapping("SMTP", 25, 1025, true),
+                PortMapping("ADMIN", 8025, 8025, false)
+            )
+
             task.hostConfig.binds.set( project.provider {
                 ContainerUtils.transformVolumes(
                     mutableMapOf(

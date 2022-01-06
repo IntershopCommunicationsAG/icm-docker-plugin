@@ -21,6 +21,7 @@ import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
+import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import java.io.File
@@ -45,21 +46,23 @@ class TaskPreparer(project: Project,
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
+            val portMapping : PortMapping
+            val dbName : String
             with(extension.developmentConfig) {
-                val port = getConfigProperty(
+                portMapping = getPortMapping("JDBC",
                     Configuration.DB_MSSQL_PORT,
-                    Configuration.DB_MSSQL_PORT_VALUE
-                )
-                val containerPort = getConfigProperty(
+                    Configuration.DB_MSSQL_PORT_VALUE,
                     Configuration.DB_MSSQL_CONTAINER_PORT,
-                    Configuration.DB_MSSQL_CONTAINER_PORT_VALUE
+                    Configuration.DB_MSSQL_CONTAINER_PORT_VALUE,
+                    true
                 )
-
-                task.hostConfig.portBindings.set(
-                    listOf("${port}:${containerPort}")
-                )
-
+                task.withPortMappings(portMapping)
                 task.hostConfig.network.set(networkId)
+
+                dbName = getConfigProperty(
+                    Configuration.DB_MSSQL_DBNAME,
+                    Configuration.DB_MSSQL_DBNAME_VALUE
+                )
 
                 task.envVars.set(
                     mutableMapOf(
@@ -82,11 +85,7 @@ class TaskPreparer(project: Project,
                                     Configuration.DB_MSSQL_RECREATE_USER,
                                     Configuration.DB_MSSQL_RECREATE_USER_VALUE
                                 ),
-                        "ICM_DB_NAME" to
-                                getConfigProperty(
-                                    Configuration.DB_MSSQL_DBNAME,
-                                    Configuration.DB_MSSQL_DBNAME_VALUE
-                                ),
+                        "ICM_DB_NAME" to dbName,
                         "ICM_DB_USER" to
                                 getConfigProperty(
                                     Configuration.DB_USER_NAME,
@@ -130,22 +129,15 @@ class TaskPreparer(project: Project,
                 task.hostConfig.binds.set(ContainerUtils.transformVolumes(volumeMap))
             }
 
+            // TODO #72420 replace by probe (SocketProbe will not help: socket gets available too early)
             task.finishedCheck = "Parallel redo is shutdown for database"
 
-            with(extension.developmentConfig) {
-                project.logger.quiet(
-                    "The database can be connected with jdbc:sqlserver://{}:{};databaseName={}",
-                    task.containerName.get(),
-                    getConfigProperty(
-                        Configuration.DB_MSSQL_PORT,
-                        Configuration.DB_MSSQL_PORT_VALUE
-                    ),
-                    getConfigProperty(
-                        Configuration.DB_MSSQL_DBNAME,
-                        Configuration.DB_MSSQL_DBNAME_VALUE
-                    )
-                )
-            }
+            project.logger.quiet(
+                "The database can be connected with jdbc:sqlserver://{}:{};databaseName={}",
+                task.containerName.get(),
+                portMapping.containerPort,
+                dbName
+            )
             task.dependsOn(pullTask, networkTask)
         }
     }

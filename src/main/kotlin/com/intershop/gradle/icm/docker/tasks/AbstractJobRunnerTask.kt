@@ -22,25 +22,19 @@ import com.intershop.icm.jobrunner.configuration.Server
 import com.intershop.icm.jobrunner.configuration.User
 import com.intershop.icm.jobrunner.utils.JobRunnerException
 import com.intershop.icm.jobrunner.utils.Protocol
-import org.apache.http.client.utils.URIBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import java.net.URI
 import javax.inject.Inject
 
 
 abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
 
     @get:Input
-    val webServerHost: Property<String> = objectFactory.property(String::class.java)
-
-    @get:Input
-    val protocol: Property<String> = objectFactory.property(String::class.java)
-
-    @get:Input
-    val webServerPort: Property<String> = objectFactory.property(String::class.java)
+    val webServerUri: Property<URI> = objectFactory.property(URI::class.java)
 
     @get:Input
     val domain: Property<String> = objectFactory.property(String::class.java)
@@ -61,11 +55,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
     val sslVerification: Property<Boolean> = objectFactory.property(Boolean::class.java)
 
     init {
-        val uriDefault = URIBuilder(Configuration.WS_SECURE_URL_VALUE)
-
-        protocol.convention(uriDefault.scheme)
-        webServerHost.convention(uriDefault.host)
-        webServerPort.convention(uriDefault.port.toString())
+        webServerUri.convention(URI.create(Configuration.WS_SECURE_URL_VALUE))
         maxWait.convention(600000)
         domain.convention("SLDSystem")
         servergroup.convention("BOS")
@@ -73,23 +63,24 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
     }
 
     private val jobRunner: JobRunner by lazy {
-        val protocolObj = if(protocol.get().toLowerCase() == "https") {
+        val wsUri = webServerUri.get()
+        val protocolObj = if (wsUri.scheme.lowercase() == "https") {
             Protocol.HTTPS
         } else {
             Protocol.HTTP
         }
         val user = User(userName.get(), userPassword.get())
-        val server = Server(protocolObj, webServerHost.get(), webServerPort.get())
+        val server = Server(protocolObj, wsUri.host, wsUri.port.toString())
 
         val runner = JobRunner(
-                    server = server,
-                    domain = domain.get(),
-                    srvgroup = servergroup.get(),
-                    user = user,
-                    timeout = maxWait.get(),
-                    logger = project.logger)
+                server = server,
+                domain = domain.get(),
+                srvgroup = servergroup.get(),
+                user = user,
+                timeout = maxWait.get(),
+                logger = project.logger)
 
-        if(sslVerification.get()) {
+        if (sslVerification.get()) {
             runner.enableSSLVerification()
         }
 
@@ -99,8 +90,8 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
     protected fun triggerJob(jobName: String) {
         try {
             jobRunner.triggerJob(jobName)
-        } catch(ex: JobRunnerException) {
-            throw GradleException(ex.message?: "There was a technical problem to run '$jobName'")
+        } catch (ex: JobRunnerException) {
+            throw GradleException(ex.message ?: "There was a technical problem to run '$jobName'")
         }
     }
 }

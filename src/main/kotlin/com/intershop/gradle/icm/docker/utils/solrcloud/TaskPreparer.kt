@@ -17,12 +17,14 @@
 
 package com.intershop.gradle.icm.docker.utils.solrcloud
 
-import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 
-class TaskPreparer(val project: Project, private val networkTasks: TaskPreparer) {
+class TaskPreparer(
+        val project: Project,
+        private val networkTasks: com.intershop.gradle.icm.docker.utils.network.TaskPreparer
+        ) {
 
     companion object {
         const val TASK_EXT_SERVER = "SolrCloud"
@@ -30,17 +32,13 @@ class TaskPreparer(val project: Project, private val networkTasks: TaskPreparer)
 
     init {
         val zkTasks = ZKPreparer(project, networkTasks.createNetworkTask)
-        val solrTasks = SolrPreparer(project, networkTasks.createNetworkTask)
+        val solrTasks = SolrPreparer(project, networkTasks.createNetworkTask, zkTasks)
 
-        solrTasks.startTask.configure {
-            it.dependsOn(zkTasks.startTask)
-        }
-
-        solrTasks.removeTask.configure {
-            it.dependsOn(zkTasks.removeTask)
-        }
-
-        project.tasks.register("start${TASK_EXT_SERVER}") { task ->
+        project.tasks.register(
+                "start${TASK_EXT_SERVER}",
+                StartSolrCloudTask::class.java,
+                solrTasks
+        ).configure { task ->
             configureSolrCloudTasks(task, "Start all components of a one note SolrCloud cluster")
             task.dependsOn(zkTasks.startTask, solrTasks.startTask, networkTasks.createNetworkTask)
         }
@@ -60,8 +58,8 @@ class TaskPreparer(val project: Project, private val networkTasks: TaskPreparer)
         }
     }
 
-    val startTask: TaskProvider<Task> by lazy {
-        project.tasks.named("start${TASK_EXT_SERVER}")
+    val startTask: TaskProvider<StartSolrCloudTask> by lazy {
+        project.tasks.named("start${TASK_EXT_SERVER}", StartSolrCloudTask::class.java)
     }
 
     val stopTask: TaskProvider<Task> by lazy {

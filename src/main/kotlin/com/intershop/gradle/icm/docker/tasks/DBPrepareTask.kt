@@ -19,10 +19,10 @@ package com.intershop.gradle.icm.docker.tasks
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
-import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
+import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
+import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLoggerCallback
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
@@ -35,7 +35,11 @@ import javax.inject.Inject
  */
 open class DBPrepareTask
 @Inject constructor(project: Project) :
-        AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
+        AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
+
+    companion object {
+        const val TASK_NAME = "dbPrepare"
+    }
 
     @get:Option(option = "mode", description = "Mode in which dbPrepare runs: 'init', 'migrate' or 'auto'. " +
                                                "The default is 'auto'.")
@@ -93,7 +97,7 @@ open class DBPrepareTask
 
     override fun createContainerEnvironment(): ContainerEnvironment {
         val ownEnv = ContainerEnvironment()
-        ownEnv.add(ENV_IS_DBPREPARE, true)
+        ownEnv.add(ICMContainerEnvironmentBuilder.ENV_IS_DBPREPARE, true)
         return super.createContainerEnvironment().merge(ownEnv)
     }
 
@@ -110,7 +114,7 @@ open class DBPrepareTask
         if (propertyKeys.get().isNotEmpty()) {
             ownParameters.add("--property-keys", propertyKeys.get().replace(" ", ""))
         }
-        if (additionalParameters.isNotEmpty()){
+        if (additionalParameters.isNotEmpty()) {
             additionalParameters.forEach { parameter ->
                 ownParameters.add(parameter)
             }
@@ -121,12 +125,12 @@ open class DBPrepareTask
 
     override fun createCartridgeList(): Provider<Set<String>> = testCartridgeList
 
-    override fun createCallback(): RedirectToLocalStreamsCallback {
-        return RedirectToLocalStreamsCallback(System.out, System.err)
+    override fun createCallback(): RedirectToLoggerCallback {
+        return RedirectToLoggerCallback(project.logger)
     }
 
     override fun waitForCompletion(
-            resultCallbackTemplate: RedirectToLocalStreamsCallback,
+            resultCallbackTemplate: RedirectToLoggerCallback,
             execResponse: ExecCreateCmdResponse,
     ): Long {
         resultCallbackTemplate.awaitCompletion()

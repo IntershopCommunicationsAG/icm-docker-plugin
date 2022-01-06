@@ -20,10 +20,13 @@ import com.github.dockerjava.api.async.ResultCallback
 import com.github.dockerjava.api.async.ResultCallbackTemplate
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.github.dockerjava.api.model.Frame
-import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
+import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
+import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.utils.JavaDebugSupport
 import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VALUE_FALSE
@@ -54,22 +57,6 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
 @Inject constructor(project: Project) : AbstractContainerTask() {
 
     companion object {
-        const val ENV_IS_DBPREPARE = "IS_DBPREPARE"
-        const val ENV_DEBUG_ICM = "DEBUG_ICM"
-        const val ENV_DB_TYPE = "INTERSHOP_DATABASETYPE"
-        const val ENV_DB_JDBC_URL = "INTERSHOP_JDBC_URL"
-        const val ENV_DB_JDBC_USER = "INTERSHOP_JDBC_USER"
-        const val ENV_DB_JDBC_PASSWORD = "INTERSHOP_JDBC_PASSWORD"
-        const val ENV_CARTRIDGE_LIST = "CARTRIDGE_LIST"
-        const val ENV_ADDITIONAL_PARAMETERS = "ADDITIONAL_PARAMETERS"
-        const val ENV_ADDITIONAL_VM_PARAMETERS = "ADDITIONAL_VM_PARAMETERS"
-        const val ENV_CARTRIDGE_CLASSPATH_LAYOUT = "CARTRIDGE_CLASSPATH_LAYOUT"
-        const val ENV_ADDITIONAL_CLASSPATH = "ADDITIONAL_CLASSPATH"
-        const val ENV_ADDITIONAL_CARTRIDGE_REPOSITORIES = "ADDITIONAL_CARTRIDGE_REPOSITORIES"
-        const val ENV_ADDITIONAL_LIBRARY_REPOSITORIES = "ADDITIONAL_LIBRARY_REPOSITORIES"
-        const val ENV_MAIN_CLASS = "MAIN_CLASS"
-        const val ENV_VALUE_CARTRIDGE_CLASSPATH_LAYOUT = "release,source"
-        const val ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT = "INTERSHOP_SERVLETENGINE_CONNECTOR_PORT"
         const val DEFAULT_COMMAND = "/intershop/bin/intershop.sh"
     }
 
@@ -80,8 +67,8 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * [com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.databaseConfiguration]
      */
     @get:Input
-    val databaseConfiguration: Property<DevelopmentConfiguration.DatabaseParameters> by lazy {
-        project.objects.property(DevelopmentConfiguration.DatabaseParameters::class.java)
+    val databaseConfiguration: Property<DatabaseParameters> by lazy {
+        project.objects.property(DatabaseParameters::class.java)
                 .value(project.extensions.getByType<IntershopDockerExtension>().developmentConfig.databaseConfiguration)
     }
 
@@ -91,8 +78,8 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * [com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.asPortConfiguration]
      */
     @get:Input
-    val portConfiguration: Property<DevelopmentConfiguration.ASPortConfiguration> by lazy {
-        project.objects.property(DevelopmentConfiguration.ASPortConfiguration::class.java)
+    val portConfiguration: Property<ASPortConfiguration> by lazy {
+        project.objects.property(ASPortConfiguration::class.java)
                 .value(project.extensions.getByType<IntershopDockerExtension>().developmentConfig.asPortConfiguration)
     }
 
@@ -201,7 +188,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Subclasses may overwrite this method to do same custom stuff.
      */
     protected open fun processExecutionResult(executionResult: ER) {
-        project.logger.quiet("Command execution inside the container finished with execution result {}",
+        project.logger.quiet("Command execution inside the container finished with execution result: {}",
                 executionResult)
     }
 
@@ -216,34 +203,16 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Subclasses may overwrite this method to add some extract environment variables (keep super-variables).
      */
     protected open fun createContainerEnvironment(): ContainerEnvironment {
-        val env = ContainerEnvironment()
-
-        // add additional parameters to env
-        val additionalParameters = createAdditionalParameters()
-
-        env.add(ENV_ADDITIONAL_PARAMETERS, additionalParameters.render())
-
-        // configure debugging
-        env.add(ENV_DEBUG_ICM, renderDebugOption(debugProperty.get()))
-
-        // add database config to env
-        databaseConfiguration.get().run {
-            env.add(ENV_DB_TYPE, type.get()).add(ENV_DB_JDBC_URL, jdbcUrl.get()).add(ENV_DB_JDBC_USER, jdbcUser.get())
-                    .add(ENV_DB_JDBC_PASSWORD, jdbcPassword.get())
-        }
-
-        // configure servlet engine port
-        portConfiguration.get().run {
-            env.add(ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT, servletEngine.get().containerPort)
-        }
-
-        // add cartridge list (values separated by space)
-        env.add(ENV_CARTRIDGE_LIST, createCartridgeList().get().joinToString(separator = " "))
-
-        // ensure release (product cartridges) and source (customization cartridges) layouts are recognized
-        env.add(ENV_CARTRIDGE_CLASSPATH_LAYOUT, ENV_VALUE_CARTRIDGE_CLASSPATH_LAYOUT)
-
-        return env
+        return ICMContainerEnvironmentBuilder()
+                .withContainerName(containerName)
+                .withDatabaseConfig(databaseConfiguration.get())
+                .withPortConfig(portConfiguration.get())
+                .withCartridgeList(createCartridgeList().get())
+                .withAdditionalParameters(createAdditionalParameters())
+                .withDebugOptions(debugProperty.get())
+                // ensure release (product cartridges) and source (customization cartridges) layouts are recognized
+                .withClasspathLayout(setOf(ClasspathLayout.RELEASE, ClasspathLayout.SOURCE))
+                .build()
     }
 
     protected abstract fun waitForCompletion(resultCallbackTemplate: RCT, execResponse: ExecCreateCmdResponse): ER
@@ -264,22 +233,5 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Creates the [ResultCallbackTemplate] to be used for the docker-exec.
      */
     protected abstract fun createCallback(): RCT
-
-    /**
-     * Renders the value for the environment variable [ENV_DEBUG_ICM] used inside the ´intershop.sh´
-     * @see intershop.sh
-     */
-    private fun renderDebugOption(debugSupport: JavaDebugSupport): String =
-            with(debugSupport) {
-                if (enabled.get()) {
-                    if (suspend.get()) {
-                        "suspend"
-                    } else {
-                        "true"
-                    }
-                } else {
-                    "false" // something else then suspend or true
-                }
-            }
 
 }

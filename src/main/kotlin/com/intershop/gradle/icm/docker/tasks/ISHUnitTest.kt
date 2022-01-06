@@ -18,8 +18,9 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
-import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLocalStreamsCallback
+import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLoggerCallback
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
@@ -29,6 +30,7 @@ import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.internal.resources.ResourceLock
 import java.util.Collections
 import javax.inject.Inject
@@ -39,7 +41,7 @@ import javax.inject.Inject
  */
 open class ISHUnitTest
 @Inject constructor(project: Project) :
-        AbstractICMASContainerTask<RedirectToLocalStreamsCallback, RedirectToLocalStreamsCallback, Long>(project) {
+        AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
 
     companion object {
         const val COMMAND = "/intershop/bin/ishunitrunner.sh"
@@ -60,6 +62,14 @@ open class ISHUnitTest
      */
     @get:Input
     val testSuite: Property<String> = project.objects.property(String::class.java)
+
+    /**
+     * Additional environment variables
+     */
+    @get:Input
+    @Optional
+    val additionalEnvironment: Property<ContainerEnvironment> =
+            project.objects.property(ContainerEnvironment::class.java)
 
     @Internal
     override fun getSharedResources(): List<ResourceLock> {
@@ -106,16 +116,23 @@ open class ISHUnitTest
         super.createCartridgeList().get().plus(testCartridge.get())
     }
 
+    override fun createContainerEnvironment(): ContainerEnvironment {
+        if (additionalEnvironment.isPresent) {
+            return super.createContainerEnvironment().merge(additionalEnvironment.get())
+        }
+        return super.createContainerEnvironment()
+    }
+
     override fun getCommand(): List<String> {
         return listOf("/bin/sh", "-c", "$COMMAND ${testCartridge.get()} ${testSuite.get()}")
     }
 
-    override fun createCallback(): RedirectToLocalStreamsCallback {
-        return RedirectToLocalStreamsCallback(System.out, System.err)
+    override fun createCallback(): RedirectToLoggerCallback {
+        return RedirectToLoggerCallback(project.logger)
     }
 
     override fun waitForCompletion(
-            resultCallbackTemplate: RedirectToLocalStreamsCallback,
+            resultCallbackTemplate: RedirectToLoggerCallback,
             execResponse: ExecCreateCmdResponse,
     ): Long {
         resultCallbackTemplate.awaitCompletion()

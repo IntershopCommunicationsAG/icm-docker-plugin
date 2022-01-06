@@ -22,18 +22,11 @@ import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
-import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailPreparer
-import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
+import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
-import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
-import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
-import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
-import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -41,7 +34,12 @@ import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.configure
+import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailPreparer
+import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
+import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
+import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
+import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
 
 /**
  * Main plugin class of the project plugin.
@@ -74,13 +72,13 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 plugins.apply(ICMDockerPlugin::class.java)
 
                 val extension = extensions.findByType(
-                    IntershopDockerExtension::class.java
+                        IntershopDockerExtension::class.java
                 ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java, project)
 
                 extension.developmentConfig.appserverAsContainer = true
 
                 extensions.findByName(INTERSHOP_EXTENSION_NAME)
-                    ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
+                ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
                 val prepareNetwork = project.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
 
@@ -98,8 +96,8 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 try {
                     tasks.named("containerClean").configure {
                         it.dependsOn(
-                            containerPreparer.removeTask,
-                            appServerPreparer.removeTask
+                                containerPreparer.removeTask,
+                                appServerPreparer.removeTask
                         )
                     }
                 } catch (ex: UnknownTaskException) {
@@ -144,7 +142,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 val oracleDatabase = tasks.named("start${OraclePreparer.extName}")
 
                 val dbprepare: TaskProvider<DBPrepareTask> =
-                    getDBPrepare(this, containerPreparer, mssqlDatabase, oracleDatabase)
+                        getDBPrepare(this, containerPreparer, mssqlDatabase, oracleDatabase)
 
                 configureISHUnitTest(this, extension, containerPreparer, dbprepare, mssqlDatabase, oracleDatabase)
                 addTestReportConfiguration(this)
@@ -154,34 +152,36 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
     }
 
 
-
-    private fun getDBPrepare(project: Project,
-                             containerPreparer: ContainerTaskPreparer,
-                             mssqlDatabase: TaskProvider<Task>,
-                             oracleDatabase: TaskProvider<Task>) : TaskProvider<DBPrepareTask> {
+    private fun getDBPrepare(
+            project: Project,
+            containerPreparer: ContainerTaskPreparer,
+            mssqlDatabase: TaskProvider<Task>,
+            oracleDatabase: TaskProvider<Task>,
+    ): TaskProvider<DBPrepareTask> {
         return project.tasks.register(TASK_DBPREPARE, DBPrepareTask::class.java) { task ->
             task.group = GROUP_SERVERBUILD
             task.description = "Starts dbPrepare in an existing ICM base container."
-            task.containerId.set(project.provider { containerPreparer.startTask.get().containerId.get() })
+            task.executeUsing(containerPreparer.startTask)
 
-            task.dependsOn(containerPreparer.startTask)
             task.finalizedBy(containerPreparer.removeTask)
             task.mustRunAfter(mssqlDatabase, oracleDatabase)
         }
     }
 
-    private fun configureISHUnitTest(project: Project,
-                                     extension: IntershopDockerExtension,
-                                     containerPreparer: ContainerTaskPreparer,
-                                     dbprepare: TaskProvider<DBPrepareTask>,
-                                     mssqlDatabase: TaskProvider<Task>,
-                                     oracleDatabase: TaskProvider<Task>) {
+    private fun configureISHUnitTest(
+            project: Project,
+            extension: IntershopDockerExtension,
+            containerPreparer: ContainerTaskPreparer,
+            dbprepare: TaskProvider<DBPrepareTask>,
+            mssqlDatabase: TaskProvider<Task>,
+            oracleDatabase: TaskProvider<Task>,
+    ) {
         project.gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY, ISHUnitTestRegistry::class.java) {
             it.maxParallelUsages.set(1)
         }
 
         val ishUnitTest = project.tasks.register(TASK_ISHUNIT_REPORT,
-            ISHUnitHTMLTestReport::class.java) { task ->
+                ISHUnitHTMLTestReport::class.java) { task ->
             task.group = GROUP_SERVERBUILD
             task.description = "Generates report for ISHUnitTest execution"
         }
@@ -191,11 +191,11 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 task.group = GROUP_SERVERBUILD
                 task.description = "Starts ISHUnitTest suite '" + it.name + "' in an existing ICM base container."
 
-                task.containerId.set(project.provider {  containerPreparer.startTask.get().containerId.get() })
+                task.executeUsing(containerPreparer.startTask)
                 task.testCartridge.set(it.cartridge)
                 task.testSuite.set(it.testSuite)
 
-                task.dependsOn(containerPreparer.startTask)
+
                 task.finalizedBy(containerPreparer.removeTask)
                 task.mustRunAfter(dbprepare, mssqlDatabase, oracleDatabase)
             }
@@ -209,14 +209,14 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
     private fun addTestReportConfiguration(project: Project) {
         val configuration = project.configurations.maybeCreate(HTML_ANT_TESTREPORT_CONFIG)
         configuration
-            .setVisible(false)
-            .setTransitive(false)
-            .setDescription("HTML Ant Test Report libraries")
-            .defaultDependencies { dependencies: DependencySet ->
-                // this will be executed if configuration is empty
-                val dependencyHandler = project.dependencies
-                dependencies.add(dependencyHandler.create("org.apache.ant:ant-junit:1.9.7"))
-            }
+                .setVisible(false)
+                .setTransitive(false)
+                .setDescription("HTML Ant Test Report libraries")
+                .defaultDependencies { dependencies: DependencySet ->
+                    // this will be executed if configuration is empty
+                    val dependencyHandler = project.dependencies
+                    dependencies.add(dependencyHandler.create("org.apache.ant:ant-junit:1.9.7"))
+                }
 
         project.configurations.maybeCreate(HTML_ANT_TESTREPORT_CONFIG)
     }

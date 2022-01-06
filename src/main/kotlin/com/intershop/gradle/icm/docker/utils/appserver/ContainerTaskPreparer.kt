@@ -36,7 +36,7 @@ open class ContainerTaskPreparer(
     init {
         initBaseTasks()
 
-        project.tasks.register("start${getExtensionName()}", StartServerContainer::class.java) { task ->
+        project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
             configureContainerTask(task)
 
             task.description = "Start container without any special command (sleep)"
@@ -52,12 +52,7 @@ open class ContainerTaskPreparer(
                             task.name, this)
                 }
             })
-            task.hostConfig.portBindings.set(project.provider {
-                getPortMappings().map { pm -> pm.render() }.apply {
-                    project.logger.quiet("Using the following port mappings for container startup in task {}: {}",
-                            task.name, this)
-                }
-            })
+            task.withPortMappings(*getPortMappings().toTypedArray())
             task.hostConfig.network.set(networkId)
 
             task.dependsOn(prepareServer, pullTask, networkTask)

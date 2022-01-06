@@ -38,6 +38,8 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
 
     private val extension = project.extensions.getByType<IntershopDockerExtension>()
 
+    val waTasks : WATaskPreparer
+
     init {
         val volumes = mapOf(
             "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
@@ -65,14 +67,14 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         }
 
         val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes)
-        val waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes + certVol)
+        waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes + certVol)
 
         waTasks.startTask.configure {
             it.dependsOn(createVolumes)
         }
 
         removeVolumes.configure {
-            it.dependsOn(waTasks.removeTask, waaTasks.removeTask, waTasks.removeTask)
+            it.dependsOn(waTasks.removeTask, waaTasks.removeTask)
         }
 
         waaTasks.startTask.configure {

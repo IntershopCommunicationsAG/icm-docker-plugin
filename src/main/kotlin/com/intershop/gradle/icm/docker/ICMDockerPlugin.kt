@@ -24,15 +24,10 @@ import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.GenICMProperties
 import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
+import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.ShowICMASConfig
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
-import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
-import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailSrvPreparer
-import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
-import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
-import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
@@ -40,16 +35,22 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
+import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailSrvPreparer
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
-import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebTaskPreparer
-import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
+import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
+import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
+import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
+import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
+import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
+import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebTaskPreparer
 
 /**
  * Main plugin class of the project plugin.
  */
-open class ICMDockerPlugin: Plugin<Project> {
+open class ICMDockerPlugin : Plugin<Project> {
 
     companion object {
         const val BUILD_MAIN_IMAGE = "buildMainImage"
@@ -88,34 +89,34 @@ open class ICMDockerPlugin: Plugin<Project> {
             val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
             val webServerTasks = WebServerPreparer(project, networkTasks)
+            /* TODO #72088
+            val nginxTasks = NginxTaskPreparer(project, networkTasks.createNetworkTask, webServerTasks.waTasks)
+             */
 
             try {
                 tasks.named("dbPrepare").configure {
                     it.mustRunAfter(mssqlTasks.startTask)
                     it.mustRunAfter(oracleTasks.startTask)
                 }
-            } catch(ex: UnknownTaskException) {
+            } catch (ex: UnknownTaskException) {
                 project.logger.info("No dbPrepare task available!")
             }
 
-            val ccTask = tasks.register("containerClean") {task ->
+            val ccTask = tasks.register("containerClean") { task ->
                 task.group = GROUP_CONTAINER
                 task.description = "Removes all available container from Docker"
 
-                task.dependsOn( networkTasks.removeNetworkTask,
-                                mssqlTasks.removeTask,
-                                mailSrvTask.removeTask,
-                                webServerTasks.removeTask,
-                                oracleTasks.removeTask,
-                                solrcloudPreparer.removeTask)
+                task.dependsOn(networkTasks.removeNetworkTask,
+                        mssqlTasks.removeTask,
+                        mailSrvTask.removeTask,
+                        webServerTasks.removeTask,
+                        oracleTasks.removeTask,
+                        solrcloudPreparer.removeTask)
             }
 
             networkTasks.removeNetworkTask.configure {
-                it.mustRunAfter(mssqlTasks.removeTask,
-                    mailSrvTask.removeTask,
-                    webServerTasks.removeTask,
-                    oracleTasks.removeTask,
-                    solrcloudPreparer.removeTask)
+                // ensure network is not removed before containers are removed
+                it.mustRunAfter(tasks.withType(RemoveContainerByName::class.java))
             }
 
             gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
@@ -125,14 +126,6 @@ open class ICMDockerPlugin: Plugin<Project> {
             createImageTasks(project, extension)
 
             createEnvironmentTask(project, extension)
-
-            try {
-                tasks.named("publish").configure {
-                    it.finalizedBy(ccTask)
-                }
-            } catch(ex: UnknownTaskException) {
-                logger.info("Publish task is not available.")
-            }
         }
     }
 
@@ -154,41 +147,47 @@ open class ICMDockerPlugin: Plugin<Project> {
         project.tasks.register("startEnv") { task ->
             task.group = GROUP_CONTAINER
             task.description = "Start all container from Docker for the selected environment"
-            if(list.contains("mail")) {
+            if (list.contains("mail")) {
                 task.dependsOn("start${MailTaskPreparer.extName}")
             }
-            if(list.contains("webserver")) {
+            if (list.contains("webserver")) {
                 task.dependsOn("start${WebTaskPreparer.TASK_EXT_SERVER}")
             }
-            if(list.contains("solr")) {
+            if (list.contains("solr")) {
                 task.dependsOn("start${SolrTaskPreparer.TASK_EXT_SERVER}")
             }
-            if(list.contains("mssql")) {
+            if (list.contains("mssql")) {
                 task.dependsOn("start${MSSQLTaskPreparer.extName}")
             }
-            if(list.contains("oracle")) {
+            if (list.contains("oracle")) {
                 task.dependsOn("start${OracleTaskPreparer.extName}")
             }
+            /* TODO #72088 if (list.contains("nginx")) {
+                task.dependsOn("start${NginxTaskPreparer.extName}")
+            }*/
         }
 
         project.tasks.register("stopEnv") { task ->
             task.group = GROUP_CONTAINER
             task.description = "Stops all container from Docker for the selected environment"
-            if(list.contains("mail")) {
+            if (list.contains("mail")) {
                 task.dependsOn("stop${MailTaskPreparer.extName}")
             }
-            if(list.contains("webserver")) {
+            if (list.contains("webserver")) {
                 task.dependsOn("stop${WebTaskPreparer.TASK_EXT_SERVER}")
             }
-            if(list.contains("solr")) {
+            if (list.contains("solr")) {
                 task.dependsOn("stop${SolrTaskPreparer.TASK_EXT_SERVER}")
             }
-            if(list.contains("mssql")) {
+            if (list.contains("mssql")) {
                 task.dependsOn("stop${MSSQLTaskPreparer.extName}")
             }
-            if(list.contains("oracle")) {
+            if (list.contains("oracle")) {
                 task.dependsOn("stop${OracleTaskPreparer.extName}")
             }
+            /* TODO #72088 if (list.contains("nginx")) {
+                task.dependsOn("stop${NginxTaskPreparer.extName}")
+            }*/
         }
     }
 
@@ -206,7 +205,7 @@ open class ICMDockerPlugin: Plugin<Project> {
 
             testImgTask.configure { task ->
                 task.description = "Creates the test image of an appserver."
-                task.buildArgs.put( "BASE_IMAGE", project.provider { imgTask.get().images.get().first() })
+                task.buildArgs.put("BASE_IMAGE", project.provider { imgTask.get().images.get().first() })
                 task.dependsOn(imgTask)
             }
 
@@ -235,12 +234,14 @@ open class ICMDockerPlugin: Plugin<Project> {
         }
     }
 
-    private fun createImageTask(project: Project,
-                                setupImg: Property<String>,
-                                imgBuild: ProjectConfiguration,
-                                imgConf: ImageConfiguration,
-                                taskName: String): TaskProvider<BuildImage> =
-            project.tasks.register(taskName, BuildImage::class.java ) { buildImage ->
+    private fun createImageTask(
+            project: Project,
+            setupImg: Property<String>,
+            imgBuild: ProjectConfiguration,
+            imgConf: ImageConfiguration,
+            taskName: String,
+    ): TaskProvider<BuildImage> =
+            project.tasks.register(taskName, BuildImage::class.java) { buildImage ->
                 buildImage.group = "icm image build"
                 buildImage.enabled.set(imgConf.enabledProvider)
                 buildImage.dockerfile.set(imgConf.dockerfileProvider)
@@ -255,24 +256,32 @@ open class ICMDockerPlugin: Plugin<Project> {
                         "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
                     })
                 }
-                buildImage.buildArgs.put( "SETUP_IMAGE", setupImg )
-                buildImage.images.set( calculateImageTag(project, imgBuild, imgConf) )
+                buildImage.buildArgs.put("SETUP_IMAGE", setupImg)
+                buildImage.images.set(calculateImageTag(project, imgBuild, imgConf))
             }
 
-    private fun configureLables(property: MapProperty<String,String>,
-                                project: Project,
-                                imageBuild: ProjectConfiguration) {
+    private fun configureLables(
+            property: MapProperty<String, String>,
+            project: Project,
+            imageBuild: ProjectConfiguration,
+    ) {
         property.put("license", imageBuild.licenseProvider)
         property.put("maintainer", imageBuild.maintainerProvider)
         property.put("created", imageBuild.createdProvider)
         property.put("version", project.provider { project.version.toString() })
     }
 
-    private fun calculateImageTag(project: Project, prjconf: ProjectConfiguration,
-                                  imgConf: ImageConfiguration): Provider<List<String>> =
+    private fun calculateImageTag(
+            project: Project, prjconf: ProjectConfiguration,
+            imgConf: ImageConfiguration,
+    ): Provider<List<String>> =
             project.provider {
                 val nameExt = imgConf.nameExtension.get()
-                val nameComplete = if(nameExt.isNotEmpty()) { "-$nameExt" } else { "" }
+                val nameComplete = if (nameExt.isNotEmpty()) {
+                    "-$nameExt"
+                } else {
+                    ""
+                }
                 mutableListOf("${prjconf.baseImageName.get()}${nameComplete}:${project.version}")
             }
 

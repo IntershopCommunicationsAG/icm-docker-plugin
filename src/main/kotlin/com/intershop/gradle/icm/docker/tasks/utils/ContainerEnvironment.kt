@@ -16,22 +16,45 @@
  */
 package com.intershop.gradle.icm.docker.tasks.utils
 
+import org.gradle.api.GradleException
+import org.gradle.api.provider.Provider
+import java.io.Serializable
+import java.lang.IllegalStateException
+
 /**
- * Encapsulates environment variables to use used when starting a container
+ * Encapsulates environment variables to be used when starting a container. If [Provider]s are added they are stored
+ * as is. [Provider.get] is not called until [ContainerEnvironment.toList] or [ContainerEnvironment.toString] are
+ * called. So the actual value is determined lazily.
  * @see com.github.dockerjava.api.command.ExecCreateCmd.withEnv
  */
-open class ContainerEnvironment {
-    private val entries: MutableMap<String, String> = mutableMapOf()
+open class ContainerEnvironment : Serializable {
+    private val entries: MutableMap<String, Any> = mutableMapOf()
 
-    fun <V> add(key: String, value: V): ContainerEnvironment {
+    companion object {
+        /**
+         * Converts a property name into an environment variable name the way it will be found by the ICM-AS
+         * 1. convert to upper case
+         * 2. replace dots (`.`) by underscores (`_`)
+         */
+        fun propertyNameToEnvName(propertyName : String) : String = propertyName.uppercase().replace('.', '_')
+    }
+
+    /**
+     * Adds an environment variable with a name of `key` and a value of `value` if `value != null`.
+     */
+    fun add(key: String, value: Any?): ContainerEnvironment {
         if (value != null) {
-            this.entries[key] = value.toString()
+            this.entries[key] = value
         }
         return this
     }
 
     fun toList(): List<String> {
-        return entries.map { entry -> "${entry.key}=${entry.value}" }.toList()
+        return toMap().map { entry -> "${entry.key}=${entry.value}" }.toList()
+    }
+
+    fun toMap(): Map<String, String> {
+        return entries.mapValues { entry -> valueToString(entry.key, entry.value) }
     }
 
     fun merge(other: ContainerEnvironment): ContainerEnvironment {
@@ -39,6 +62,17 @@ open class ContainerEnvironment {
         merged.entries.putAll(this.entries)
         merged.entries.putAll(other.entries)
         return merged
+    }
+
+    private fun valueToString(key: String, value: Any) : String {
+        if (value !is Provider<*>){
+            return value.toString()
+        }
+        val renderedValueProvider = value.map { v -> v.toString() }
+        if (renderedValueProvider.isPresent){
+            return renderedValueProvider.get()
+        }
+        throw IllegalStateException("Provider mapped to ContainerEnvironment entry '$key' must not be empty.")
     }
 
     override fun toString(): String {
@@ -50,7 +84,7 @@ open class ContainerEnvironment {
                     if (key.matches(Regex("(?i).*PASSWORD.*"))) {
                         "<present>"
                     } else {
-                        "'$value'"
+                        "'${valueToString(key, value)}'"
                     }
                 }"
             }.joinToString(separator = ", ")

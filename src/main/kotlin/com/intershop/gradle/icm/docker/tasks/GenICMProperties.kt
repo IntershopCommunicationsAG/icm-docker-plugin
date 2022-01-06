@@ -37,12 +37,14 @@ import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPrepar
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
 
-open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
-                                           projectLayout: ProjectLayout) : DefaultTask() {
+open class GenICMProperties @Inject constructor(
+        objectFactory: ObjectFactory,
+        projectLayout: ProjectLayout,
+) : DefaultTask() {
 
     companion object {
         const val standardDevProps =
-            """
+                """
                       # development properties
                       # switch auto reload on for all Intershop artifacts
                       intershop.extensions.CheckSource=true
@@ -91,10 +93,10 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         const val webserverUrlProp = "intershop.WebServerURL"
         const val webserverSecureUrlProp = "intershop.WebServerSecureURL"
 
-        const val asConnectorAdressProp = "intershop.servletEngine.connector.address"
+        const val asConnectorAdressProp = Configuration.AS_CONNECTOR_CONTAINER_ADDRESS
 
-        const val asSolrZKListProp =  "solr.zooKeeperHostList"
-        const val asSolrPrefixProp = "solr.clusterIndexPrefix"
+        const val asSolrZKListProp = Configuration.SOLR_CLOUD_HOSTLIST
+        const val asSolrPrefixProp = Configuration.SOLR_CLOUD_INDEXPREFIX
 
         const val asMailHostProp = "mail.smtp.host"
         const val asMailPortProp = "mail.smtp.port"
@@ -113,7 +115,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     val outputDirectory: DirectoryProperty = objectFactory.directoryProperty()
 
     @get:Option(option = "icmenvops", description =
-        """A comma-separated list of options for the icm.properties files.
+    """A comma-separated list of options for the icm.properties files.
             dev - General development properties for the application server
             mail - MailHog container is used as test mail server
             solr - Single node solr cluster with containers is used
@@ -122,7 +124,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     val contentOptions: Property<String> = project.objects.property(String::class.java)
 
     @get:Option(option = "db", description =
-        """Option for the used database. The following values are possible:
+    """Option for the used database. The following values are possible:
             oracle-container - Oracle configuration for database provided by a container 
             oracle - Oracle configuration for an external database
             mssql-container - MSSQL configuration for database provided by a container
@@ -131,8 +133,8 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     @get:Input
     val dbOption: Property<String> = project.objects.property(String::class.java)
 
-    @get:Option(option = "icmas" , description ="If this parameter specified, the properties file "+
-            "will be generated for app server development.")
+    @get:Option(option = "icmas", description = "If this parameter specified, the properties file " +
+                                                "will be generated for app server development.")
     @get:Input
     val icmasOption: Property<Boolean> = project.objects.property(Boolean::class.java)
 
@@ -146,14 +148,14 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     @TaskAction
     fun createFile() {
         val outputFile = outputDirectory.file(fileName).get().asFile
-        if(outputFile.exists()) {
+        if (outputFile.exists()) {
             outputFile.delete()
         } else {
             outputFile.createNewFile()
         }
         val optList = contentOptions.get().split(",")
 
-        if(optList.contains("dev")) {
+        if (optList.contains("dev")) {
             writeDevProps(outputFile)
         }
 
@@ -182,7 +184,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         addTo(envListTasks, "webserver", true)
 
         val text =
-            """
+                """
             # The following containers will be started / stopped with
             # startEnv / stopEnv. The container can be configured in 
             # the docker image extension.
@@ -194,7 +196,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     }
 
     private fun addTo(list: MutableList<String>, value: String, check: Boolean) {
-        if(check) {
+        if (check) {
             list.add(value)
         }
     }
@@ -205,19 +207,19 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     }
 
     private fun writeDBUserConfig(file: File, container: Boolean) {
-        val user = if(container) {
+        val user = if (container) {
             Configuration.DB_USER_NAME_VALUE
         } else {
             "<database user of ext db>"
         }
-        val password = if(container) {
+        val password = if (container) {
             Configuration.DB_USER_PASSWORD_VALUE
         } else {
             "<database user password of ext db>"
         }
 
         val text =
-            """
+                """
             ${Configuration.DB_USER_NAME} = $user
             ${Configuration.DB_USER_PASSWORD} = $password
             """.trimIndent()
@@ -228,33 +230,41 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
     private fun writeOracleProps(file: File, container: Boolean) {
         val icmas = icmasOption.get()
 
-        val host = if(icmas) {
-            if(container) { "localhost" } else { "<host name of the external db>" }
+        val host = if (icmas) {
+            if (container) {
+                "localhost"
+            } else {
+                "<host name of the external db>"
+            }
         } else {
-            if(container) {
+            if (container) {
                 "${extension.containerPrefix}-${OracleTaskPreparer.extName.lowercase()}"
             } else {
                 "<host name of the external db>"
             }
         }
-        val port = if(icmas) {
-            if(container) {
+        val port = if (icmas) {
+            if (container) {
                 Configuration.DB_ORACLE_LISTENERPORT_VALUE
             } else {
                 "<listener port of the external db>"
             }
         } else {
-            if(container) {
+            if (container) {
                 Configuration.DB_ORACLE_CONTAINER_LISTENERPORT_VALUE
             } else {
                 "<listener port of the external db>"
             }
         }
 
-        val sid = if(container) { "XE" } else { "<db name of the external db>" }
+        val sid = if (container) {
+            "XE"
+        } else {
+            "<db name of the external db>"
+        }
 
         val text =
-            """
+                """
             # oracle base configuration
             $databaseTypeProp = oracle
             $databaseJDBCUrlProp = jdbc:oracle:thin:@$host:$port:$sid
@@ -262,11 +272,11 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
         file.appendText(text, Charsets.UTF_8)
         file.appendText("\n", Charsets.UTF_8)
-        writeDBUserConfig(file,  container)
+        writeDBUserConfig(file, container)
 
-        if(container) {
+        if (container) {
             val ctext =
-            """
+                    """
             # mssql container configuration - do not change this value if the default images is used 
             ${Configuration.DB_ORACLE_LISTENERPORT} = ${Configuration.DB_ORACLE_LISTENERPORT_VALUE}
             ${Configuration.DB_ORACLE_CONTAINER_LISTENERPORT} = ${Configuration.DB_ORACLE_CONTAINER_LISTENERPORT_VALUE}
@@ -315,7 +325,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         }
 
         val text =
-            """
+                """
             # mssql base configuration
             $databaseTypeProp = mssql
             $databaseJDBCUrlProp = jdbc:sqlserver://$host:$port;databaseName=$dbname
@@ -328,7 +338,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
         with(Configuration) {
             if (container) {
                 val ctext =
-                    """
+                        """
                     $DATA_FOLDER_PATH =
                     $BACKUP_FOLDER_PATH =
                         
@@ -351,7 +361,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             val confDir = File(extension.developmentConfig.configDirectory)
             val systemIP = IPFinder.getSystemIP()
 
-            val hostname = if(systemIP.second != null) {
+            val hostname = if (systemIP.second != null) {
                 try {
                     systemIP.second
                 } catch (e: UnknownHostException) {
@@ -362,7 +372,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
             }
 
             val text =
-                """
+                    """
                 # webserver configuration
                 # if youn want change the ports of the webserver, it is necessary to change the ports 
                 # in $webserverUrlProp and $webserverSecureUrlProp 
@@ -392,7 +402,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
             if (icmasOption.get()) {
                 val wstext =
-                    """
+                        """
                 # port number to start the servlet engine
                 $AS_CONNECTOR_PORT = $AS_CONNECTOR_PORT_VALUE
             
@@ -407,7 +417,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
             } else {
                 val astext =
-                    """
+                        """
                     # do not change this configuration, if you use the standard
                     # both ports must match
                     # port number to start the servlet engine
@@ -416,17 +426,16 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
                     $AS_CONNECTOR_CONTAINER_PORT = $AS_CONNECTOR_CONTAINER_PORT_VALUE
                     
                     # port number of the exposed port
-                    $AS_EXT_CONNECTOR_PORT = $AS_EXT_CONNECTOR_PORT_VALUE
+                    $AS_CONNECTOR_HOST_PORT = $AS_CONNECTOR_HOST_PORT_VALUE
                     
                     # jmx configuration
                     $AS_JMX_CONNECTOR_PORT = $AS_JMX_CONNECTOR_PORT_VALUE
-                    $AS_JMX_CONNECTOR_CONTAINER_PORT = $AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE
                     
                     # Host name / IP of the ICM Server (local installation)
                     # both values must match    
                     $LOCAL_CONNECTOR_HOST = ${systemIP.first}
                     """.trimIndent()
-                    file.appendText(astext, Charsets.UTF_8)
+                file.appendText(astext, Charsets.UTF_8)
             }
         }
         file.appendText("\n\n", Charsets.UTF_8)
@@ -434,19 +443,27 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
     private fun writeMailProps(file: File, container: Boolean) {
         val icmAs = icmasOption.get()
-        val host = if(icmAs) {
-            if(container) { "localhost" } else { "<hostname of the mail server>" }
+        val host = if (icmAs) {
+            if (container) {
+                "localhost"
+            } else {
+                "<hostname of the mail server>"
+            }
         } else {
-            if(container) {
+            if (container) {
                 "${extension.containerPrefix}-${MailTaskPreparer.extName.lowercase()}"
             } else {
                 "<hostname of the mail server>"
             }
         }
-        val port = if(container) { "25" } else { "<port of the external zookeeper node>" }
+        val port = if (container) {
+            "25"
+        } else {
+            "<port of the external zookeeper node>"
+        }
 
         val text =
-            """
+                """
             ${asMailHostProp}=${host}
             ${asMailPortProp}=${port}
     
@@ -460,12 +477,24 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
     private fun writeSolrProps(file: File, container: Boolean) {
 
-        val host = if(container) { IPFinder.getSystemIP() } else { "<hostname of min. one external zookeeper node>" }
-        val port = if(container) { "2181" } else { "<port of the external zookeeper node>" }
-        val solrpath = if(container) { "" } else { "/<path of the solr cluster>" }
+        val host = if (container) {
+            IPFinder.getSystemIP()
+        } else {
+            "<hostname of min. one external zookeeper node>"
+        }
+        val port = if (container) {
+            "2181"
+        } else {
+            "<port of the external zookeeper node>"
+        }
+        val solrpath = if (container) {
+            ""
+        } else {
+            "/<path of the solr cluster>"
+        }
 
         val text =
-            """
+                """
             $asSolrZKListProp = $host:${port}${solrpath}
             $asSolrPrefixProp = ${extension.containerPrefix}
             """.trimIndent()
@@ -476,7 +505,7 @@ open class GenICMProperties @Inject constructor(objectFactory: ObjectFactory,
 
     private fun writeGebTestProps(file: File) {
         val text =
-            """
+                """
             # necessary for automatic Solr resest
             intershop.smc.admin.user.name = admin
             intershop.smc.admin.user.password = <smcadminpassword>

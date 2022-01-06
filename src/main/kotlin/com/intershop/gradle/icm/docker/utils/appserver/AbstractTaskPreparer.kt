@@ -67,14 +67,14 @@ abstract class AbstractTaskPreparer(
         project.tasks.register("stop${getExtensionName()}", StopExtraContainer::class.java) { task ->
             task.group = "icm container ${getContainerExt()}"
             task.description = "Stop running container"
-            task.containerName.set("${extension.containerPrefix}-${getContainerExt()}")
+            task.containerName.set(getContainerName())
         }
 
         project.tasks.register("remove${getExtensionName()}", RemoveContainerByName::class.java) { task ->
             task.group = "icm container ${getContainerExt()}"
             task.description = "Remove container from Docker"
 
-            task.containerName.set("${extension.containerPrefix}-${getContainerExt()}")
+            task.containerName.set(getContainerName())
         }
     }
 
@@ -112,7 +112,7 @@ abstract class AbstractTaskPreparer(
                         to "/intershop/customizations/additional-dependencies/cartridges",
                 getOutputPathFor(TASK_CREATECLUSTERID, "")
                         to "/intershop/clusterid",
-                /* FIXME SKR remove File(extension.developmentConfig.configDirectory).absolutePath
+                /* TODO remove File(extension.developmentConfig.configDirectory).absolutePath
                         to "/intershop/conf",*/
                 getOutputPathFor(TASK_CREATECONFIG, "system-conf")
                         to "/intershop/system-conf"

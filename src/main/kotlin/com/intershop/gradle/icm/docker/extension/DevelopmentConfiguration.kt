@@ -29,6 +29,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Serializable
+import java.time.Duration
 import java.util.Properties
 import javax.inject.Inject
 
@@ -63,6 +64,10 @@ open class DevelopmentConfiguration
 
         const val LICENSE_FILE_NAME = "license.xml"
         const val CONFIG_FILE_NAME = "icm.properties"
+
+        const val PORT_MAPPING_AS_CONNECTOR = "CONNECTOR"
+        const val PORT_MAPPING_AS_DEBUG = "DEBUG"
+        const val PORT_MAPPING_AS_JMX = "JMX"
     }
 
     private val licenseDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
@@ -176,6 +181,10 @@ open class DevelopmentConfiguration
         }
     }
 
+    fun getDurationProperty(property: String, defaultSeconds: Int): Duration {
+        return Duration.ofSeconds(getIntProperty (property, defaultSeconds).toLong())
+    }
+
     /**
      * The database configuration (initialized lazily)
      */
@@ -194,18 +203,24 @@ open class DevelopmentConfiguration
     val asPortConfiguration: ASPortConfiguration by lazy {
         val config = ASPortConfiguration(objectFactory)
         config.servletEngine.value(getPortMapping(
+                PORT_MAPPING_AS_CONNECTOR,
+                Configuration.AS_CONNECTOR_HOST_PORT,
+                Configuration.AS_CONNECTOR_HOST_PORT_VALUE,
                 Configuration.AS_CONNECTOR_CONTAINER_PORT,
                 Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE,
-                Configuration.AS_EXT_CONNECTOR_PORT,
-                Configuration.AS_EXT_CONNECTOR_PORT_VALUE))
+                true))
         config.debug.value(getPortMapping(
-                Configuration.AS_DEBUG_CONTAINER_PORT_VALUE,
+                PORT_MAPPING_AS_DEBUG,
                 Configuration.AS_DEBUG_PORT,
-                Configuration.AS_DEBUG_PORT_VALUE))
+                Configuration.AS_DEBUG_PORT_VALUE,
+                Configuration.AS_DEBUG_CONTAINER_PORT_VALUE
+        ))
         config.jmx.value(getPortMapping(
-                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE,
+                PORT_MAPPING_AS_JMX,
                 Configuration.AS_JMX_CONNECTOR_PORT,
-                Configuration.AS_JMX_CONNECTOR_PORT_VALUE))
+                Configuration.AS_JMX_CONNECTOR_PORT_VALUE,
+                Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE,
+        ))
         config
     }
 
@@ -222,14 +237,35 @@ open class DevelopmentConfiguration
         val jmx: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
     }
 
-    private fun getPortMapping(containerValue: Int, hostKey: String, hostDefaultValue: Int): PortMapping =
-            PortMapping(containerValue, getIntProperty(hostKey, hostDefaultValue))
+    fun getPortMapping(
+            name: String,
+            hostKey: String,
+            hostDefaultValue: Int,
+            containerValue: Int,
+            primary: Boolean = false
+    ): PortMapping =
+            PortMapping(
+                    name = name,
+                    hostPort = getIntProperty(hostKey, hostDefaultValue),
+                    containerPort = containerValue,
+                    primary = primary
+            )
 
     @Suppress("SameParameterValue")
-    private fun getPortMapping(
-            containerKey: String, containerDefaultValue: Int, hostKey: String,
+    fun getPortMapping(
+            name: String,
+            hostKey: String,
             hostDefaultValue: Int,
+            containerKey: String,
+            containerDefaultValue: Int,
+            primary: Boolean = false
     ): PortMapping =
-            getPortMapping(getIntProperty(containerKey, containerDefaultValue), hostKey, hostDefaultValue)
+            getPortMapping(
+                    name = name,
+                    hostKey = hostKey,
+                    hostDefaultValue = hostDefaultValue,
+                    containerValue = getIntProperty(containerKey, containerDefaultValue),
+                    primary = primary
+            )
 
 }

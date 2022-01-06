@@ -19,11 +19,11 @@ package com.intershop.gradle.icm.docker.utils
 
 object Configuration {
 
-    const val DB_MSSQL_PORT = "intershop.db.mssql.hostport"
-    const val DB_MSSQL_CONTAINER_PORT  = "intershop.db.container.mssql.hostport"
+    const val DB_MSSQL_PORT = "intershop.db.mssql.port"
+    const val DB_MSSQL_CONTAINER_PORT = "intershop.db.container.mssql.hostport"
 
-    const val DB_MSSQL_PORT_VALUE = "1433"
-    const val DB_MSSQL_CONTAINER_PORT_VALUE = "1433"
+    const val DB_MSSQL_PORT_VALUE = 1433
+    const val DB_MSSQL_CONTAINER_PORT_VALUE = 1433
 
     const val DB_MSSQL_SA_PASSWORD = "intershop.db.mssql.sa.password"
     const val DB_MSSQL_SA_PASSWORD_VALUE = "1ntershop5A"
@@ -64,13 +64,12 @@ object Configuration {
     const val LOCAL_CONNECTOR_HOST = "intershop.local.hostname"
     const val LOCAL_CONNECTOR_HOST_VALUE = "localhost"
 
+    const val AS_CONNECTOR_CONTAINER_ADDRESS = "intershop.servletEngine.connector.address"
     const val AS_CONNECTOR_CONTAINER_PORT = "intershop.servletEngine.connector.container.port"
     const val AS_CONNECTOR_CONTAINER_PORT_VALUE = 7743
-    const val AS_EXT_CONNECTOR_PORT = "intershop.as.connector.port"
-    const val AS_EXT_CONNECTOR_PORT_VALUE = 7743
+    const val AS_CONNECTOR_HOST_PORT = "intershop.as.connector.port"
+    const val AS_CONNECTOR_HOST_PORT_VALUE = 7743
 
-    @Deprecated("JMX port inside the container is no more configurable")
-    const val AS_JMX_CONNECTOR_CONTAINER_PORT = "intershop.as.jmx.connector.container.port"
     const val AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE = 7747
     const val AS_JMX_CONNECTOR_PORT = "intershop.as.jmx.connector.port"
     const val AS_JMX_CONNECTOR_PORT_VALUE = 7747
@@ -84,10 +83,10 @@ object Configuration {
     const val WS_CONTAINER_HTTP_PORT = "webserver.container.http.port"
     const val WS_CONTAINER_HTTPS_PORT = "webserver.container.https.port"
 
-    const val WS_HTTP_PORT_VALUE = "8080"
-    const val WS_HTTPS_PORT_VALUE = "8443"
-    const val WS_CONTAINER_HTTP_PORT_VALUE = "8080"
-    const val WS_CONTAINER_HTTPS_PORT_VALUE = "8443"
+    const val WS_HTTP_PORT_VALUE = 8080
+    const val WS_HTTPS_PORT_VALUE = 8443
+    const val WS_CONTAINER_HTTP_PORT_VALUE = 8080
+    const val WS_CONTAINER_HTTPS_PORT_VALUE = 8443
 
     const val WS_CERT_PATH = "webServer.cert.path"
     const val WS_SERVER_CERT = "webserver.cert.server"
@@ -98,12 +97,24 @@ object Configuration {
     const val WS_SECURE_URL = "intershop.WebServerSecureURL"
     const val WS_SECURE_URL_VALUE = "https://localhost:8443"
 
+    const val WS_READINESS_PROBE_INTERVAL = "intershop.db.readinessProbe.interval"
+    const val WS_READINESS_PROBE_INTERVAL_VALUE = 2 // 2 secs
+    const val WS_READINESS_PROBE_TIMEOUT = "intershop.db.readinessProbe.timeout"
+    const val WS_READINESS_PROBE_TIMEOUT_VALUE = 30 // 30 secs
+
     const val AS_ADMIN_USER_NAME = "intershop.smc.admin.user.name"
     const val AS_ADMIN_USER_NAME_VALUE = "admin"
     const val AS_ADMIN_USER_PASSWORD = "intershop.smc.admin.user.password"
 
     const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
+    const val SOLR_CLOUD_HOST_PORT = "solr.port"
+    const val SOLR_CLOUD_HOST_PORT_VALUE = 8983
+
+    const val ZOOKEEPER_HOST_PORT = "zookeeper.port"
+    const val ZOOKEEPER_HOST_PORT_VALUE = 2181
+    const val ZOOKEEPER_METRICS_HOST_PORT = "zookeeper.metrics.port"
+    const val ZOOKEEPER_METRICS_HOST_PORT_VALUE = 7000
 
     const val SSL_VERIFICATION = "ssl.verification"
 
@@ -126,7 +137,21 @@ object Configuration {
     const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
 
     const val AS_READINESS_PROBE_INTERVAL = "intershop.as.readinessProbe.interval"
-    const val AS_READINESS_PROBE_INTERVAL_VALUE = 30 // 30 secs
+    const val AS_READINESS_PROBE_INTERVAL_VALUE = 15 // 15 secs
     const val AS_READINESS_PROBE_TIMEOUT = "intershop.as.readinessProbe.timeout"
-    const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins
+    const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins (full dbinit may be necessary)
+
+    /* TODO #72088
+    const val NGINX_HTTP_PORT = "nginx.http.port"
+    const val NGINX_HTTPS_PORT = "nginx.https.port"
+
+    const val NGINX_HTTP_PORT_VALUE = 8080
+    const val NGINX_HTTPS_PORT_VALUE = 8443
+
+    const val NGINX_CERT_PATH = "nginx.cert.path"
+    const val NGINX_CERT_FILENAME = "nginx.cert.filename"
+    const val NGINX_CERT_FILENAME_VALUE = "fullchain.pem"
+    const val NGINX_PRIVATEKEY_FILENAME = "nginx.privatekey.filename"
+    const val NGINX_PRIVATEKEY_FILENAME_VALUE = "privkey.pem"
+     */
 }

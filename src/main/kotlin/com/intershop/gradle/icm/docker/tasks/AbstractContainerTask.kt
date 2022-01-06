@@ -25,10 +25,11 @@ import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.options.Option
+import org.gradle.api.tasks.TaskProvider
 import java.util.concurrent.TimeUnit
 
 abstract class AbstractContainerTask : AbstractDockerRemoteApiTask() {
+    private val containerNameProperty: Property<String> = project.objects.property(String::class.java)
 
     /**
      * The ID or name of container used to perform operation.
@@ -37,7 +38,17 @@ abstract class AbstractContainerTask : AbstractDockerRemoteApiTask() {
     @get:Input
     val containerId: Property<String> = project.objects.property(String::class.java)
 
-    protected fun waitForExit(localExecId: String ): Long {
+    fun executeUsing(startContainerTaskProvider: TaskProvider<StartExtraContainer>) {
+        containerId.set(project.provider { startContainerTaskProvider.get().containerId.get() })
+        containerNameProperty.set(project.provider { startContainerTaskProvider.get().containerName.get() })
+        dependsOn(startContainerTaskProvider)
+    }
+
+    @get:Internal
+    val containerName: String
+        get() = containerNameProperty.get()
+
+    protected fun waitForExit(localExecId: String): Long {
 
         // create progressLogger for pretty printing of terminal log progression.
         val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)

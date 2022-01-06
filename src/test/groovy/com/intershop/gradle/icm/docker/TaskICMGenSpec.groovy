@@ -20,6 +20,7 @@ package com.intershop.gradle.icm.docker
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration
 import com.intershop.gradle.test.AbstractIntegrationGroovySpec
 import org.gradle.wrapper.GradleUserHomeLookup
+import spock.lang.Ignore
 
 import java.nio.file.Paths
 
@@ -270,6 +271,7 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
+    @Ignore
     def 'start environment'() {
         settingsFile << """
         rootProject.name='rootproject'
