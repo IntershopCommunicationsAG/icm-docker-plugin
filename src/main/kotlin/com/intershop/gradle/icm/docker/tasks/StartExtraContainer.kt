@@ -101,7 +101,7 @@ open class StartExtraContainer
     }
 
     /**
-     * Applies the given `environment` to this tasks [DockerCreateContainer.envVars] (using [MapProperty.putAll])
+     * Applies the given `environment` to this task's [DockerCreateContainer.envVars] (using [MapProperty.putAll])
      */
     fun withEnvironment(environment: ContainerEnvironment) {
         envVars.putAll(environment.toMap())

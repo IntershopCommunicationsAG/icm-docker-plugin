@@ -18,7 +18,10 @@ package com.intershop.gradle.icm.docker.tasks.utils
 
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
+import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.JavaDebugSupport
+import org.gradle.api.provider.Provider
 
 /**
  * Encapsulates a builder for [ContainerEnvironment] instances for an ICM appserver.
@@ -40,6 +43,9 @@ class ICMContainerEnvironmentBuilder {
         const val ENV_SERVER_NAME = "SERVER_NAME"
         const val ENV_ENABLE_HEAPDUMP = "ENABLE_HEAPDUMP"
         const val ENV_ENABLE_GCLOG = "ENABLE_GCLOG"
+        const val ENV_MAIL = "ISH_ENV_MAIL"
+        const val PROP_MAIL_HOST = "mail.smtp.host"
+        const val PROP_MAIL_PORT = "mail.smtp.port"
     }
 
     private var classpathLayout: Set<ClasspathLayout> = setOf()
@@ -53,6 +59,8 @@ class ICMContainerEnvironmentBuilder {
     private var debugOptions: JavaDebugSupport? = null
     private var enableHeapDump: Boolean? = null
     private var enableGCLog: Boolean? = null
+    private var solrCloudTZookeeperHostList : Provider<String>? = null
+    private var mailServer : Provider<HostAndPort>? = null
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
@@ -109,6 +117,16 @@ class ICMContainerEnvironmentBuilder {
         return this
     }
 
+    fun withSolrCloudZookeeperHostList(hostList : Provider<String>) : ICMContainerEnvironmentBuilder {
+        this.solrCloudTZookeeperHostList = hostList
+        return this
+    }
+
+    fun withMailServer(mailServer : Provider<HostAndPort>) : ICMContainerEnvironmentBuilder {
+        this.mailServer = mailServer
+        return this
+    }
+
     fun build() : ContainerEnvironment {
         val env = ContainerEnvironment()
         additionalParameters?.run {
@@ -153,14 +171,26 @@ class ICMContainerEnvironmentBuilder {
         }
 
         triggerDbPrepare?.run {
-            env.add(ENV_IS_DBPREPARE, triggerDbPrepare)
+            env.add(ENV_IS_DBPREPARE, this)
         }
         enableHeapDump?.run {
-            env.add(ENV_ENABLE_HEAPDUMP, enableHeapDump)
+            env.add(ENV_ENABLE_HEAPDUMP, this)
         }
         enableGCLog?.run {
-            env.add(ENV_ENABLE_GCLOG, enableGCLog)
+            env.add(ENV_ENABLE_GCLOG, this)
         }
+        solrCloudTZookeeperHostList?.run {
+            if (isPresent) {
+                env.add(ContainerEnvironment.propertyNameToEnvName(Configuration.SOLR_CLOUD_HOSTLIST), this)
+            }
+        }
+        mailServer?.run {
+            if (isPresent) {
+                val value : HostAndPort = get()
+                env.add(ENV_MAIL, "$PROP_MAIL_HOST=${value.hostName},$PROP_MAIL_PORT=${value.port}")
+            }
+        }
+
         return env
     }
 

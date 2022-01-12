@@ -17,7 +17,6 @@
 package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_DBPREPARE
-import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
@@ -64,7 +63,6 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                         StartServerContainer::class.java
                 )
 
-                val startServer = tasks.named(TASK_START_SERVER)
                 val startSolrCloud = tasks.named("startSolrCloud")
                 val dbPrepareTask = tasks.named(TASK_DBPREPARE)
 
@@ -74,7 +72,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                         wfs.probes.addAll(provider { startWAProvider.get().probes.get() })
                         wfs.probes.addAll(provider { startASProvider.get().probes.get() })
 
-                        wfs.mustRunAfter(startServer)
+                        wfs.mustRunAfter(startWAProvider, startASProvider)
                     }
 
                     val solrCloudHostList = getConfigProperty(SOLR_CLOUD_HOSTLIST, "localhost")

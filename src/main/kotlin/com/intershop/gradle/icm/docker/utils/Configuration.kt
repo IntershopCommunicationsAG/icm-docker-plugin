@@ -105,6 +105,10 @@ object Configuration {
     const val AS_ADMIN_USER_NAME = "intershop.smc.admin.user.name"
     const val AS_ADMIN_USER_NAME_VALUE = "admin"
     const val AS_ADMIN_USER_PASSWORD = "intershop.smc.admin.user.password"
+    const val AS_READINESS_PROBE_INTERVAL = "intershop.as.readinessProbe.interval"
+    const val AS_READINESS_PROBE_INTERVAL_VALUE = 15 // 15 secs
+    const val AS_READINESS_PROBE_TIMEOUT = "intershop.as.readinessProbe.timeout"
+    const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins (full dbinit may be necessary)
 
     const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
@@ -136,10 +140,14 @@ object Configuration {
     const val DATA_FOLDER_VOLUME_VALUE = "/var/opt/mssql/data"
     const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
 
-    const val AS_READINESS_PROBE_INTERVAL = "intershop.as.readinessProbe.interval"
-    const val AS_READINESS_PROBE_INTERVAL_VALUE = 15 // 15 secs
-    const val AS_READINESS_PROBE_TIMEOUT = "intershop.as.readinessProbe.timeout"
-    const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins (full dbinit may be necessary)
+    const val MAIL_SMTP_HOST_PORT = "mail.smtp.host.port"
+    const val MAIL_SMTP_HOST_PORT_VALUE = 25
+    const val MAIL_ADMIN_HOST_PORT = "mail.admin.host.port"
+    const val MAIL_ADMIN_HOST_PORT_VALUE = 8025
+    const val MAIL_READINESS_PROBE_INTERVAL = "mail.readinessProbe.interval"
+    const val MAIL_READINESS_PROBE_INTERVAL_VALUE = 1 // 1 secs
+    const val MAIL_READINESS_PROBE_TIMEOUT = "mail.readinessProbe.timeout"
+    const val MAIL_READINESS_PROBE_TIMEOUT_VALUE = 15 // 15 secs
 
     /* TODO #72088
     const val NGINX_HTTP_PORT = "nginx.http.port"

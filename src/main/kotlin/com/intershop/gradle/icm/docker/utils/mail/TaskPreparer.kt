@@ -16,19 +16,23 @@
  */
 package com.intershop.gradle.icm.docker.utils.mail
 
+import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
-import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.getByType
 
 class TaskPreparer(project: Project,
                    networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
         const val extName: String = "MailSrv"
+        const val SMTP_CONTAINER_PORT = 1025
+        const val ADMIN_CONTAINER_PORT = 8025
     }
 
     override fun getExtensionName(): String = extName
@@ -48,10 +52,32 @@ class TaskPreparer(project: Project,
                 "MH_STORAGE" to "maildir",
                 "MH_MAILDIR_PATH" to "/maildir"))
 
-            task.withPortMappings(
-                // TODO make host ports configurable
-                PortMapping("SMTP", 25, 1025, true),
-                PortMapping("ADMIN", 8025, 8025, false)
+            val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+            val smtpPortMapping = devConfig.getPortMapping(
+                    "SMTP",
+                    Configuration.MAIL_SMTP_HOST_PORT,
+                    Configuration.MAIL_SMTP_HOST_PORT_VALUE,
+                    SMTP_CONTAINER_PORT,
+                    true
+            )
+            val adminPortMapping = devConfig.getPortMapping(
+                    "ADMIN",
+                    Configuration.MAIL_ADMIN_HOST_PORT,
+                    Configuration.MAIL_ADMIN_HOST_PORT_VALUE,
+                    ADMIN_CONTAINER_PORT,
+                    false
+            )
+            task.withPortMappings(smtpPortMapping, adminPortMapping)
+            task.withSocketProbe(
+                    smtpPortMapping.hostPort,
+                    devConfig.getDurationProperty(
+                            Configuration.MAIL_READINESS_PROBE_INTERVAL,
+                            Configuration.MAIL_READINESS_PROBE_INTERVAL_VALUE
+                    ),
+                    devConfig.getDurationProperty(
+                            Configuration.MAIL_READINESS_PROBE_TIMEOUT,
+                            Configuration.MAIL_READINESS_PROBE_TIMEOUT_VALUE
+                    )
             )
 
             task.hostConfig.binds.set( project.provider {
