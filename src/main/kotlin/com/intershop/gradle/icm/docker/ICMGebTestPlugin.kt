@@ -17,7 +17,6 @@
 
 package com.intershop.gradle.icm.docker
 
-import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_START_SERVER
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork

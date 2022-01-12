@@ -34,14 +34,12 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
 
         collectionsList.forEach { col ->
             if (col.startsWith(solrClusterPrefixProperty.get(), true)) {
-                project.logger.info("Remove collection {} found for {}", col, solrClusterPrefixProperty.get())
+                project.logger.info("Collection {} found for prefix '{}'", col, prefixName())
 
                 val deleteColl = CollectionAdminRequest.Delete.deleteCollection(col)
                 val deleteCollResponse = deleteColl.process(solrClient)
                 if (!deleteCollResponse.isSuccess) {
-                    throw GradleException("It was not possible to drop all collections for " +
-                            solrClusterPrefixProperty.get()
-                    )
+                    throw GradleException("Unable to drop all collections for prefix '${prefixName()}'")
                 }
 
                 ++collections
@@ -55,7 +53,7 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
 
         actualConfigSets.forEach { conf ->
             if (conf.startsWith(solrClusterPrefixProperty.get(), true)) {
-                project.logger.info("Remove configuration set {} found for {}", conf, solrClusterPrefixProperty.get())
+                project.logger.info("Configuration set {} found for prefix '{}'", conf, prefixName())
 
                 val deleteConfRequest = ConfigSetAdminRequest.Delete()
                 deleteConfRequest.configSetName = conf
@@ -64,8 +62,7 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
                     deleteConfResponse.errorMessages.forEach { err ->
                         project.logger.error("${err.key}:${err.value}")
                     }
-                    throw GradleException("It was not possible to drop all configsets " +
-                            "for ${solrClusterPrefixProperty.get()}")
+                    throw GradleException("Unable to drop all configuration sets for prefix '${prefixName()}'")
                 }
 
                 ++configs
@@ -74,7 +71,9 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
 
         solrClient.close()
 
-        project.logger.quiet("{} collections and {} coniguration sets for {} deleted.",
-            collections, configs, solrClusterPrefixProperty.get())
+        project.logger.quiet("{} collections and {} configuration sets for prefix '{}' deleted.",
+            collections, configs, prefixName())
     }
+
+    private fun prefixName() = solrClusterPrefixProperty.get().ifBlank { "<emptyPrefix>" }
 }

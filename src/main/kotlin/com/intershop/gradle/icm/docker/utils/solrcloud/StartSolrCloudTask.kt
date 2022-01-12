@@ -21,12 +21,12 @@ import org.gradle.api.tasks.Internal
 import javax.inject.Inject
 
 /**
- * Ext. of [DefaultTask] that just provides the [SolrPreparer.requiredContainerEnvironment] by
- * [requiredContainerEnvironment].
+ * Ext. of [DefaultTask] that just provides the [SolrPreparer.zookeeperHostList] by
+ * [zookeeperHostList].
  */
 open class StartSolrCloudTask @Inject constructor(solrPreparer:SolrPreparer) : DefaultTask() {
 
     @Internal
-    val requiredContainerEnvironment = solrPreparer.requiredContainerEnvironment
+    val zookeeperHostList = solrPreparer.zookeeperHostList
 
 }

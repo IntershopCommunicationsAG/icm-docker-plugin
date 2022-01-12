@@ -19,11 +19,14 @@ package com.intershop.gradle.icm.docker.utils.appserver
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout.RELEASE
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout.SOURCE
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.HostAndPort
+import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
@@ -32,6 +35,8 @@ import java.net.URI
 class ServerTaskPreparer(
         project: Project,
         networkTask: Provider<PrepareNetwork>,
+        startSolrCloudTask : Provider<StartSolrCloudTask>,
+        mailServerTask : Provider<StartExtraContainer>
 ) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
@@ -81,6 +86,15 @@ class ServerTaskPreparer(
                             Configuration.AS_READINESS_PROBE_TIMEOUT_VALUE
                     )
             )
+            task.solrCloudZookeeperHostList = project.provider {
+                startSolrCloudTask.get().zookeeperHostList.get()
+            }
+            task.mailServer = project.provider {
+                HostAndPort(
+                        mailServerTask.get().containerName.get(),
+                        mailServerTask.get().getPrimaryPortMapping().get().containerPort
+                )
+            }
 
             task.dependsOn(prepareServer, pullTask, networkTask)
         }

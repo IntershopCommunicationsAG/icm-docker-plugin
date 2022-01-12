@@ -18,7 +18,6 @@ package com.intershop.gradle.icm.docker.utils.solrcloud
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
-import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.IPFinder
@@ -30,7 +29,7 @@ class SolrPreparer(
         networkTask: Provider<PrepareNetwork>,
         zkPreparer: ZKPreparer,
 ) : AbstractTaskPreparer(project, networkTask) {
-    val requiredContainerEnvironment = ContainerEnvironment()
+    val zookeeperHostList : Provider<String>
 
     companion object {
         const val extName: String = "Solr"
@@ -56,10 +55,7 @@ class SolrPreparer(
         }
 
         val hostList = zkPreparer.renderedHostList
-        requiredContainerEnvironment.add(
-                ContainerEnvironment.propertyNameToEnvName(Configuration.SOLR_CLOUD_HOSTLIST),
-                hostList
-        )
+        zookeeperHostList = project.provider { zkPreparer.renderedHostList }
 
         project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)

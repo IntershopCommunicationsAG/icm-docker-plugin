@@ -22,10 +22,12 @@ import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -81,11 +83,15 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                 ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
 
                 val prepareNetwork = project.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
+                val startSolrCloud = tasks.named(
+                        "start${com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer.TASK_EXT_SERVER}",
+                        StartSolrCloudTask::class.java)
+                val mailSrvTask = tasks.named("start${MailPreparer.extName}",
+                        StartExtraContainer::class.java)
 
                 val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
-                val appServerPreparer = ServerTaskPreparer(project, prepareNetwork)
+                val appServerPreparer = ServerTaskPreparer(project, prepareNetwork, startSolrCloud, mailSrvTask)
 
-                val mailSrvTask = tasks.named("start${MailPreparer.extName}")
                 val solrCloudTask = tasks.named("start${SolrCloudPreparer.TASK_EXT_SERVER}")
 
                 appServerPreparer.startTask.configure {

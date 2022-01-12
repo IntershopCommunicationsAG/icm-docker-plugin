@@ -20,15 +20,16 @@ package com.intershop.gradle.icm.docker.tasks
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.JavaDebugSupport
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
-import java.net.URI
-import java.time.Duration
 import javax.inject.Inject
 
 open class StartServerContainer
@@ -38,8 +39,8 @@ open class StartServerContainer
     private val gcLogProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
     private val heapDumpProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
     private val appserverNameProperty: Property<String> = objectFactory.property(String::class.java)
-    private val readinessProbeInterval: Property<Duration> = objectFactory.property(Duration::class.java)
-    private val readinessProbeTimeout: Property<Duration> = objectFactory.property(Duration::class.java)
+    private val solrCloudZookeeperHostListProperty: Property<String> = objectFactory.property(String::class.java)
+    private val mailServerProperty: Property<HostAndPort> = objectFactory.property(HostAndPort::class.java)
 
     companion object {
         const val PATTERN_READINESS_PROBE_URL = "http://localhost:%d/status/ReadinessProbe"
@@ -126,6 +127,30 @@ open class StartServerContainer
         set(value) {
             appserverNameProperty.set(value)
             withEnvironment(ICMContainerEnvironmentBuilder().withServerName(value).build())
+        }
+
+    /**
+     * Provide the host list of the Zookeeper required by Solr Cloud
+     */
+    @get:Optional
+    @get:Input
+    var solrCloudZookeeperHostList : Provider<String>
+        get() = solrCloudZookeeperHostListProperty
+        set(value) {
+            solrCloudZookeeperHostListProperty.set(value)
+            withEnvironment(ICMContainerEnvironmentBuilder().withSolrCloudZookeeperHostList(value).build())
+        }
+
+    /**
+     * Provide the smtp host
+     */
+    @get:Optional
+    @get:Input
+    var mailServer : Provider<HostAndPort>
+        get() = mailServerProperty
+        set(value) {
+            mailServerProperty.set(value)
+            withEnvironment(ICMContainerEnvironmentBuilder().withMailServer(value).build())
         }
 
     init {
