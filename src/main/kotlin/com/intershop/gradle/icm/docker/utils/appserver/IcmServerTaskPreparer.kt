@@ -17,7 +17,9 @@
 
 package com.intershop.gradle.icm.docker.utils.appserver
 
+import com.intershop.gradle.icm.docker.ICMDockerPlugin
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
@@ -26,31 +28,35 @@ import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilde
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout.SOURCE
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
-import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
 import java.net.URI
 
-class ServerTaskPreparer(
-        project: Project,
-        networkTask: Provider<PrepareNetwork>,
-        startSolrCloudTask : Provider<StartSolrCloudTask>,
-        mailServerTask : Provider<StartExtraContainer>
+class IcmServerTaskPreparer(
+    project: Project,
+    networkTask: Provider<PrepareNetwork>,
+    mailServerTask : Provider<StartExtraContainer>
 ) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
-        const val extName: String = "AS"
+        const val extName: String = "AsProdContainer"
     }
 
     override fun getExtensionName(): String = extName
+
+    override fun getImage(): Provider<String> {
+        val mainBuildImageTask = project.tasks.named(ICMDockerPlugin.BUILD_MAIN_IMAGE, BuildImage::class.java)
+        val imageProvider = project.provider { mainBuildImageTask.get().images.get() }
+        return imageProvider.map { it.first() }
+    }
 
     init {
         initAppTasks()
 
         project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
-            val customization: Boolean = true
-            val taskDescription: String = "Starts Application Server in a container - only for project use (e.g. solrcloud, responsive)"
+            val customization: Boolean = false
+            val taskDescription: String = "Starts Production Application Server in a container - only for use in icm-as"
 
             configureContainerTask(task)
             task.description = taskDescription
@@ -89,9 +95,6 @@ class ServerTaskPreparer(
                             Configuration.AS_READINESS_PROBE_TIMEOUT_VALUE
                     )
             )
-            task.solrCloudZookeeperHostList = project.provider {
-                startSolrCloudTask.get().zookeeperHostList.get()
-            }
             task.mailServer = project.provider {
                 HostAndPort(
                         mailServerTask.get().containerName.get(),
@@ -99,7 +102,7 @@ class ServerTaskPreparer(
                 )
             }
 
-            task.dependsOn(prepareServer, pullTask, networkTask)
+            task.dependsOn(pullTask, networkTask)
         }
     }
 

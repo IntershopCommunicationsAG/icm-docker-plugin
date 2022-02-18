@@ -47,7 +47,7 @@ open class ContainerTaskPreparer(
             task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
 
             task.hostConfig.binds.set(project.provider {
-                getServerVolumes().apply {
+                getServerVolumes(true).apply {
                     project.logger.quiet("Using the following volume binds for container startup in task {}: {}",
                             task.name, this)
                 }
