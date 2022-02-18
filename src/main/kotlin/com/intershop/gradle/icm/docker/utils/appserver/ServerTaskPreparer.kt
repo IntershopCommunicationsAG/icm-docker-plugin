@@ -37,7 +37,7 @@ class ServerTaskPreparer(
         networkTask: Provider<PrepareNetwork>,
         startSolrCloudTask : Provider<StartSolrCloudTask>,
         mailServerTask : Provider<StartExtraContainer>
-) : AbstractTaskPreparer(project, networkTask) {
+) : AbstractServerTaskPreparer(project, networkTask, startSolrCloudTask, mailServerTask) {
 
     companion object {
         const val extName: String = "AS"
@@ -49,55 +49,11 @@ class ServerTaskPreparer(
         initAppTasks()
 
         project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
-            val customization: Boolean = true
-            val taskDescription: String = "Starts Application Server in a container - only for project use (e.g. solrcloud, responsive)"
 
-            configureContainerTask(task)
-            task.description = taskDescription
+            val customization = true
+            val taskDescription = "Starts Application Server in a container - only for project use (e.g. solrcloud, responsive)"
 
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            task.hostConfig.binds.set(getServerVolumes(customization).apply {
-                project.logger.info("Using the following volume binds for container startup in task {}: {}",
-                        task.name,this)
-            })
-
-            task.withPortMappings(*getPortMappings().toTypedArray())
-
-            task.hostConfig.network.set(networkId)
-            task.withEnvironment(
-                ICMContainerEnvironmentBuilder()
-                    .withClasspathLayout(setOf(RELEASE, SOURCE))
-                    .withContainerName(getContainerName())
-                    .build()
-            )
-
-            val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
-            task.withHttpProbe(
-                    URI.create(
-                            StartServerContainer.PATTERN_READINESS_PROBE_URL.format(
-                                    devConfig.asPortConfiguration.servletEngine.get().hostPort
-                            )
-                    ),
-                    devConfig.getDurationProperty(
-                            Configuration.AS_READINESS_PROBE_INTERVAL,
-                            Configuration.AS_READINESS_PROBE_INTERVAL_VALUE
-                    ),
-                    devConfig.getDurationProperty(
-                            Configuration.AS_READINESS_PROBE_TIMEOUT,
-                            Configuration.AS_READINESS_PROBE_TIMEOUT_VALUE
-                    )
-            )
-            task.solrCloudZookeeperHostList = project.provider {
-                startSolrCloudTask.get().zookeeperHostList.get()
-            }
-            task.mailServer = project.provider {
-                HostAndPort(
-                        mailServerTask.get().containerName.get(),
-                        mailServerTask.get().getPrimaryPortMapping().get().containerPort
-                )
-            }
+            initServer(task, taskDescription, customization)
 
             task.dependsOn(prepareServer, pullTask, networkTask)
         }

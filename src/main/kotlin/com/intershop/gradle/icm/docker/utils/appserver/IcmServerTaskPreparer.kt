@@ -18,26 +18,18 @@
 package com.intershop.gradle.icm.docker.utils.appserver
 
 import com.intershop.gradle.icm.docker.ICMDockerPlugin
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout.RELEASE
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout.SOURCE
-import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.HostAndPort
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.getByType
-import java.net.URI
 
 class IcmServerTaskPreparer(
     project: Project,
     networkTask: Provider<PrepareNetwork>,
     mailServerTask : Provider<StartExtraContainer>
-) : AbstractTaskPreparer(project, networkTask) {
+) : AbstractServerTaskPreparer(project, networkTask, null, mailServerTask) {
 
     companion object {
         const val extName: String = "AsProdContainer"
@@ -55,52 +47,11 @@ class IcmServerTaskPreparer(
         initAppTasks()
 
         project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
-            val customization: Boolean = false
-            val taskDescription: String = "Starts Production Application Server in a container - only for use in icm-as"
 
-            configureContainerTask(task)
-            task.description = taskDescription
+            val customization = false
+            val taskDescription = "Starts Production Application Server in a container - only for use in icm-as"
 
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            task.hostConfig.binds.set(getServerVolumes(customization).apply {
-                project.logger.info("Using the following volume binds for container startup in task {}: {}",
-                        task.name,this)
-            })
-
-            task.withPortMappings(*getPortMappings().toTypedArray())
-
-            task.hostConfig.network.set(networkId)
-            task.withEnvironment(
-                ICMContainerEnvironmentBuilder()
-                    .withClasspathLayout(setOf(RELEASE, SOURCE))
-                    .withContainerName(getContainerName())
-                    .build()
-            )
-
-            val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
-            task.withHttpProbe(
-                    URI.create(
-                            StartServerContainer.PATTERN_READINESS_PROBE_URL.format(
-                                    devConfig.asPortConfiguration.servletEngine.get().hostPort
-                            )
-                    ),
-                    devConfig.getDurationProperty(
-                            Configuration.AS_READINESS_PROBE_INTERVAL,
-                            Configuration.AS_READINESS_PROBE_INTERVAL_VALUE
-                    ),
-                    devConfig.getDurationProperty(
-                            Configuration.AS_READINESS_PROBE_TIMEOUT,
-                            Configuration.AS_READINESS_PROBE_TIMEOUT_VALUE
-                    )
-            )
-            task.mailServer = project.provider {
-                HostAndPort(
-                        mailServerTask.get().containerName.get(),
-                        mailServerTask.get().getPrimaryPortMapping().get().containerPort
-                )
-            }
+            initServer(task, taskDescription, customization)
 
             task.dependsOn(pullTask, networkTask)
         }
