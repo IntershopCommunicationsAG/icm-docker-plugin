@@ -114,7 +114,13 @@ open class ICMDockerPlugin : Plugin<Project> {
                         mailSrvTask.removeTask,
                         webServerTasks.removeTask,
                         oracleTasks.removeTask,
-                        solrcloudPreparer.removeTask)
+                        solrcloudPreparer.removeTask,
+                        appServerPreparer.removeTask)
+            }
+
+            val startAsContainer = appServerPreparer.startTask
+            startAsContainer.configure {
+                it.mustRunAfter(mailSrvTask.startTask)
             }
 
             networkTasks.removeNetworkTask.configure {
