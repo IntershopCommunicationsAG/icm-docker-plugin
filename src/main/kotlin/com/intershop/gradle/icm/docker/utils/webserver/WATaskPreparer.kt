@@ -26,7 +26,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_IN
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_INTERVAL_VALUE
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_TIMEOUT
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_TIMEOUT_VALUE
-import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
 import com.intershop.gradle.icm.utils.SocketProbe
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -113,7 +113,7 @@ class WATaskPreparer(
                     val port: Int
                     if (appserverAsContainer) {
                         // started as container
-                        host = "${extension.containerPrefix}-${ServerTaskPreparer.extName.lowercase()}"
+                        host = "${extension.containerPrefix}-${CustomServerTaskPreparer.extName.lowercase()}"
                         port = portMapping.containerPort
                     } else {
 

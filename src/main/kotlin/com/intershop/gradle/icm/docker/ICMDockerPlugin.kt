@@ -89,7 +89,7 @@ open class ICMDockerPlugin : Plugin<Project> {
             val mailSrvTask = MailSrvPreparer(project, networkTasks.createNetworkTask)
             val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
-            val appServerPreparer = IcmServerTaskPreparer(project, networkTasks.createNetworkTask , mailSrvTask.startTask)
+            val icmServerPreparer = IcmServerTaskPreparer(project, networkTasks.createNetworkTask , mailSrvTask.startTask)
 
             val webServerTasks = WebServerPreparer(project, networkTasks)
             /* TODO #72088
@@ -115,10 +115,10 @@ open class ICMDockerPlugin : Plugin<Project> {
                         webServerTasks.removeTask,
                         oracleTasks.removeTask,
                         solrcloudPreparer.removeTask,
-                        appServerPreparer.removeTask)
+                        icmServerPreparer.removeTask)
             }
 
-            val startAsContainer = appServerPreparer.startTask
+            val startAsContainer = icmServerPreparer.startTask
             startAsContainer.configure {
                 it.mustRunAfter(mailSrvTask.startTask)
             }

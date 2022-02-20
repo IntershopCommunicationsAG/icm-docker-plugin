@@ -28,7 +28,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.CustomizationImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.TestContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
@@ -100,7 +100,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val prepareNetwork = project.tasks.named(TaskPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
                 val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
                 val testContainerPreparer = TestContainerTaskPreparer(project, prepareNetwork)
-                val appServerPreparer = ServerTaskPreparer(project, prepareNetwork, startSolrCloud, mailSrvTask)
+                val appServerPreparer = CustomServerTaskPreparer(project, prepareNetwork, startSolrCloud, mailSrvTask)
                 val startAS = appServerPreparer.startTask
                 try {
                     tasks.named("containerClean").configure {

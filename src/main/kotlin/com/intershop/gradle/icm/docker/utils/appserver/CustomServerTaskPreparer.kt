@@ -17,22 +17,14 @@
 
 package com.intershop.gradle.icm.docker.utils.appserver
 
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout.RELEASE
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout.SOURCE
-import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.getByType
-import java.net.URI
 
-class ServerTaskPreparer(
+class CustomServerTaskPreparer(
         project: Project,
         networkTask: Provider<PrepareNetwork>,
         startSolrCloudTask : Provider<StartSolrCloudTask>,

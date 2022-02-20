@@ -20,7 +20,7 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -70,7 +70,7 @@ class WAATaskPreparer(project: Project,
                 }
 
                 val asHostname = if (appserverAsContainer) {
-                    "${extension.containerPrefix}-${ServerTaskPreparer.extName}"
+                    "${extension.containerPrefix}-${CustomServerTaskPreparer.extName}"
                 } else {
                     getConfigProperty(
                         Configuration.LOCAL_CONNECTOR_HOST,
