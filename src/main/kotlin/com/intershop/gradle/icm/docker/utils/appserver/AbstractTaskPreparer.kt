@@ -115,7 +115,8 @@ abstract class AbstractTaskPreparer(
         )
 
         if(customization) {
-            volumes[getOutputPathFor(TASK_EXTRACARTRIDGES, "")] = "/intershop/customizations/additional-dependencies/cartridges"
+            volumes[getOutputPathFor(TASK_EXTRACARTRIDGES, "")] =
+                "/intershop/customizations/additional-dependencies/cartridges"
             volumes[getOutputPathFor(TASK_CREATECONFIG, "system-conf")] ="/intershop/system-conf"
 
             getOutputDirFor(CollectLibraries.DEFAULT_NAME).listFiles { file -> file.isDirectory }?.forEach { dir ->

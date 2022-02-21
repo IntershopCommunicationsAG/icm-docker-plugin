@@ -43,7 +43,8 @@ class CustomServerTaskPreparer(
         project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
 
             val customization = true
-            val taskDescription = "Starts Application Server in a container - only for project use (e.g. solrcloud, responsive)"
+            val taskDescription =
+                "Starts Application Server in a container - only for project use (e.g. solrcloud, responsive)"
 
             initServer(task, taskDescription, customization)
 

@@ -89,7 +89,8 @@ open class ICMDockerPlugin : Plugin<Project> {
             val mailSrvTask = MailSrvPreparer(project, networkTasks.createNetworkTask)
             val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
-            val icmServerPreparer = IcmServerTaskPreparer(project, networkTasks.createNetworkTask , mailSrvTask.startTask)
+            val icmServerPreparer = IcmServerTaskPreparer(project,
+                                        networkTasks.createNetworkTask , mailSrvTask.startTask)
 
             val webServerTasks = WebServerPreparer(project, networkTasks)
             /* TODO #72088
