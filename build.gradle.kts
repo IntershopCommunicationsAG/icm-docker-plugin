@@ -274,7 +274,6 @@ publishing {
         }
     }
     repositories {
-        /*
         maven {
             val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
             val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
@@ -284,7 +283,6 @@ publishing {
                 password = sonatypePassword
             }
         }
-         */
     }
 }
 
