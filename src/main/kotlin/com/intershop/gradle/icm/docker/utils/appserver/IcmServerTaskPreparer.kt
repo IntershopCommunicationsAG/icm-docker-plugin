@@ -32,14 +32,14 @@ class IcmServerTaskPreparer(
 ) : AbstractServerTaskPreparer(project, networkTask, null, mailServerTask) {
 
     companion object {
-        const val extName: String = "AsProdContainer"
+        const val extName: String = "AsTestContainer"
     }
 
     override fun getExtensionName(): String = extName
 
     override fun getImage(): Provider<String> {
-        val mainBuildImageTask = project.tasks.named(ICMDockerPlugin.BUILD_MAIN_IMAGE, BuildImage::class.java)
-        val imageProvider = project.provider { mainBuildImageTask.get().images.get() }
+        val buildTestImageTask = project.tasks.named(ICMDockerPlugin.BUILD_TEST_IMAGE, BuildImage::class.java)
+        val imageProvider = project.provider { buildTestImageTask.get().images.get() }
         return imageProvider.map { it.first() }
     }
 
