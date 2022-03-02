@@ -21,9 +21,9 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
-import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.SITES_FOLDER_PATH
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
+import com.intershop.gradle.icm.docker.utils.OS
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import com.intershop.gradle.icm.tasks.CollectLibraries
 import org.gradle.api.GradleException
@@ -34,6 +34,7 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 abstract class AbstractTaskPreparer(
         project: Project,
@@ -90,7 +91,7 @@ abstract class AbstractTaskPreparer(
     }
 
     protected fun getServerVolumes(customization: Boolean): Map<String,String> {
-        addDirectories.forEach { _, path ->
+        addDirectories.forEach { (_, path) ->
             path.get().asFile.mkdirs()
         }
 
@@ -140,65 +141,64 @@ abstract class AbstractTaskPreparer(
     private fun prepareSitesFolder(project: Project, extension: IntershopDockerExtension) {
         with(project) {
             val sitesFolderPath = extension.developmentConfig.getConfigProperty(
-                Configuration.SITES_FOLDER_PATH, ""
+                SITES_FOLDER_PATH, ""
             )
 
             val defaultSitesFolder =
                 project.layout.buildDirectory.dir("sites_folder").forUseAtConfigurationTime().get().asFile
 
+            val sitesFolder : File
             if (sitesFolderPath.isEmpty()) {
                 logger.warn(
                     "There is no configuration for the sites folder. Check '{}' in your icm.properties! \n" +
-                            "The default '{}' value will be used!",
-                    Configuration.SITES_FOLDER_PATH,
+                           "The default '{}' value will be used!",
+                    SITES_FOLDER_PATH,
                     defaultSitesFolder.path
                 )
+                sitesFolder = defaultSitesFolder
+            }
+            else {
+                sitesFolder = File(sitesFolderPath)
+                logger.quiet("Using configured sites folder '{}'", sitesFolder.path)
+            }
 
-                if (! defaultSitesFolder.exists()) {
-                    if (! defaultSitesFolder.mkdirs()) {
-                        logger.error(
-                            "It was not possible to create the sites folder '{}'!",
-                            defaultSitesFolder.path
-                        )
-                        throw GradleException(
-                            "It was not possible to create the sites folder '{" +
-                                    defaultSitesFolder.path + "'!"
-                        )
-                    }
-                } else {
-                    logger.warn(
-                        "The sites folder exists and will be used '{}'!",
-                        defaultSitesFolder.path
-                    )
-                }
+            if (sitesFolder.exists() && sitesFolder.canWrite()) {
+                logger.quiet("The sites folder '{}' exists and can be used", sitesFolder.path)
             } else {
-                val sitesFolder = File(sitesFolderPath)
-
-                if (sitesFolder.exists() && sitesFolder.canWrite()) {
-                    logger.warn("The sites folder exists and can be used '{}'!", sitesFolder.path)
-                } else {
+                if (sitesFolder.exists()){
                     if (!sitesFolder.canWrite()) {
-                        logger.warn(
-                            "The sites folder exists, but it is not possible to write '{}'!",
-                            sitesFolder.path
-                        )
+                        throw GradleException("The sites folder '${sitesFolder.path}' exists, but is not writable!")
                     }
-                    if (sitesFolder.mkdirs()) {
-                        logger.warn(
-                            "The sites folder does not exist, but it is was possible to create '{}'!",
-                            sitesFolder.path
-                        )
-                    } else {
-                        logger.error(
-                            "The sites folder does not exist and it is was possible to create '{}'!",
-                            sitesFolder.path
-                        )
-                        throw GradleException(
-                            "It was not possible to create the sites folder '{" +
-                                    sitesFolder.path + "'!"
-                        )
+                } else {
+                    logger.warn("The sites folder '{}' does not exist -> trying to create", sitesFolder.path)
+                    if (!sitesFolder.mkdirs()) {
+                        throw GradleException("The sites folder '${sitesFolder.path}' does not exist, but can not be " +
+                                              "created!")
+                    }
+                    logger.quiet("Created sites folder '{}'", sitesFolder.path)
+                }
+            }
+
+            // try to make sites folder accessible to other users especially 'intershop' (inside the container)
+            val os = OS.bySystem()
+            os?.run {
+                if (this == OS.LINUX || this == OS.MAC){
+                    // execute '/bin/sh -c chmod a+rwx <sitesFolder>', stdout/stderr are just redirected to gradle's
+                    // stdout/stderr
+                    val process = ProcessBuilder().command("/bin/sh", "-c", "chmod a+rwx '${sitesFolder.path}'").
+                    inheritIO().start()
+                    val isTimeout = !process.waitFor(5, TimeUnit.SECONDS)
+                    if (isTimeout){
+                        throw GradleException("Timed out while making the sites folder '${sitesFolder.path}' " +
+                                              "accessible to everyone!")
+                    }
+                    val exitCode = process.exitValue()
+                    if (exitCode != 0){
+                        throw GradleException("Failed to make the sites folder '${sitesFolder.path}' accessible to " +
+                                              "everyone (exitCode=$exitCode)!")
                     }
                 }
+
             }
         }
     }

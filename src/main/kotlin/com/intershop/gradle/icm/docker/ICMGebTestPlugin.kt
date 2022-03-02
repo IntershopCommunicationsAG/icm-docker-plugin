@@ -78,7 +78,7 @@ class ICMGebTestPlugin : Plugin<Project> {
 
             val networkTask = rootProject.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
 
-            val os = getOS()
+            val os = OS.bySystem()
             val localDriverConfig = extension.developmentConfig.getConfigProperty(GEB_LOCAL_DRIVER, "")
             val localEnvironmentConfig = extension.developmentConfig.getConfigProperty(GEB_LOCAL_ENVIRONMENT, "")
 
@@ -152,14 +152,4 @@ class ICMGebTestPlugin : Plugin<Project> {
         }
     }
 
-    private fun getOS(): OS? {
-        val os = System.getProperty("os.name").lowercase()
-
-        return when {
-            os.contains(OS.WINDOWS.value) -> { OS.WINDOWS }
-            os.contains("nix") || os.contains("nux") || os.contains("aix") -> { OS.LINUX }
-            os.contains(OS.MAC.value) -> { OS.MAC }
-            else -> null
-        }
-    }
 }
