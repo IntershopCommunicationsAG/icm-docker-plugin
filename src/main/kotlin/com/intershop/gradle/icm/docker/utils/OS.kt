@@ -21,5 +21,24 @@ enum class OS(val value: String) {
 
     WINDOWS("win"),
     LINUX("linux"),
-    MAC("mac")
+    MAC("mac");
+
+    companion object {
+        fun bySystem(): OS? {
+            val os = System.getProperty("os.name").lowercase()
+
+            return when {
+                os.contains(WINDOWS.value) -> {
+                    WINDOWS
+                }
+                os.contains("nix") || os.contains("nux") || os.contains("aix") -> {
+                    LINUX
+                }
+                os.contains(MAC.value) -> {
+                    MAC
+                }
+                else -> null
+            }
+        }
+    }
 }
