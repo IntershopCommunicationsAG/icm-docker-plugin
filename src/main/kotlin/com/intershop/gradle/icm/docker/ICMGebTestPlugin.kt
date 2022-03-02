@@ -21,12 +21,15 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.geb.GebConfiguration
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.StartServerContainer
+import com.intershop.gradle.icm.docker.tasks.WaitForServer
 import com.intershop.gradle.icm.docker.tasks.geb.GebDriverDownload
 import com.intershop.gradle.icm.docker.tasks.geb.GebTest
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_DRIVER
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_ENVIRONMENT
 import com.intershop.gradle.icm.docker.utils.OS
+import com.intershop.gradle.icm.docker.utils.appserver.IcmServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -68,6 +71,11 @@ class ICMGebTestPlugin : Plugin<Project> {
                 StartExtraContainer::class.java
             )
 
+            val startASProvider = rootProject.tasks.named(
+                "start${IcmServerTaskPreparer.extName}",
+                StartServerContainer::class.java
+            )
+
             val networkTask = rootProject.tasks.named(NetworkPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
 
             val os = getOS()
@@ -78,6 +86,20 @@ class ICMGebTestPlugin : Plugin<Project> {
                 Configuration.WS_SECURE_URL,
                 Configuration.WS_SECURE_URL_VALUE
             )
+
+            try {
+                with(extension.developmentConfig) {
+
+                    val wfsTask = project.tasks.register("waitForServer", WaitForServer::class.java) { wfs ->
+                        wfs.probes.addAll(provider { startWebSrv.get().probes.get() })
+                        wfs.probes.addAll(provider { startASProvider.get().probes.get() })
+
+                        wfs.mustRunAfter(startWebSrv, startASProvider)
+                    }
+                }
+            } catch (ex: UnknownTaskException) {
+                project.logger.info("No startServer task found.")
+            }
 
             val gebTest = tasks.register("gebTest", GebTest::class.java) {
                 it.testClassesDirs = sourcesets.output.classesDirs
@@ -92,7 +114,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                     it.gebEnvironment.set(gebExtension.gebEnvironment)
                 }
 
-                it.mustRunAfter(startWebSrv)
+                it.dependsOn(tasks.named("waitForServer"))
             }
 
             try {
