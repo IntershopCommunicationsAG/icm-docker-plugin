@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  */
+@file:Suppress("TooManyFunctions")
 package com.intershop.gradle.icm.docker.tasks.utils
 
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
