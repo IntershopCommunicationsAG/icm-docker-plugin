@@ -16,6 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.tasks.utils
 
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
 import com.intershop.gradle.icm.docker.utils.Configuration
@@ -37,6 +38,8 @@ class ICMContainerEnvironmentBuilder {
         const val ENV_DB_JDBC_PASSWORD = "INTERSHOP_JDBC_PASSWORD"
         const val ENV_CARTRIDGE_LIST = "CARTRIDGE_LIST"
         const val ENV_ADDITIONAL_PARAMETERS = "ADDITIONAL_PARAMETERS"
+        const val ENV_INTERSHOP_WEBSERVERURL = "INTERSHOP_WEBSERVERURL"
+        const val ENV_INTERSHOP_WEBSERVERSECUREURL = "INTERSHOP_WEBSERVERSECUREURL"
         const val ENV_CARTRIDGE_CLASSPATH_LAYOUT = "CARTRIDGE_CLASSPATH_LAYOUT"
         const val ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_ADDRESS = "INTERSHOP_SERVLETENGINE_CONNECTOR_ADDRESS"
         const val ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT = "INTERSHOP_SERVLETENGINE_CONNECTOR_PORT"
@@ -53,6 +56,7 @@ class ICMContainerEnvironmentBuilder {
     private var serverName: String? = null
     private var containerName: String? = null
     private var databaseConfig: DatabaseParameters? = null
+    private var webserverConfig: WebserverConfiguration? = null
     private var portConfig: ASPortConfiguration? = null
     private var cartridgeList: Set<String> = setOf()
     private var additionalParameters: AdditionalICMParameters? = null
@@ -84,6 +88,11 @@ class ICMContainerEnvironmentBuilder {
 
     fun withDatabaseConfig(databaseConfig: DatabaseParameters) : ICMContainerEnvironmentBuilder {
         this.databaseConfig = databaseConfig
+        return this
+    }
+
+    fun withWebserverConfig(webserverConfig: WebserverConfiguration) : ICMContainerEnvironmentBuilder {
+        this.webserverConfig = webserverConfig
         return this
     }
 
@@ -144,6 +153,11 @@ class ICMContainerEnvironmentBuilder {
                     .add(ENV_DB_JDBC_URL, jdbcUrl.get())
                     .add(ENV_DB_JDBC_USER, jdbcUser.get())
                     .add(ENV_DB_JDBC_PASSWORD, jdbcPassword.get())
+        }
+
+        webserverConfig?.run {
+            env.add(ENV_INTERSHOP_WEBSERVERURL, webserverUrl.get())
+                .add(ENV_INTERSHOP_WEBSERVERSECUREURL, webserverSecureURL.get())
         }
 
         // configure servlet engine port

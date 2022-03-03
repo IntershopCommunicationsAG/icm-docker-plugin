@@ -22,6 +22,7 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.github.dockerjava.api.model.Frame
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
@@ -72,6 +73,15 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
                 .value(project.extensions.getByType<IntershopDockerExtension>().developmentConfig.databaseConfiguration)
     }
 
+    /**
+     * The webserver configuration. It is lazily determined from
+     * [com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.webserverConfiguration]
+     */
+    @get:Input
+    val webserverConfiguration: Property<WebserverConfiguration> by lazy {
+        project.objects.property(WebserverConfiguration::class.java)
+            .value(project.extensions.getByType<IntershopDockerExtension>().developmentConfig.webserverConfiguration)
+    }
 
     /**
      * The port configuration. It is lazily determined from
@@ -206,6 +216,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         return ICMContainerEnvironmentBuilder()
                 .withContainerName(containerName)
                 .withDatabaseConfig(databaseConfiguration.get())
+                .withWebserverConfig(webserverConfiguration.get())
                 .withPortConfig(portConfiguration.get())
                 .withCartridgeList(createCartridgeList().get())
                 .withAdditionalParameters(createAdditionalParameters())
