@@ -90,7 +90,7 @@ abstract class AbstractTaskPreparer(
         )
     }
 
-    protected fun getServerVolumes(): Map<String,String> {
+    protected fun getServerVolumes(customization: Boolean): Map<String,String> {
         addDirectories.forEach { (_, path) ->
             path.get().asFile.mkdirs()
         }
@@ -109,17 +109,21 @@ abstract class AbstractTaskPreparer(
                         to "/intershop/ishunitrunner/output",
                 project.projectDir.absolutePath
                         to "/intershop/customizations/${extension.containerPrefix}/cartridges",
-                getOutputPathFor(TASK_EXTRACARTRIDGES, "")
-                        to "/intershop/customizations/additional-dependencies/cartridges",
                 getOutputPathFor(TASK_CREATECLUSTERID, "")
                         to "/intershop/clusterid",
                 /* TODO remove File(extension.developmentConfig.configDirectory).absolutePath
                         to "/intershop/conf",*/
-                getOutputPathFor(TASK_CREATECONFIG, "system-conf")
-                        to "/intershop/system-conf"
         )
-        getOutputDirFor(CollectLibraries.DEFAULT_NAME).listFiles { file -> file.isDirectory }?.forEach { dir ->
-            volumes[dir.absolutePath] = "/intershop/customizations/${extension.containerPrefix}-${dir.name}-libs/lib"
+
+        if(customization) {
+            volumes[getOutputPathFor(TASK_EXTRACARTRIDGES, "")] =
+                "/intershop/customizations/additional-dependencies/cartridges"
+            volumes[getOutputPathFor(TASK_CREATECONFIG, "system-conf")] ="/intershop/system-conf"
+
+            getOutputDirFor(CollectLibraries.DEFAULT_NAME).listFiles { file -> file.isDirectory }?.forEach { dir ->
+                volumes[dir.absolutePath] =
+                    "/intershop/customizations/${extension.containerPrefix}-${dir.name}-libs/lib"
+            }
         }
 
         return ContainerUtils.transformVolumes(volumes)

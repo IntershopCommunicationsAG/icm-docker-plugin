@@ -94,6 +94,8 @@ object Configuration {
 
     const val WS_SERVER_HTTP2 = "webserver.use.http2"
 
+    const val WS_URL = "intershop.WebServerURL"
+    const val WS_URL_VALUE = "http://localhost:8080"
     const val WS_SECURE_URL = "intershop.WebServerSecureURL"
     const val WS_SECURE_URL_VALUE = "https://localhost:8443"
 

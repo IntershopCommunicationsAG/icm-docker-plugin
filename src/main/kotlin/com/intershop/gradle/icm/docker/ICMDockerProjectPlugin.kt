@@ -26,7 +26,7 @@ import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.ProjectImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.appserver.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.GradleException
@@ -90,7 +90,7 @@ open class ICMDockerProjectPlugin : Plugin<Project> {
                         StartExtraContainer::class.java)
 
                 val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
-                val appServerPreparer = ServerTaskPreparer(project, prepareNetwork, startSolrCloud, mailSrvTask)
+                val appServerPreparer = CustomServerTaskPreparer(project, prepareNetwork, startSolrCloud, mailSrvTask)
 
                 val solrCloudTask = tasks.named("start${SolrCloudPreparer.TASK_EXT_SERVER}")
 

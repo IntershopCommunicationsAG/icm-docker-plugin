@@ -17,45 +17,44 @@
 
 package com.intershop.gradle.icm.docker.utils.appserver
 
+import com.intershop.gradle.icm.docker.ICMDockerPlugin
+import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
-open class ContainerTaskPreparer(
-        project: Project,
-        networkTask: Provider<PrepareNetwork>,
-) : AbstractTaskPreparer(project, networkTask) {
+class IcmServerTaskPreparer(
+    project: Project,
+    networkTask: Provider<PrepareNetwork>,
+    mailServerTask : Provider<StartExtraContainer>
+) : AbstractServerTaskPreparer(project, networkTask, null, mailServerTask) {
 
     companion object {
-        const val extName: String = "Container"
+        const val extName: String = "AsTestContainer"
     }
 
     override fun getExtensionName(): String = extName
 
+    override fun getImage(): Provider<String> {
+        val buildTestImageTask = project.tasks.named(ICMDockerPlugin.BUILD_TEST_IMAGE, BuildImage::class.java)
+        val imageProvider = project.provider { buildTestImageTask.get().images.get() }
+        return imageProvider.map { it.first() }
+    }
+
     init {
-        initBaseTasks()
+        initAppTasks()
 
         project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
-            configureContainerTask(task)
 
-            task.description = "Start container without any special command (sleep)"
+            val customization = false
+            val taskDescription = "Starts Production Application Server in a container - only for use in icm-as"
 
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
+            initServer(task, taskDescription, customization)
 
-            task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
-
-            task.hostConfig.binds.set(project.provider {
-                getServerVolumes(true).apply {
-                    project.logger.quiet("Using the following volume binds for container startup in task {}: {}",
-                            task.name, this)
-                }
-            })
-            task.withPortMappings(*getPortMappings().toTypedArray())
-            task.hostConfig.network.set(networkId)
-
-            task.dependsOn(prepareServer, pullTask, networkTask)
+            task.dependsOn(pullTask, networkTask)
         }
     }
+
 }

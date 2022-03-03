@@ -28,6 +28,7 @@ import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.ShowICMASConfig
 import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.appserver.IcmServerTaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
@@ -88,6 +89,9 @@ open class ICMDockerPlugin : Plugin<Project> {
             val mailSrvTask = MailSrvPreparer(project, networkTasks.createNetworkTask)
             val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
+            val icmServerPreparer = IcmServerTaskPreparer(project,
+                                        networkTasks.createNetworkTask , mailSrvTask.startTask)
+
             val webServerTasks = WebServerPreparer(project, networkTasks)
             /* TODO #72088
             val nginxTasks = NginxTaskPreparer(project, networkTasks.createNetworkTask, webServerTasks.waTasks)
@@ -111,7 +115,13 @@ open class ICMDockerPlugin : Plugin<Project> {
                         mailSrvTask.removeTask,
                         webServerTasks.removeTask,
                         oracleTasks.removeTask,
-                        solrcloudPreparer.removeTask)
+                        solrcloudPreparer.removeTask,
+                        icmServerPreparer.removeTask)
+            }
+
+            val startAsContainer = icmServerPreparer.startTask
+            startAsContainer.configure {
+                it.mustRunAfter(mailSrvTask.startTask)
             }
 
             networkTasks.removeNetworkTask.configure {

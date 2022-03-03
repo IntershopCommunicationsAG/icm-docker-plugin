@@ -198,6 +198,16 @@ open class DevelopmentConfiguration
     }
 
     /**
+     * The webserver configuration (initialized lazily)
+     */
+    val webserverConfiguration: WebserverConfiguration by lazy {
+        val config = WebserverConfiguration(objectFactory)
+        config.webserverUrl.set(getConfigProperty(Configuration.WS_URL))
+        config.webserverSecureURL.set(getConfigProperty(Configuration.WS_SECURE_URL))
+        config
+    }
+
+    /**
      * The port configuration (initialized lazily)
      */
     val asPortConfiguration: ASPortConfiguration by lazy {
@@ -235,6 +245,11 @@ open class DevelopmentConfiguration
         val servletEngine: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
         val debug: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
         val jmx: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+    }
+
+    class WebserverConfiguration(objectFactory: ObjectFactory) : Serializable {
+        val webserverUrl: Property<String> = objectFactory.property(String::class.java)
+        val webserverSecureURL: Property<String> = objectFactory.property(String::class.java)
     }
 
     fun getPortMapping(

@@ -18,44 +18,38 @@
 package com.intershop.gradle.icm.docker.utils.appserver
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
+import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
-open class ContainerTaskPreparer(
+class CustomServerTaskPreparer(
         project: Project,
         networkTask: Provider<PrepareNetwork>,
-) : AbstractTaskPreparer(project, networkTask) {
+        startSolrCloudTask : Provider<StartSolrCloudTask>,
+        mailServerTask : Provider<StartExtraContainer>
+) : AbstractServerTaskPreparer(project, networkTask, startSolrCloudTask, mailServerTask) {
 
     companion object {
-        const val extName: String = "Container"
+        const val extName: String = "AS"
     }
 
     override fun getExtensionName(): String = extName
 
     init {
-        initBaseTasks()
+        initAppTasks()
 
         project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
-            configureContainerTask(task)
 
-            task.description = "Start container without any special command (sleep)"
+            val customization = true
+            val taskDescription =
+                "Starts Application Server in a container - only for project use (e.g. solrcloud, responsive)"
 
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
-
-            task.hostConfig.binds.set(project.provider {
-                getServerVolumes(true).apply {
-                    project.logger.quiet("Using the following volume binds for container startup in task {}: {}",
-                            task.name, this)
-                }
-            })
-            task.withPortMappings(*getPortMappings().toTypedArray())
-            task.hostConfig.network.set(networkId)
+            initServer(task, taskDescription, customization)
 
             task.dependsOn(prepareServer, pullTask, networkTask)
         }
     }
+
 }
