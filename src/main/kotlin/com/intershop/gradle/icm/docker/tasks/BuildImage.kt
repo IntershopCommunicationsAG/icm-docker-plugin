@@ -21,13 +21,8 @@ import com.bmuschko.gradle.docker.internal.OutputCollector
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
 import com.github.dockerjava.api.command.BuildImageResultCallback
-import com.github.dockerjava.api.exception.DockerException
 import com.github.dockerjava.api.model.BuildResponseItem
-import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_IMG_REGISTRY
-import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
-import groovy.lang.Closure
 import org.gradle.api.Action
-import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.ProjectLayout
@@ -36,15 +31,12 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
-import org.gradle.api.services.BuildServiceRegistry
-import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
-import org.gradle.util.ConfigureUtil
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
@@ -70,15 +62,6 @@ open class BuildImage
      */
     override fun registryCredentials(action: Action<in DockerRegistryCredentials>?) {
         action!!.execute(registryCredentials)
-    }
-
-    /**
-     * Set the credentials for the task.
-     *
-     * @param c closure with Docker registry credentials.
-     */
-    fun registryCredentials(c: Closure<DockerRegistryCredentials>) {
-        ConfigureUtil.configure(c, registryCredentials)
     }
 
     /**
@@ -190,7 +173,7 @@ open class BuildImage
      * If path contains ':' it will be replaced by '_'.
      */
     @get:OutputFile
-    val imageIdFile:RegularFileProperty = project.objects.fileProperty()
+    val imageFile:RegularFileProperty = project.objects.fileProperty()
 
     /**
      * The id of the image built.
@@ -212,28 +195,8 @@ open class BuildImage
         pull.set(false)
         cacheFrom.empty()
         val safeTaskPath = this.path.replaceFirst("^:", "").replace(":", "_")
-        imageIdFile.set(project.layout.buildDirectory.file(".docker/${safeTaskPath}-imageId.txt"))
+        imageFile.set(project.layout.buildDirectory.file(".docker/${safeTaskPath}-imageId.txt"))
         buildArgs.empty()
-
-        outputs.upToDateWhen {
-            val file = imageIdFile.get().asFile
-            val returnValue =
-                    if(file.exists()) {
-                        try {
-                            val fileImageId = file.readText()
-                            dockerClient.inspectImageCmd(fileImageId).exec()
-                            imageId.set(fileImageId)
-
-                            true
-                        } catch (e: DockerException) {
-                            e.printStackTrace()
-                            false
-                        }
-                    } else {
-                        false
-                    }
-            returnValue
-        }
 
         onlyIf {
             val returnValue = enabled.getOrElse(false)
@@ -265,17 +228,7 @@ open class BuildImage
         val buildImageCmd = dockerClient.buildImageCmd().withBaseDirectory(imgBuildDir)
         buildImageCmd.withDockerfile(defaultDockerFile)
 
-        val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
-        val buildImgRegistry = getBuildService(serviceRegistry, BUILD_IMG_REGISTRY)
-
         if (images.orNull != null) {
-            val tagListString = images.get().joinToString(separator = ",") { "'${it}'" }
-            logger.quiet("Using images {}.", tagListString)
-            if(buildImgRegistry != null) {
-                buildImgRegistry.addImages(images.get().toList())
-            } else {
-                throw GradleException("Buildservice registry is not correct configured.")
-            }
             buildImageCmd.withTags(images.get())
         }
 
@@ -319,7 +272,7 @@ open class BuildImage
 
         val createdImageId = buildImageCmd.exec(createCallback(nextHandler)).awaitImageId()
         imageId.set(createdImageId)
-        imageIdFile.get().asFile.writeText(createdImageId)
+        imageFile.get().asFile.writeText(images.get().joinToString(separator = ","))
         logger.quiet("Created image with ID '{}'.", createdImageId)
     }
 
@@ -359,18 +312,6 @@ open class BuildImage
                 collector.close()
                 super.close()
             }
-        }
-    }
-
-    private fun getBuildService(registry: BuildServiceRegistry, name: String): BuildImageRegistry? {
-        val registration = registry.registrations.findByName(name)
-            ?: throw GradleException ("Unable to find build service with name '$name'.")
-
-        val buildservice = registration.service.get()
-        return if(buildservice is BuildImageRegistry) {
-            buildservice
-        } else {
-            null
         }
     }
 }

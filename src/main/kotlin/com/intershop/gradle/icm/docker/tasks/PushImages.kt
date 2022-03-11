@@ -19,17 +19,13 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.DockerRegistryCredentials
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
+import com.github.dockerjava.api.model.Identifier
 import com.github.dockerjava.api.model.PushResponseItem
-import com.intershop.gradle.icm.docker.ICMDockerPlugin
 import com.intershop.gradle.icm.docker.tasks.utils.PushImageCallback
-import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
-import groovy.lang.Closure
 import org.gradle.api.Action
-import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.services.BuildServiceRegistry
-import org.gradle.api.services.internal.BuildServiceRegistryInternal
-import org.gradle.util.ConfigureUtil
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
 open class PushImages
@@ -47,46 +43,48 @@ open class PushImages
     }
 
     /**
+     * The images including repository, image name and tag used e.g. {@code vieux/apache:2.0}.
+     */
+    @get:Input
+    val images: SetProperty<String> = project.objects.setProperty(String::class.java)
+
+    /**
      * Configures the target Docker registry credentials for use with a task.
      */
     override fun registryCredentials(action: Action<in DockerRegistryCredentials>?) {
         action!!.execute(registryCredentials)
     }
 
-    /**
-     * Set the credentials for the task.
-     *
-     * @param c closure with Docker registry credentials.
-     */
-    fun registryCredentials(c: Closure<DockerRegistryCredentials>) {
-        ConfigureUtil.configure(c, registryCredentials)
-    }
-
     init {
         group = "icm image build"
         description = "Push all available images to registry."
-        onlyIf {
-            project.hasProperty("runOnCI") &&
-                    project.property("runOnCI") == "true"
-        }
     }
 
     override fun runRemoteCommand() {
 
-        val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
-        val buildService = getBuildService(serviceRegistry, ICMDockerPlugin.BUILD_IMG_REGISTRY)
-
-        if(buildService != null) {
-            buildService.images.forEach { image ->
-                logger.quiet("Pushing image '${image}'.")
-                val pushImageCmd = dockerClient.pushImageCmd(image)
-                val authConfig = registryAuthLocator.lookupAuthConfig(image, registryCredentials)
-                pushImageCmd.withAuthConfig(authConfig)
-                val callback = createCallback(nextHandler)
-                pushImageCmd.exec(callback).awaitCompletion()
+        val imageIDs = mutableMapOf<String,String>()
+        val availableimages = dockerClient.listImagesCmd().withShowAll(true).exec()
+        availableimages.forEach { img ->
+            images.get().forEach { imgName ->
+                if(img.repoTags.contains(imgName)) {
+                    imageIDs.put(img.id.split(":").get(1).substring(0,12), imgName)
+                }
             }
-        } else {
-            throw GradleException("Buildservice registry is not correct configured.")
+        }
+
+        images.get().forEach {
+            if(! imageIDs.values.contains(it)) {
+                logger.warn("Image {} is not available! Please call buildImage before.", it)
+            }
+        }
+
+        imageIDs.forEach { id, name ->
+            logger.quiet("Pushing image '{}' with ID '{}'.", name, id)
+            val pushImageCmd = dockerClient.pushImageCmd(name)
+            val authConfig = registryAuthLocator.lookupAuthConfig(id, registryCredentials)
+            pushImageCmd.withAuthConfig(authConfig)
+            val callback = createCallback(nextHandler)
+            pushImageCmd.exec(callback).awaitCompletion()
         }
     }
 
@@ -103,18 +101,6 @@ open class PushImages
                 }
                 super.onNext(item)
             }
-        }
-    }
-
-    private fun getBuildService(registry: BuildServiceRegistry, name: String): BuildImageRegistry? {
-        val registration = registry.registrations.findByName(name)
-                ?: throw GradleException ("Unable to find build service with name '$name'.")
-
-        val buildservice = registration.service.get()
-        return if(buildservice is BuildImageRegistry) {
-            buildservice
-        } else {
-            null
         }
     }
 }

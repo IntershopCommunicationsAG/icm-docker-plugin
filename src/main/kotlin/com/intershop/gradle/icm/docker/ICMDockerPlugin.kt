@@ -22,11 +22,9 @@ import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.GenICMProperties
-import com.intershop.gradle.icm.docker.tasks.ImageProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.ShowICMASConfig
-import com.intershop.gradle.icm.docker.utils.BuildImageRegistry
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.appserver.IcmServerTaskPreparer
 import org.gradle.api.Plugin
@@ -106,7 +104,7 @@ open class ICMDockerPlugin : Plugin<Project> {
                 project.logger.info("No dbPrepare task available!")
             }
 
-            val ccTask = tasks.register("containerClean") { task ->
+            tasks.register("containerClean") { task ->
                 task.group = GROUP_CONTAINER
                 task.description = "Removes all available container from Docker"
 
@@ -128,8 +126,6 @@ open class ICMDockerPlugin : Plugin<Project> {
                 // ensure network is not removed before containers are removed
                 it.mustRunAfter(tasks.withType(RemoveContainerByName::class.java))
             }
-
-            gradle.sharedServices.registerIfAbsent(BUILD_IMG_REGISTRY, BuildImageRegistry::class.java) { }
 
             createICMPropertiesGenTask(project)
 
@@ -203,15 +199,16 @@ open class ICMDockerPlugin : Plugin<Project> {
 
     private fun createImageTasks(project: Project, extension: IntershopDockerExtension) {
         with(extension) {
+            val mainImages = calculateImageTag(project, imageBuild, imageBuild.images.mainImage)
             val imgTask = createImageTask(
-                    project, images.icmsetup, imageBuild, imageBuild.images.mainImage, BUILD_MAIN_IMAGE)
+                    project, images.icmsetup, imageBuild, imageBuild.images.mainImage, mainImages, BUILD_MAIN_IMAGE)
 
             imgTask.configure { task ->
                 task.description = "Creates the main image with an appserver."
             }
-
+            val testImages = calculateImageTag(project, imageBuild, imageBuild.images.testImage)
             val testImgTask = createImageTask(
-                    project, images.icmsetup, imageBuild, imageBuild.images.testImage, BUILD_TEST_IMAGE)
+                    project, images.icmsetup, imageBuild, imageBuild.images.testImage, testImages, BUILD_TEST_IMAGE)
 
             testImgTask.configure { task ->
                 task.description = "Creates the test image of an appserver."
@@ -226,7 +223,9 @@ open class ICMDockerPlugin : Plugin<Project> {
             }
 
             val push = project.tasks.register(PUSH_IMAGES, PushImages::class.java) { task ->
-                task.dependsOn(imgTask, testImgTask)
+                task.mustRunAfter(imgTask, testImgTask)
+                task.images.addAll(mainImages)
+                task.images.addAll(testImages)
             }
 
             try {
@@ -237,10 +236,6 @@ open class ICMDockerPlugin : Plugin<Project> {
             } catch (ex: UnknownTaskException) {
                 project.logger.info("Task check is not available!")
             }
-
-            project.tasks.register(WRITE_IMAGE_PROPERTIES, ImageProperties::class.java) { task ->
-                task.dependsOn(push)
-            }
         }
     }
 
@@ -249,7 +244,8 @@ open class ICMDockerPlugin : Plugin<Project> {
             setupImg: Property<String>,
             imgBuild: ProjectConfiguration,
             imgConf: ImageConfiguration,
-            taskName: String,
+            images: Provider<List<String>>,
+            taskName: String
     ): TaskProvider<BuildImage> =
             project.tasks.register(taskName, BuildImage::class.java) { buildImage ->
                 buildImage.group = "icm image build"
@@ -267,7 +263,7 @@ open class ICMDockerPlugin : Plugin<Project> {
                     })
                 }
                 buildImage.buildArgs.put("SETUP_IMAGE", setupImg)
-                buildImage.images.set(calculateImageTag(project, imgBuild, imgConf))
+                buildImage.images.set(images)
             }
 
     private fun configureLables(
