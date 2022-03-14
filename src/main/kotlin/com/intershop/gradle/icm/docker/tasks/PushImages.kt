@@ -85,11 +85,11 @@ open class PushImages
 
             if(authConfig != null) {
                 pushImageCmd.withAuthConfig(authConfig)
-                println("...... " + authConfig.username + " ... for " + authConfig.registryAddress)
+                println("authconfig ...... " + authConfig.username + " ... for " + authConfig.registryAddress)
             } else {
                 pushImageCmd.withAuthConfig(dockerClient.authConfig())
                 val authConf = dockerClient.authConfig()
-                println("...... " + authConf.username + " ... for " + authConf.registryAddress)
+                println("dockerclient ...... " + authConf.username + " ... for " + authConf.registryAddress)
             }
 
             val callback = createCallback(nextHandler)
