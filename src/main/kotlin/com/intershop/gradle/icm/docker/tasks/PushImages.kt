@@ -81,8 +81,17 @@ open class PushImages
         imageIDs.forEach { id, name ->
             logger.quiet("Pushing image '{}' with ID '{}'.", name, id)
             val pushImageCmd = dockerClient.pushImageCmd(name)
-            val authConfig = registryAuthLocator.lookupAuthConfig(id, registryCredentials)
-            pushImageCmd.withAuthConfig(authConfig)
+            val authConfig = registryAuthLocator.lookupAuthConfig(name, registryCredentials)
+
+            if(authConfig != null) {
+                pushImageCmd.withAuthConfig(authConfig)
+                println("...... " + authConfig.username + " ... for " + authConfig.registryAddress)
+            } else {
+                pushImageCmd.withAuthConfig(dockerClient.authConfig())
+                val authConf = dockerClient.authConfig()
+                println("...... " + authConf.username + " ... for " + authConf.registryAddress)
+            }
+
             val callback = createCallback(nextHandler)
             pushImageCmd.exec(callback).awaitCompletion()
         }
