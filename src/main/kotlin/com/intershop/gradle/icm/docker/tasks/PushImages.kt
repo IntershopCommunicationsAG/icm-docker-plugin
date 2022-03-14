@@ -66,9 +66,10 @@ open class PushImages
         val availableimages = dockerClient.listImagesCmd().withShowAll(true).exec()
         availableimages.forEach { img ->
             images.get().forEach { imgName ->
-                logger.quiet("check id {} for repotag {}", img.id, img.repoTags.get(0))
+                logger.debug("check id {} for repotag {}", img.id, img.repoTags.get(0))
 
                 if(img.repoTags != null && img.repoTags.contains(imgName)) {
+                    logger.info("add {} with id {} for push", img.id, img.repoTags.get(0))
                     imageIDs.put(img.id.split(":").get(1).substring(0,12), imgName)
                 }
             }
@@ -84,16 +85,7 @@ open class PushImages
             logger.quiet("Pushing image '{}' with ID '{}'.", name, id)
             val pushImageCmd = dockerClient.pushImageCmd(name)
             val authConfig = registryAuthLocator.lookupAuthConfig(name, registryCredentials)
-
-            if(authConfig != null) {
-                pushImageCmd.withAuthConfig(authConfig)
-                println("authconfig ...... " + authConfig.username + " ... for " + authConfig.registryAddress)
-            } else {
-                pushImageCmd.withAuthConfig(dockerClient.authConfig())
-                val authConf = dockerClient.authConfig()
-                println("dockerclient ...... " + authConf.username + " ... for " + authConf.registryAddress)
-            }
-
+            pushImageCmd.withAuthConfig(authConfig)
             val callback = createCallback(nextHandler)
             pushImageCmd.exec(callback).awaitCompletion()
         }
