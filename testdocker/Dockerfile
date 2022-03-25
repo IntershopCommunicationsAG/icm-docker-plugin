@@ -1,11 +1,11 @@
 ARG USERNAME=intershop
 ARG USERID=150
 
-FROM alpine:latest as BUILD
+FROM ubuntu:20.10 as BUILD
 ARG USERNAME=intershop
 ARG USERID=150
 
-RUN addgroup --gid 150 intershop && adduser -u ${USERID} -G intershop -D ${USERNAME} -s /bin/sh
+RUN addgroup --gid 150 intershop && useradd -m --uid ${USERID} -g intershop --shell /bin/sh ${USERNAME}
 RUN mkdir -p /intershop-prj
 
 COPY bin /intershop-prj/bin
@@ -41,8 +41,8 @@ COPY usr /usr/bin/
 RUN chmod a+x -R /usr/bin/dirdiff
 
 RUN addgroup --gid 150 intershop && \
-    adduser -u ${USERID} -G intershop -D ${USERNAME} -s /bin/sh && \
-    adduser -u 151 -G intershop -D intershop -s /bin/sh
+    useradd -m --uid ${USERID} -g intershop --shell /bin/sh ${USERNAME} && \
+    useradd --uid 151 -g intershop --shell /bin/sh intershop
 
 COPY --from=BUILD /intershop-prj/ /intershop/
 COPY --from=BUILD /intershop-init/ /intershop-init/
