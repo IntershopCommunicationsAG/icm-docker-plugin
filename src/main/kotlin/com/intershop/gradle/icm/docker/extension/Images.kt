@@ -25,8 +25,6 @@ import javax.inject.Inject
  */
 open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
-    val icmsetup: Property<String> = objectFactory.property(String::class.java)
-
     val webadapter: Property<String> = objectFactory.property(String::class.java)
 
     val webadapteragent: Property<String> = objectFactory.property(String::class.java)
@@ -58,7 +56,6 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         icmbasetest.convention("docker.intershop.de/intershop/icm-as-test:latest")
         icmcustomizationbase.convention("intershophub/icm-as-customization-base:latest")
 
-        icmsetup.convention("intershophub/icm-base:8.282.3")
         webadapter.convention("intershophub/icm-webadapter:2.1.0")
         webadapteragent.convention("intershophub/icm-webadapteragent:3.1.0")
 

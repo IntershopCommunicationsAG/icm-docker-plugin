@@ -38,8 +38,6 @@ intershop {
 
 intershop_docker {
     images {
-        icmsetup = 'intershophub/icm-base:8.282.2'
-
         webadapter = 'intershophub/icm-webadapter:2.1.0'
         webadapteragent = 'intershophub/icm-webadapteragent:3.1.0'
 
@@ -98,8 +96,6 @@ intershop {
 
 intershop_docker {
     images {
-        icmsetup.set("intershophub/icm-base:8.282.2")
-
         webadapter.set("'intershophub/icm-webadapter:2.1.0")
         webadapteragent.set("intershophub/icm-webadapteragent:3.1.0")
 
@@ -207,7 +203,6 @@ imageBuild {
 |===
 |Property               | Type      | Default value | Description
 
-|`icmsetup`   | `Property<String>` | `docker.intershop.de/intershop/icm-base:latest`       | This image is used as a base image for the most ICM images.
 |`webadapter` | `Property<String>` | `docker.intershop.de/intershop/icm-webadapter:latest`       | The image contains the web server of the Intershop Commerce Management application with a special Intershop Apache module.
 |`webadapteragent`  | `Property<String>` | `docker.intershop.de/intershop/icm-webadapteragent:latest`       | The web adapter agent image of the Intershop Commerce Management application.
 |`mssqldb`  | `Property<String>` | `mcr.microsoft.com/mssql/server:2019-latest`       | The Microsoft SQL  server image. There will be also a build file available.

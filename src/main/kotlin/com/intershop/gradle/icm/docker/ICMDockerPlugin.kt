@@ -201,14 +201,14 @@ open class ICMDockerPlugin : Plugin<Project> {
         with(extension) {
             val mainImages = calculateImageTag(project, imageBuild, imageBuild.images.mainImage)
             val imgTask = createImageTask(
-                    project, images.icmsetup, imageBuild, imageBuild.images.mainImage, mainImages, BUILD_MAIN_IMAGE)
+                    project, imageBuild, imageBuild.images.mainImage, mainImages, BUILD_MAIN_IMAGE)
 
             imgTask.configure { task ->
                 task.description = "Creates the main image with an appserver."
             }
             val testImages = calculateImageTag(project, imageBuild, imageBuild.images.testImage)
             val testImgTask = createImageTask(
-                    project, images.icmsetup, imageBuild, imageBuild.images.testImage, testImages, BUILD_TEST_IMAGE)
+                    project, imageBuild, imageBuild.images.testImage, testImages, BUILD_TEST_IMAGE)
 
             testImgTask.configure { task ->
                 task.description = "Creates the test image of an appserver."
@@ -241,7 +241,6 @@ open class ICMDockerPlugin : Plugin<Project> {
 
     private fun createImageTask(
             project: Project,
-            setupImg: Property<String>,
             imgBuild: ProjectConfiguration,
             imgConf: ImageConfiguration,
             images: Provider<List<String>>,
@@ -262,7 +261,6 @@ open class ICMDockerPlugin : Plugin<Project> {
                         "${imgBuild.baseDescription.get()} - ${imgConf.description.get()}"
                     })
                 }
-                buildImage.buildArgs.put("SETUP_IMAGE", setupImg)
                 buildImage.images.set(images)
             }
 

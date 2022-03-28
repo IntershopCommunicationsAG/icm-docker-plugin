@@ -111,8 +111,6 @@ abstract class AbstractTaskPreparer(
                         to "/intershop/customizations/${extension.containerPrefix}/cartridges",
                 getOutputPathFor(TASK_CREATECLUSTERID, "")
                         to "/intershop/clusterid",
-                /* TODO remove File(extension.developmentConfig.configDirectory).absolutePath
-                        to "/intershop/conf",*/
         )
 
         if(customization) {

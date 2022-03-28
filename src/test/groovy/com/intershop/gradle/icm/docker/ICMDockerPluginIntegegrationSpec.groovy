@@ -51,7 +51,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop_docker {
                 images {
-                    icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
                 }
 
@@ -78,8 +77,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         dockerMainFile.createNewFile()
         dockerMainFile <<
                 """
-        ARG SETUP_IMAGE
-        FROM \$SETUP_IMAGE as BUILD
+        FROM ubuntu:20.10 as BUILD
         RUN mkdir -p /intershop-prj
         """.stripIndent()
 
@@ -282,7 +280,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop_docker {
                 images {
-                    icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
@@ -324,8 +321,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         dockerMainFile.createNewFile()
         dockerMainFile <<
         """
-        ARG SETUP_IMAGE
-        FROM \$SETUP_IMAGE as BUILD
+        FROM ubuntu:20.10 as BUILD
         RUN mkdir -p /intershop-prj
         """.stripIndent()
 
@@ -522,7 +518,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop_docker {
                 images {
-                    icmsetup = 'alpine:latest'
                     icmbase = 'intershopmock/icm-as-mock:latest'
                 }
 
@@ -729,7 +724,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop_docker {
                 images {
-                    icmsetup = 'alpine:latest'
                     icmcustomizationbase = 'intershophub/icm-as-customization-base:1.0.0'
                     icmbase = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
