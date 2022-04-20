@@ -478,7 +478,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.as.debug.port` | the host port to be used for the appserver debug port | Integer | Optional | `7746` +
 | `intershop.databaseType` | database type to be used | { `mssql`, `oracle` } | Mandatory | <none> +
 | `intershop.jdbc.url` | JDBC URL pointing to the database to be used | URL | Mandatory | <none> +
-| `intershop.jdbc.url` | JDBC database user | String | Mandatory | <none> +
+| `intershop.jdbc.user` | JDBC database user | String | Mandatory | <none> +
 | `intershop.jdbc.password` | JDBC database password | String | Mandatory | <none> +
 |===
 
