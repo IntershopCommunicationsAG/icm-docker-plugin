@@ -263,7 +263,7 @@ For all properties configurations methods with a closure or an action are availa
 
 |===
 
-=== Tasks
+=== Tasks [[DockerPluginTasks]]
 
 [cols="25%,75%", width="99%, options="header"]
 |===
@@ -324,34 +324,83 @@ The package of all tasks is `com.intershop.gradle.icm.docker.tasks`.
 
 |===
 
-<<PropertiesFile>> and Image Properties
+==== Task configuration
+
+The following properties are part of the <<PropertiesFile>>.
+
+===== MSSQL [[MSSQLConfiguration]]
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `intershop.db.mssql.port` | the container port to be used for the database (normally no need to change) | Integer | Optional | `1433` +
+| `intershop.db.container.mssql.hostport` | the host port to be used for the database | Integer | Optional | `1433` +
+| `intershop.db.mssql.sa.password` | the password to be set for the sa-user | Integer | Optional | `1ntershop5A` +
+| `intershop.db.mssql.dbname` | the name of the actual DB to be created | String | Optional | `icmtestdb` +
+| `intershop.db.mssql.recreatedb` | controls if the actual DB is recreated on container start | Boolean | Optional | `false` +
+| `intershop.db.mssql.recreateuser` | controls if the DB-user is recreated on container start | Boolean | Optional | `false` +
+| `intershop.jdbc.user` | the name of the actual DB user to be created | String | Optional | `intershop` +
+| `intershop.jdbc.password` | the password of the actual DB user to be created | String | Optional | `intershop` +
+|===
+
+===== Oracle [[OracleConfiguration]]
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `intershop.db.oracle.listenerport` | Exposed listener port of the database. | Integer | Optional | `1521` +
+| `intershop.db.oracle.port` | Exposed enterprise manager port of the oracle db. | Integer | Optional | `1521` +
+|===
+
+===== WA [[WAConfiguration]]
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `webserver.http.port` | the host port to be used for the WebAdapter http port | Integer | Optional | `8080` +
+| `webserver.https.port` | the host port to be used for the WebAdapter https port | Integer | Optional | `8443` +
+| `webserver.container.http.port` | the container port to be used for the WebAdapter http port (normally no need to change) | Integer | Optional | `8080` +
+| `webserver.container.https.port` | the container port to be used for the WebAdapter https port (normally no need to change) | Integer | Optional | `8443` +
+| `webServer.cert.path` | the host path to look for TLS certificate and private key (if not defined no certificates will be mounted for the WA) | Path | Optional | <none> +
+| `webserver.cert.server` | short name of the certificate file inside of `webServer.cert.path` + | String | mandatory if `webServer.cert.path` is set + | <none> +
+| `webserver.cert.privatekey` | short name of the private key file inside of `webServer.cert.path` + | String | mandatory if `webServer.cert.path` is set + | <none> +
+| `intershop.ws.readinessProbe.interval` | interval in seconds to be used to check if the WebAdapter is ready | Integer | Optional | `2` +
+| `intershop.ws.readinessProbe.timeout` | max. number of seconds to wait for the WebAdapter to become ready | Integer | Optional | `30` +
+| `webserver.use.http2` | enables/disables usage of HTTP2 | Boolean | Optional | `false` +
+|===
+
+===== Solr [[SolrConfiguration]]
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `solr.clusterIndexPrefix` | prefix to be used for indexed inside Solr | String | Optional | <empty> +
+| `solr.port` | the host port to be used for the Solr server primary port | Integer | Optional | `8983` +
+|===
+
+===== ZooKeeper [[ZKConfiguration]]
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `zookeeper.port` | the host port to be used for the Zookeeper's primary port | Integer | Optional | `2181` +
+| `zookeeper.metrics.port` | the host port to be used for the Zookeeper's metrics port | Integer | Optional | `7000` +
+|===
+
+===== Mail [[MailConfiguration]]
 
 There are no special configuration properties for the mail server.
-The SMTP port is 25 and the web interface listened on 8025. Mails are stored
-in the build directory `mailoutput`.
+The SMTP port is `25` and the web interface listened on 8025. Mails are stored in the build directory `mailoutput`.
 
-[cols="10%,45%,45%", width="99%, options="header"]
-|===
-| Task | Property Key | Property Value
-
-.5+| MSSQL |`intershop.db.mssql.hostport` | Exposed port of the database +
-|`intershop.db.mssql.sa.password` | Name of the admin password. Default value is "1ntershop5A".
-|`intershop.db.mssql.recreatedb` | The db will be recreated after a restart if the value is true. Default value is "false".
-|`intershop.db.mssql.recreateuser` | The db will be recreated after a restart if the value is true. Default value is "false".
-|`intershop.db.mssql.dbname` | The name of the database. Default is "icmtestdb"
-
-.2+| Oracle | `intershop.db.oracle.listenerport` | Exposed listener port of the database.
-|`intershop.db.oracle.port` | Exposed enterprise manager port of the oracle db.
-
-.3+| WA | `webserver.http.port` | Exposed http port of the webserver.
-| `webserver.https.port` | Exposed https port of the webserver.
-| `intershop.local.hostname` | Hostname or IP of the local host. This is used for the connection between WA and AS on the local host.
-|===
-
-== Intershop Commerce Management Project Docker Plugin
-This plugin configures additional tasks of an Intershop Commerce Management customer project. It uses the same Gradle
-configuration like the Docker Plugin. With this plugin additional task will be configured and the task dependencies are
-adapted for the development process.
+== Intershop Commerce Management Customization Docker Plugin
+This plugin configures additional tasks of an Intershop Commerce Management customization project. It uses the same Gradle
+configuration like the Docker Plugin. With this plugin the task dependencies are
+adapted to build customization images.
 
 The plugins must be applied to the root project.
 
@@ -391,10 +440,11 @@ The plugins must be applied to the root project.
 
 |`icmbase`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as:latest`       | This image is used as a base image for the ICM application server image.
 |`icmbasetest`   | `Property<String>`   | `docker.intershop.de/intershop/icm-as-test:latest`       | This image is used as a base image for the ICM application server image whenever tests are executed.
+|`icmcustomizationbase`   | `Property<String>`   | `intershophub/icm-as-customization-base:latest`       | This image is used as a base image for the ICM application server customization image.
 
 |===
 
-=== Tasks
+=== Tasks [[CustomizationDockerPluginTasks]]
 
 [cols="25%,75%", width="99%, options="header"]
 |===
@@ -406,37 +456,153 @@ The plugins must be applied to the root project.
 | *dbPrepare*       | This task starts dbPrepare inside the running "Container" docker container.
 | *ishUnitTestReport*  | This task starts the creation of a report for all ISHUnit test executions.
 | **ISHUnitTest*    | This task starts ishUnit tests inside the running "Container" docker container.
-
 |===
 
 For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
 The task *startContainer* and *startAS* uses `StartServerContainer`. *pullContainer* and *pullAS* uses `PullImage`.
 With this task it is possible to use an alternative image for these tasks with a command line parameter `--altImage`.
 
-== Intershop Commerce Management Customization Docker Plugin
-This plugin configures additional tasks of an Intershop Commerce Management customization project. It uses the same Gradle
-configuration like the Docker Plugin. With this plugin the task dependencies are
-adapted to build customization images.
+==== Task configuration
 
-The plugins must be applied to the root project.
+The following properties are part of the <<PropertiesFile>>.
 
-=== Plugin Configuration
+===== dbPrepare [[DBPrepareConfiguration]]
 
-==== Extension 'intershop_docker'
-
-===== Additional Image Configuration `Images`
-
-*Properties*
-
-[cols="25%,10%,10%,55%", width="99%, options="header"]
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
 |===
-|Property               | Type      | Default value | Description
+| Key | Description | Co-domain | Mandatory/Optional | Default value
 
-|`icmcustomizationbase`   | `Property<String>`   | `intershophub/icm-as-customization-base:latest`       | This image is used as a base image for the ICM application server customization image.
-
+| `intershop.as.connector.port` | the host port to be used for the appserver http port | Integer | Optional | `7743` +
+| `intershop.servletEngine.connector.container.port` | the container port to be used for the appserver http port (normally no need to change) | Integer | Optional | `7743` +
+| `intershop.as.jmx.connector.port` | the host port to be used for the appserver JMX port | Integer | Optional | `7747` +
+| `intershop.as.debug.port` | the host port to be used for the appserver debug port | Integer | Optional | `7746` +
+| `intershop.databaseType` | database type to be used | { `mssql`, `oracle` } | Mandatory | <none> +
+| `intershop.jdbc.url` | JDBC URL pointing to the database to be used | URL | Mandatory | <none> +
+| `intershop.jdbc.url` | JDBC database user | String | Mandatory | <none> +
+| `intershop.jdbc.password` | JDBC database password | String | Mandatory | <none> +
 |===
 
-For task classes see the <<TaskClasses, documentation of task in the Intershop Commerce Management Docker Plugin>>.
+--
+The referenced database can either be an externally running database or an instance started using the gradle <<DockerPluginTasks>> `startMSSQL` respectively `startOracle`. In either case the properties `intershop.databaseType` and `intershop.jdbc.*` have to be defined properly (when using the gradle tasks the hostname equals the container name).
+--
+
+===== Application Server [[StartASConfiguration]]
+
+Configuration of <<DBPrepareConfiguration>> also applies to the application server. But there are some additional properties:
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `intershop.as.readinessProbe.interval` | interval in seconds to be used to check if the appserver is _ready_ | Integer | Optional | `15` +
+| `intershop.as.readinessProbe.timeout` | max. number of seconds to wait for the appserver to become _ready_ | Integer | Optional | `6000` (full dbinit may be necessary) +
+|===
+
+===== ISH unit tests [[ISHUnitTestConfiguration]]
+
+Configuration of <<DBPrepareConfiguration>> also applies to the container started to run the ISH unit tests.
+
+==== Task parameters
+
+===== dbPrepare [[DBPrepareParameters]]
+
+[cols="10%,70%,10%,10%", width="99%, options="header"]
+|===
+| Parameter | Description | Co-domain | Default value
+
+| `mode` | controls which mode is used by `dbPrepare` (forced initialization/migration or automatic) + | { `init`, `migrate`, `auto` } + | `auto` +
+| `clean` | controls if `dbPrepare` just cleans the DB and sites (`only`), cleans and inits the DB and sites (`yes`) or migrates the DB and sites (`no`) | {`only`, `yes`, `no`} + | `no` +
+| `cartridges` | controls which cartridges are actually prepared | comma-separated list of cartridge names to prepare | <none>
+| `property-keys` | controls which preparers are actually executed | comma-separated list of preparer property keys to execute | <none>
+| `additional-parameter` | additional command line parameters to be passed to `dbPrepare`. Use more than once to passed more than 1 parameter | String | <none>
+| `debug-icm` | controls if the Java code inside of `dbPrepare` can be debugged and if the JVM suspends until a debug client connects + | { `no`, `yes`, `suspend` } + | `no` +
+|===
+
+++++
+<details>
+<summary>Examples</summary>
+++++
+.fresh initialization
+[source,shell]
+----
+./gradlew dbPrepare --mode=init --clean=yes
+----
+.only execute some preparers of a cartridge
+[source,shell]
+----
+./gradlew dbPrepare --cartridges=core --property-keys=Class2,Class4
+----
+.use custom parameters
+[source,shell]
+----
+./gradlew dbPrepare --additional-parameter="--force-exec-id=core:Class2,core:Class4" --additional-parameter="--dry-run-save"
+----
+++++
+</details>
+++++
+
+===== Application Server [[StartASParameters]]
+
+[cols="10%,70%,10%,10%", width="99%, options="header"]
+|===
+| Parameter | Description | Co-domain | Default value
+
+| `debug-icm` | controls if the Java code inside application server can be debugged and if the JVM suspends until a debug client connects + | { `no`, `yes`, `suspend` } + | `no` +
+| `gclog` | toggles if GC logs are written by the application server + | Switch | `false` +
+| `heapdump` | toggles if a heapdump is written by the application server in case of an `OutOfMemoryError` + | Switch | `false` +
+| `appserver-name` | sets a custom name for the application server + | String | `appserver` +
+|===
+
+++++
+<details>
+<summary>Examples</summary>
+++++
+.start with debugging in suspend mode
+[source,shell]
+----
+./gradlew startAS --debug-icm=suspend
+----
+.start with GC-logging and heap dump
+[source,shell]
+----
+./gradlew startAS --gclog --heapdump
+----
+++++
+</details>
+++++
+
+IMPORTANT: As long as the application server is starting the container's log output is forwared to the host's standard out. Afterwards it is only accessible by `docker logs`.
+
+NOTE: the application server can be started using a custom image (e.g. different version) using the `--altImage` parameter.
+
+===== ISH unit tests [[ISHUnitTestParameters]]
+
+[cols="10%,70%,10%,10%", width="99%, options="header"]
+|===
+| Parameter | Description | Co-domain | Default value
+
+| `debug-icm` | controls if the Java code inside application server can be debugged and if the JVM suspends until a debug client connects + | { `no`, `yes`, `suspend` } + | `no` +
+|===
+
+++++
+<details>
+<summary>Examples</summary>
+++++
+.start all ISH unit tests
+[source,shell]
+----
+./gradlew ishUnitTestReport
+----
+.start ISH unit tests of suite `ac_solr_cloud_test` (defined inside of `intershop_docker.ishUnitTests`)
+[source,shell]
+----
+./gradlew ac_solr_cloud_testISHUnitTest
+----
+++++
+</details>
+++++
+
+NOTE: The ISH unit test report is generated to `<buildRoot>/build/ishunitrunner`.
 
 == Intershop Commerce Management Test Docker Plugin
 Additional test tasks of an Intershop Commerce Management project will be added by this plugin. It uses the same Gradle
