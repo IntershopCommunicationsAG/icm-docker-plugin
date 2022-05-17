@@ -113,17 +113,12 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
     val testCartridgeList: SetProperty<String> by lazy {
         val cartListProvider =
                 project.extensions.getByType<IntershopDockerExtension>().developmentConfig.testCartridgeList
-        if (cartListProvider.get().isEmpty()) {
-            throw GradleException(
-                    "Build property intershop_docker.developmentConfig.testCartridgeList denotes an empty " +
-                    "set. Please provide a non-empty set.")
-        }
         cartListProvider
     }
 
     /**
      * Enable debugging for the JVM running the ICM-AS inside the container. This option defaults to the value
-     * of the JVM property [SYSPROP_DEBUG_JVM] respectively `false` if not set.
+     * of the JVM property (SYSPROP_DEBUG_JVM) respectively `false` if not set.
      * The port on the host can be configured using the property `icm.properties/intershop.as.debug.port`
      *
      * @see com.intershop.gradle.icm.docker.utils.Configuration.AS_DEBUG_PORT
@@ -234,9 +229,9 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
     protected open fun createCartridgeList(): Provider<Set<String>> = cartridgeList
 
     /**
-     * This function creates the additional parameters used for the environment variables [ENV_ADDITIONAL_PARAMETERS].
+     * This function creates the additional parameters used for the environment variables (ENV_ADDITIONAL_PARAMETERS).
      * Subclasses may overwrite this method to add some extract parameters (keep super-parameters).
-     * @see intershop.sh
+     * see intershop.sh
      */
     protected open fun createAdditionalParameters(): AdditionalICMParameters = AdditionalICMParameters()
 
