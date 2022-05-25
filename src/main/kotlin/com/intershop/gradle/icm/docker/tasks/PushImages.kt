@@ -66,8 +66,6 @@ open class PushImages
         val availableimages = dockerClient.listImagesCmd().withShowAll(true).exec()
         availableimages.forEach { img ->
             images.get().forEach { imgName ->
-                logger.debug("check id {} for repotag {}", img.id, img.repoTags.get(0))
-
                 if(img.repoTags != null && img.repoTags.contains(imgName)) {
                     logger.info("add {} with id {} for push", img.id, img.repoTags.get(0))
                     imageIDs.put(img.id.split(":").get(1).substring(0,12), imgName)
