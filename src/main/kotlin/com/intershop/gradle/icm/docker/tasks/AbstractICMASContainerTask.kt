@@ -217,7 +217,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
                 .withAdditionalParameters(createAdditionalParameters())
                 .withDebugOptions(debugProperty.get())
                 // ensure release (product cartridges) and source (customization cartridges) layouts are recognized
-                .withClasspathLayout(setOf(ClasspathLayout.RELEASE, ClasspathLayout.SOURCE))
+                .withClasspathLayout(setOf(ClasspathLayout.RELEASE, ClasspathLayout.SOURCE, ClasspathLayout.SOURCEJAR))
                 .build()
     }
 

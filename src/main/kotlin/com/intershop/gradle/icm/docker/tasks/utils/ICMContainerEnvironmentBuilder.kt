@@ -210,6 +210,6 @@ class ICMContainerEnvironmentBuilder {
     }
 
     enum class ClasspathLayout(val value: String) {
-        RELEASE("release"), SOURCE("source"), ECLIPSE("eclipse")
+        RELEASE("release"), SOURCE("source"), SOURCEJAR("sourceJar"), ECLIPSE("eclipse")
     }
 }
