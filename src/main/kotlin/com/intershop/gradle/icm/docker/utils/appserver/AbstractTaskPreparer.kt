@@ -53,7 +53,6 @@ abstract class AbstractTaskPreparer(
         const val TASK_PREPARESERVER = "prepareServer"
         const val TASK_EXTRACARTRIDGES = "setupCartridges"
         const val TASK_CREATECONFIG = "createConfig"
-        const val TASK_CREATECLUSTERID = "createClusterID"
     }
 
     override fun getImage(): Provider<String> = extension.images.icmbase
@@ -108,9 +107,7 @@ abstract class AbstractTaskPreparer(
                 addDirectories.getValue(ISHUNITOUT).get().asFile.absolutePath
                         to "/intershop/ishunitrunner/output",
                 project.projectDir.absolutePath
-                        to "/intershop/customizations/${extension.containerPrefix}/cartridges",
-                getOutputPathFor(TASK_CREATECLUSTERID, "")
-                        to "/intershop/clusterid",
+                        to "/intershop/customizations/${extension.containerPrefix}/cartridges"
         )
 
         if(customization) {
