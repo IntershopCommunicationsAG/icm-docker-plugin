@@ -75,7 +75,7 @@ class CustomizationImageBuildPreparer(private val project: Project,
             task.dependsOn(testPkgTask, provideDockerfileTask)
 
             task.srcFiles.from(testPkgTask)
-            task.buildArgs.put(ARG_BASE_IMAGE, images.icmcustomizationbase)
+            task.buildArgs.put(ARG_BASE_IMAGE, project.provider { mainBuildImageTask.get().images.get().first() })
             task.buildArgs.put(ARG_PACKAGE_FILE, project.provider { testPkgTask.get().outputs.files.singleFile.name })
             task.buildArgs.put(ARG_NAME, project.name)
             task.dockerfile.set(project.objects.fileProperty().fileProvider(dockerfileProvider))
