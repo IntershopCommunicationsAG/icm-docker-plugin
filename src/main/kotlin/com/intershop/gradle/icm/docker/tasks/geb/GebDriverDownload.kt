@@ -70,15 +70,15 @@ open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
         }
 
         when {
-            extension.get().toLowerCase() == "zip" -> {
+            extension.get().lowercase() == "zip" -> {
                 fsOps.copy {
                     it.from(archiveOps.zipTree(targetFile))
                     it.into(driverDir)
                 }
             }
-            extension.get().toLowerCase() == "tar"
-                    || extension.get().toLowerCase() == "tgz"
-                    || extension.get().toLowerCase() == "tar.gz" -> {
+            extension.get().lowercase() == "tar"
+                    || extension.get().lowercase() == "tgz"
+                    || extension.get().lowercase() == "tar.gz" -> {
                 fsOps.copy {
                     it.from(archiveOps.tarTree(targetFile))
                     it.into(driverDir)

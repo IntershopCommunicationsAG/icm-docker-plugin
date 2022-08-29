@@ -31,7 +31,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.provider.MapProperty
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailSrvPreparer
@@ -57,9 +56,6 @@ open class ICMDockerPlugin : Plugin<Project> {
 
         const val BUILD_IMAGES = "buildImages"
         const val PUSH_IMAGES = "pushImages"
-        const val WRITE_IMAGE_PROPERTIES = "writeImageProperties"
-
-        const val BUILD_IMG_REGISTRY = "ishBuildImageRegistry"
 
         const val GROUP_CONTAINER = "icm container"
         const val GROUP_SERVERBUILD = "icm server build"

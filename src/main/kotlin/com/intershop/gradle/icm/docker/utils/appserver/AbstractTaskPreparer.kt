@@ -25,7 +25,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration.SITES_FOLDER_PATH
 import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import com.intershop.gradle.icm.docker.utils.OS
 import com.intershop.gradle.icm.docker.utils.PortMapping
-import com.intershop.gradle.icm.tasks.CollectLibraries
+import com.intershop.gradle.icm.tasks.CopyLibraries
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -42,8 +42,6 @@ abstract class AbstractTaskPreparer(
 ) : com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer(project, networkTask) {
 
     companion object {
-        const val SERVER_READY_STRING = "Servlet engine successfully started"
-
         const val SERVERLOGS = "serverlogs"
         const val SERVERLOGS_PATH = "server/logs"
 
@@ -89,7 +87,7 @@ abstract class AbstractTaskPreparer(
         )
     }
 
-    protected fun getServerVolumes(customization: Boolean): Map<String,String> {
+    protected fun getServerVolumes(task: Task, customization: Boolean): Map<String,String> {
         addDirectories.forEach { (_, path) ->
             path.get().asFile.mkdirs()
         }
@@ -115,10 +113,13 @@ abstract class AbstractTaskPreparer(
                 "/intershop/customizations/additional-dependencies/cartridges"
             volumes[getOutputPathFor(TASK_CREATECONFIG, "system-conf")] ="/intershop/system-conf"
 
-            getOutputDirFor(CollectLibraries.DEFAULT_NAME).listFiles { file -> file.isDirectory }?.forEach { dir ->
+            project.tasks.withType(CopyLibraries::class.java) {
+                task.dependsOn(it)
+                val dir = it.librariesDirectory.get().asFile
                 volumes[dir.absolutePath] =
                     "/intershop/customizations/${extension.containerPrefix}-${dir.name}-libs/lib"
             }
+
         }
 
         return ContainerUtils.transformVolumes(volumes)
