@@ -40,6 +40,10 @@ import java.net.URI
 
 class ICMSolrCloudPlugin : Plugin<Project> {
 
+    companion object {
+        const val SOLR_GROUP = "Solr Cloud Support"
+    }
+
     /**
      * Main method of a plugin.
      *
@@ -78,7 +82,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                     val solrCloudHostList = getConfigProperty(SOLR_CLOUD_HOSTLIST, "localhost")
                     val solrCloudIndexPrefix = getConfigProperty(SOLR_CLOUD_INDEXPREFIX, "")
                     val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolr::class.java) { cus ->
-                        cus.group = "Solr Cloud Support"
+                        cus.group = SOLR_GROUP
                         cus.description = "Removes all collections and configuration for the specified prefix"
 
                         cus.solrConfiguration.set(solrCloudHostList)
@@ -88,7 +92,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
 
                     val rebuildIndex = project.tasks.register("rebuildSearchIndex",
                             RebuildSolrSearchIndex::class.java) { rsi ->
-                        rsi.group = "Solr Cloud Support"
+                        rsi.group = SOLR_GROUP
                         rsi.description = "Rebuilds the search index for the specified server."
 
                         rsi.webServerUri.set(URI.create(getConfigProperty(
@@ -106,7 +110,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                         rsi.mustRunAfter(dbPrepareTask)
                     }
 
-                    val solrList = project.tasks.register("listSolr", ListSolr::class.java) { lst ->
+                    project.tasks.register("listSolr", ListSolr::class.java) { lst ->
                         lst.group = "Solr Cloud Support"
                         lst.description = "List all collections and configuration for the specified prefix"
 

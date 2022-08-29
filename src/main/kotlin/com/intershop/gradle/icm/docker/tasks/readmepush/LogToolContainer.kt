@@ -17,10 +17,8 @@
 package com.intershop.gradle.icm.docker.tasks.readmepush
 
 import com.bmuschko.gradle.docker.tasks.container.DockerLogsContainer
-import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
-open class LogToolContainer @Inject constructor(objectFactory: ObjectFactory) : DockerLogsContainer() {
+open class LogToolContainer:  DockerLogsContainer() {
     init {
         group = "icm container readme push"
         description = "Create image for pushing readme"

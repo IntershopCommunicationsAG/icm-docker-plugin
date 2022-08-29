@@ -90,7 +90,7 @@ class ICMGebTestPlugin : Plugin<Project> {
             try {
                 with(extension.developmentConfig) {
 
-                    val wfsTask = project.tasks.register("waitForServer", WaitForServer::class.java) { wfs ->
+                    project.tasks.register("waitForServer", WaitForServer::class.java) { wfs ->
                         wfs.probes.addAll(provider { startWebSrv.get().probes.get() })
                         wfs.probes.addAll(provider { startASProvider.get().probes.get() })
 
@@ -125,25 +125,23 @@ class ICMGebTestPlugin : Plugin<Project> {
                 logger.quiet("There is no check task available.")
             }
 
-            if(localDriverConfig.isNotBlank()) {
-                if( os != null) {
-                    gebExtension.localDriver.all { localDriver ->
-                        localDriver.osPackages.all { driverDownLoad ->
-                            if (driverDownLoad.name == os.value && localDriverConfig == localDriver.name) {
-                                val download =
-                                    tasks.register("downloadDriver", GebDriverDownload::class.java) { task ->
-                                        task.extension.set(driverDownLoad.archiveType)
-                                        task.url.set(driverDownLoad.url)
-                                    }
-
-                                gebTest.configure {
-                                    it.dependsOn(download)
-
-                                    it.browserExecutableName.set(driverDownLoad.webDriverExecName)
-                                    it.browserExecutableDir.set(download.get().driverDir)
-
-                                    it.baseUrl.set(baseUrlConfig)
+            if(localDriverConfig.isNotBlank() && os != null) {
+                gebExtension.localDriver.all { localDriver ->
+                    localDriver.osPackages.all { driverDownLoad ->
+                        if (driverDownLoad.name == os.value && localDriverConfig == localDriver.name) {
+                            val download =
+                                tasks.register("downloadDriver", GebDriverDownload::class.java) { task ->
+                                    task.extension.set(driverDownLoad.archiveType)
+                                    task.url.set(driverDownLoad.url)
                                 }
+
+                            gebTest.configure {
+                                it.dependsOn(download)
+
+                                it.browserExecutableName.set(driverDownLoad.webDriverExecName)
+                                it.browserExecutableDir.set(download.get().driverDir)
+
+                                it.baseUrl.set(baseUrlConfig)
                             }
                         }
                     }

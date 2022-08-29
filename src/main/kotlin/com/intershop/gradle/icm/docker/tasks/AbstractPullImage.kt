@@ -27,8 +27,6 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
-import org.gradle.util.ConfigureUtil
-import java.util.*
 import javax.inject.Inject
 
 abstract class AbstractPullImage
@@ -63,7 +61,7 @@ abstract class AbstractPullImage
      * @param c closure with Docker registry credentials.
      */
     fun registryCredentials(c: Closure<DockerRegistryCredentials>) {
-        ConfigureUtil.configure(c, registryCredentials)
+        project.configure(registryCredentials, c)
     }
 
     @get:Option(option = "forcePull", description = "Call pull always also if the image is available.")
