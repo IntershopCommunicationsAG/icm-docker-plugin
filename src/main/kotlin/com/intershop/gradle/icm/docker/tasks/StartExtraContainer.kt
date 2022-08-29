@@ -173,8 +173,11 @@ open class StartExtraContainer
                 logger.quiet("Container '{}' still exists.", containerName.get())
             }
 
-            logger.quiet("Starting container '{}' with ID '{}' using the following port mappings {}.",
+            logger.info("Starting container '{}' with ID '{}' using the following port mappings: {}.",
                     containerName.get(), containerId.get(), getPortMappings())
+            logger.info("Starting container '{}' with ID '{}' using volumes: {}",
+                    containerName.get(), containerId.get(), volumes.get())
+
             val startCommand = dockerClient.startContainerCmd(containerId.get())
             startCommand.exec()
 

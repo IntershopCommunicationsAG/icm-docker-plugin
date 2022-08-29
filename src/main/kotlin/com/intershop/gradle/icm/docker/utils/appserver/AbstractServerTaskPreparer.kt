@@ -51,7 +51,7 @@ abstract class AbstractServerTaskPreparer(
         task.targetImageId(project.provider { pullTask.get().image.get() })
         task.image.set(pullTask.get().image)
 
-        task.hostConfig.binds.set(getServerVolumes(customization).apply {
+        task.hostConfig.binds.set(getServerVolumes(task, customization).apply {
             project.logger.info(
                 "Using the following volume binds for container startup in task {}: {}",
                 task.name, this
@@ -71,7 +71,8 @@ abstract class AbstractServerTaskPreparer(
         val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
         task.withHttpProbe(
             URI.create(
-                StartServerContainer.PATTERN_READINESS_PROBE_URL.format(
+                StartServerContainer.
+                PATTERN_READINESS_PROBE_URL.format(
                     devConfig.asPortConfiguration.servletEngine.get().hostPort
                 )
             ),

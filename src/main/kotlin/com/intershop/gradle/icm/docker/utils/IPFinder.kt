@@ -37,9 +37,9 @@ object IPFinder {
                     val nets = NetworkInterface.getNetworkInterfaces()
                     var pair: Pair<String?,String?> = Pair(null, null)
                     nets.toList().map { it.name }.sorted().forEach {
-                        var ip = getSystemIP4Linux(it)
+                        val ip = getSystemIP4Linux(it)
                         if(ip != null) {
-                            pair = Pair(ip?.hostAddress, ip?.canonicalHostName)
+                            pair = Pair(ip.hostAddress, ip.canonicalHostName)
                             return@forEach
                         }
                     }
