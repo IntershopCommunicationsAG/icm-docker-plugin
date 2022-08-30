@@ -51,11 +51,13 @@ abstract class AbstractServerTaskPreparer(
         task.targetImageId(project.provider { pullTask.get().image.get() })
         task.image.set(pullTask.get().image)
 
-        task.hostConfig.binds.set(getServerVolumes(task, customization).apply {
-            project.logger.info(
-                "Using the following volume binds for container startup in task {}: {}",
-                task.name, this
-            )
+        task.hostConfig.binds.set(project.provider {
+            getServerVolumes(task, customization).apply {
+                project.logger.info(
+                    "Using the following volume binds for container startup in task {}: {}",
+                    task.name, this
+                )
+            }
         })
 
         task.withPortMappings(*getPortMappings().toTypedArray())

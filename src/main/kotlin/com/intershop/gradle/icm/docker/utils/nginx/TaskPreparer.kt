@@ -17,19 +17,13 @@
 package com.intershop.gradle.icm.docker.utils.nginx
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
-import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import java.io.File
 
 class TaskPreparer(project: Project,
-                   networkTask: Provider<PrepareNetwork>,
-                   waTaskPreparer: WATaskPreparer,
+                   networkTask: Provider<PrepareNetwork>
     ) : AbstractTaskPreparer(project, networkTask){
 
     companion object {
