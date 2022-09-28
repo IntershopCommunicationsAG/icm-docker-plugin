@@ -49,7 +49,6 @@ import javax.inject.Inject
 
 /**
  * Abstract base task to run a typical ICM-AS classes on a previously prepared container
- * @see com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
  * @param <RC> result callback type
  * @param <RCT> result callback template type
  * @param <ER> execution result type

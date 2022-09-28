@@ -20,7 +20,7 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appsrv.ServerTaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -30,22 +30,23 @@ class WAATaskPreparer(project: Project,
 
     companion object {
         const val extName: String = "WAA"
+        const val GROUP_NAME: String = "icm container webserver"
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.webadapteragent
+    override fun getImage(): Provider<String> = dockerExtension.images.webadapteragent
 
     init{
         initBaseTasks()
 
         pullTask.configure {
-            it.group = "icm container webserver"
+            it.group = GROUP_NAME
         }
         stopTask.configure {
-            it.group = "icm container webserver"
+            it.group = GROUP_NAME
         }
         removeTask.configure {
-            it.group = "icm container webserver"
+            it.group = GROUP_NAME
         }
 
         project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
@@ -56,7 +57,7 @@ class WAATaskPreparer(project: Project,
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            with(extension.developmentConfig) {
+            with(dockerExtension.developmentConfig) {
                 val asHTTPPort = if (appserverAsContainer) {
                     getIntProperty(
                         Configuration.AS_CONNECTOR_CONTAINER_PORT,
@@ -70,7 +71,7 @@ class WAATaskPreparer(project: Project,
                 }
 
                 val asHostname = if (appserverAsContainer) {
-                    "${extension.containerPrefix}-${CustomServerTaskPreparer.extName}"
+                    "${dockerExtension.containerPrefix}-${ServerTaskPreparer.extName}"
                 } else {
                     getConfigProperty(
                         Configuration.LOCAL_CONNECTOR_HOST,

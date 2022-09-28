@@ -35,10 +35,7 @@ class TaskPreparer(
         val solrTasks = SolrPreparer(project, networkTasks.createNetworkTask, zkTasks)
 
         project.tasks.register(
-                "start${TASK_EXT_SERVER}",
-                StartSolrCloudTask::class.java,
-                solrTasks
-        ).configure { task ->
+                "start${TASK_EXT_SERVER}").configure { task ->
             configureSolrCloudTasks(task, "Start all components of a one note SolrCloud cluster")
             task.dependsOn(zkTasks.startTask, solrTasks.startTask, networkTasks.createNetworkTask)
         }
@@ -58,8 +55,8 @@ class TaskPreparer(
         }
     }
 
-    val startTask: TaskProvider<StartSolrCloudTask> by lazy {
-        project.tasks.named("start${TASK_EXT_SERVER}", StartSolrCloudTask::class.java)
+    val startTask: TaskProvider<Task> by lazy {
+        project.tasks.named("start${TASK_EXT_SERVER}")
     }
 
     val stopTask: TaskProvider<Task> by lazy {

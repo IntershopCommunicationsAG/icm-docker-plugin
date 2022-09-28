@@ -20,6 +20,8 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.PortMapping
+import com.intershop.gradle.icm.docker.utils.solrcloud.SolrPreparer.Companion.GROUP_NAME
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -27,44 +29,36 @@ class ZKPreparer(
         project: Project,
         networkTask: Provider<PrepareNetwork>,
 ) : AbstractTaskPreparer(project, networkTask) {
-    val renderedHostList: String
 
     companion object {
         const val extName: String = "ZK"
         const val CONTAINER_PORT = 2181
         const val CONTAINER_METRICS_PORT = 7000
+        const val CONTAINER_PORTMAPPING = "CONTAINER"
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.zookeeper
+    override fun getImage(): Provider<String> = dockerExtension.images.zookeeper
 
     init {
         initBaseTasks()
 
         pullTask.configure {
-            it.group = "icm container solrcloud"
+            it.group = GROUP_NAME
         }
         stopTask.configure {
-            it.group = "icm container solrcloud"
+            it.group = GROUP_NAME
         }
         removeTask.configure {
-            it.group = "icm container solrcloud"
+            it.group = GROUP_NAME
         }
 
-        val portMapping = extension.developmentConfig.getPortMapping(
-                "CONTAINER",
-                Configuration.ZOOKEEPER_HOST_PORT,
-                Configuration.ZOOKEEPER_HOST_PORT_VALUE,
-                CONTAINER_PORT,
-                true
-        )
-        val metricsPortMapping = extension.developmentConfig.getPortMapping(
+        val metricsPortMapping = dockerExtension.developmentConfig.getPortMapping(
                 "METRICS",
                 Configuration.ZOOKEEPER_METRICS_HOST_PORT,
                 Configuration.ZOOKEEPER_METRICS_HOST_PORT_VALUE,
                 CONTAINER_METRICS_PORT,
         )
-        renderedHostList = "${getContainerName()}:${portMapping.containerPort}"
 
         project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
@@ -99,6 +93,20 @@ class ZKPreparer(
             )
             task.dependsOn(pullTask, networkTask)
         }
+    }
+
+    private val portMapping: PortMapping by lazy {
+        dockerExtension.developmentConfig.getPortMapping(
+            CONTAINER_PORTMAPPING,
+            Configuration.ZOOKEEPER_HOST_PORT,
+            Configuration.ZOOKEEPER_HOST_PORT_VALUE,
+            CONTAINER_PORT,
+            true
+        )
+    }
+
+    val renderedHostPort : String by lazy {
+        "${getContainerName()}:${portMapping.containerPort}"
     }
 
 }

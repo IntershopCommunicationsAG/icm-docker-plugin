@@ -17,7 +17,6 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
-import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.ISHUNIT_REGISTRY
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLoggerCallback
@@ -45,6 +44,7 @@ open class ISHUnitTest
 
     companion object {
         const val COMMAND = "/intershop/bin/ishunitrunner.sh"
+        const val ISHUNIT_REGISTRY = "ishUnitTestTegistry"
     }
 
     init {
@@ -77,7 +77,7 @@ open class ISHUnitTest
         val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
         val testResourceProvider = getBuildService(serviceRegistry, ISHUNIT_REGISTRY)
         val resource = serviceRegistry.forService(testResourceProvider)
-        locks.add(resource.getResourceLock(1))
+        locks.add(resource.getResourceLock())
 
         return Collections.unmodifiableList(locks)
     }

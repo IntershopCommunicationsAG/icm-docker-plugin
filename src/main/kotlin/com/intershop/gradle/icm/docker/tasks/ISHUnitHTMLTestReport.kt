@@ -16,7 +16,6 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.HTML_ANT_TESTREPORT_CONFIG
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
@@ -38,6 +37,7 @@ open class ISHUnitHTMLTestReport @Inject constructor(
 ) : DefaultTask() {
     companion object {
         const val TASK_NAME = "ishUnitTestReport"
+        const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
     }
 
     @get:InputDirectory

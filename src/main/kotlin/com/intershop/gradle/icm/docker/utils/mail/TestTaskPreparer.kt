@@ -14,7 +14,6 @@
  * limitations under the License.
  *
  */
-
 package com.intershop.gradle.icm.docker.utils.mail
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
@@ -24,7 +23,7 @@ import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
-class TestTaskPreparer(project: Project,
+open class TestTaskPreparer(project: Project,
                        networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
@@ -32,7 +31,7 @@ class TestTaskPreparer(project: Project,
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.testmailsrv
+    override fun getImage(): Provider<String> = dockerExtension.images.testmailsrv
 
     init {
         initBaseTasks()

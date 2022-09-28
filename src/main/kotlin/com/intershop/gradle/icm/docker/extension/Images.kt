@@ -33,10 +33,6 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val zookeeper: Property<String> = objectFactory.property(String::class.java)
 
-    val icmbase: Property<String> = objectFactory.property(String::class.java)
-
-    val icmbasetest: Property<String> = objectFactory.property(String::class.java)
-
     val icmcustomizationbase: Property<String> = objectFactory.property(String::class.java)
 
     val mssqldb: Property<String> = objectFactory.property(String::class.java)
@@ -52,8 +48,6 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
      */
 
     init {
-        icmbase.convention("docker.intershop.de/intershop/icm-as:latest")
-        icmbasetest.convention("docker.intershop.de/intershop/icm-as-test:latest")
         icmcustomizationbase.convention("intershophub/icm-as-customization-base:latest")
 
         webadapter.convention("intershophub/icm-webadapter:2.1.0")

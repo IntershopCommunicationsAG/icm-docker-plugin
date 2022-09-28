@@ -32,13 +32,21 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
             """
             plugins {
                 id 'java'
+                id 'com.intershop.gradle.icm.project' version '5.6.0-SNAPSHOT'
                 id 'com.intershop.gradle.icm.docker'
             }
             """.stripIndent()
 
     String settingsfileContent =
             """
-            rootProject.name='rootproject'
+            pluginManagement {
+                repositories {
+                    gradlePluginPortal()
+                    mavenCentral()
+                    mavenLocal()
+                }
+            }
+           rootProject.name='rootproject'
             """.stripIndent()
 
     def 'test simple file creation'() {

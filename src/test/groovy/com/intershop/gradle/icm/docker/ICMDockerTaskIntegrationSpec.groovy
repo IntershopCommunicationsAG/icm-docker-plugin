@@ -25,12 +25,20 @@ class ICMDockerTaskIntegrationSpec extends AbstractIntegrationGroovySpec {
 
     def 'test create volumes task'() {
         settingsFile << """
+        pluginManagement {
+            repositories {
+        		gradlePluginPortal()
+                mavenCentral()
+                mavenLocal()
+            }
+        }
         rootProject.name='rootproject'
         """.stripIndent()
 
         buildFile << """
             plugins {
                 id 'java'
+                id 'com.intershop.gradle.icm.project' version '5.6.0-SNAPSHOT'
                 id 'com.intershop.gradle.icm.docker'
             }
             
@@ -92,12 +100,20 @@ class ICMDockerTaskIntegrationSpec extends AbstractIntegrationGroovySpec {
 
     def 'test webserver configuration'() {
         settingsFile << """
+        pluginManagement {
+            repositories {
+        		gradlePluginPortal()
+                mavenCentral()
+                mavenLocal()
+            }
+        }
         rootProject.name='rootproject'
         """.stripIndent()
 
         buildFile << """
             plugins {
                 id 'java'
+                id 'com.intershop.gradle.icm.project' version '5.6.0-SNAPSHOT'
                 id 'com.intershop.gradle.icm.docker'
             }
             

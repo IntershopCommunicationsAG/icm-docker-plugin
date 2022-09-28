@@ -26,8 +26,8 @@ import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_IN
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_INTERVAL_VALUE
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_TIMEOUT
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_TIMEOUT_VALUE
-import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
-import com.intershop.gradle.icm.utils.SocketProbe
+import com.intershop.gradle.icm.docker.utils.appsrv.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.webserver.WAATaskPreparer.Companion.GROUP_NAME
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -42,7 +42,7 @@ class WATaskPreparer(
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.webadapter
+    override fun getImage(): Provider<String> = dockerExtension.images.webadapter
 
     val httpContainerPort: Int
 
@@ -50,23 +50,23 @@ class WATaskPreparer(
         initBaseTasks()
 
         pullTask.configure {
-            it.group = "icm container webserver"
+            it.group = GROUP_NAME
         }
         stopTask.configure {
-            it.group = "icm container webserver"
+            it.group = GROUP_NAME
         }
         removeTask.configure {
-            it.group = "icm container webserver"
+            it.group = GROUP_NAME
         }
 
-        val httpPortMapping = extension.developmentConfig.getPortMapping(
+        val httpPortMapping = dockerExtension.developmentConfig.getPortMapping(
                 "http",
                 Configuration.WS_HTTP_PORT,
                 Configuration.WS_HTTP_PORT_VALUE,
                 Configuration.WS_CONTAINER_HTTP_PORT,
                 Configuration.WS_CONTAINER_HTTP_PORT_VALUE,
         )
-        val httpsPortMapping = extension.developmentConfig.getPortMapping(
+        val httpsPortMapping = dockerExtension.developmentConfig.getPortMapping(
                 "https",
                 Configuration.WS_HTTPS_PORT,
                 Configuration.WS_HTTPS_PORT_VALUE,
@@ -84,7 +84,7 @@ class WATaskPreparer(
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            with(extension.developmentConfig) {
+            with(dockerExtension.developmentConfig) {
                 task.withPortMappings(httpPortMapping, httpsPortMapping)
 
                 val env = ContainerEnvironment()
@@ -113,7 +113,7 @@ class WATaskPreparer(
                     val port: Int
                     if (appserverAsContainer) {
                         // started as container
-                        host = "${extension.containerPrefix}-${CustomServerTaskPreparer.extName.lowercase()}"
+                        host = "${dockerExtension.containerPrefix}-${ServerTaskPreparer.extName.lowercase()}"
                         port = portMapping.containerPort
                     } else {
 
@@ -135,7 +135,7 @@ class WATaskPreparer(
             task.hostConfig.binds.set(volumes)
 
             // add socketProbes to http and https ports
-            with(extension.developmentConfig) {
+            with(dockerExtension.developmentConfig) {
                 task.withSocketProbe(
                         httpPortMapping.hostPort,
                         getDurationProperty(WS_READINESS_PROBE_INTERVAL, WS_READINESS_PROBE_INTERVAL_VALUE),

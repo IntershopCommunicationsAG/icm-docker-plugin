@@ -18,8 +18,6 @@ package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.util.TestRepo
 import com.intershop.gradle.test.AbstractIntegrationGroovySpec
-import spock.lang.Ignore
-
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.SKIPPED
 
@@ -49,11 +47,16 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
             group = 'com.intershop.test'
             version = '10.0.0'
 
-            intershop_docker {
-                images {
-                    icmbase = 'intershopmock/icm-as-mock:latest'
+            intershop {
+                projectConfig {                   
+                    base {
+                        dependency.set("com.intershop.icm:icm-as:1.0.0")
+                        image.set("intershopmock/icm-as-mock:latest")  
+                    }
                 }
+            }
 
+            intershop_docker {
                 imageBuild {
                     images {
                         mainImage {
@@ -198,7 +201,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
             plugins {
                 id 'java'
                 id 'com.intershop.gradle.icm.project' version '4.3.0'
-                id 'com.intershop.gradle.icm.docker.project'
+                id 'com.intershop.gradle.icm.docker.customization'
                 id 'com.intershop.gradle.icm.docker.solrcloud'
             }
             
@@ -207,30 +210,21 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop {
                 projectConfig {
-                    
-                    cartridges = [ 'com.intershop.cartridge:cartridge_test:1.0.0', 
-                                   'prjCartridge_prod',
-                                   'com.intershop.cartridge:cartridge_dev:1.0.0', 
-                                   'com.intershop.cartridge:cartridge_adapter:1.0.0',
-                                   'prjCartridge_adapter',
-                                   'prjCartridge_dev',
-                                   'prjCartridge_test',
-                                   'com.intershop.cartridge:cartridge_prod:1.0.0' ] 
-
-                    dbprepareCartridges = [ 'prjCartridge_prod',
-                                            'prjCartridge_test' ] 
 
                     base {
                         dependency.set("com.intershop.icm:icm-as:1.0.0")
                         platforms = [ "com.intershop:libbom:1.0.0" ]
+                        image.set("intershopmock/icm-as-mock:latest")  
                     }
 
                     modules {
                         solrExt {
                             dependency.set("com.intershop.search:solrcloud:1.0.0")
+                            image.set("intershophub/icm-as:11.0.1")  
                         }
                         paymentExt {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
+                            image.set("intershophub/icm-as:11.0.1")  
                         }
                     }
 
@@ -280,7 +274,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop_docker {
                 images {
-                    icmbase = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
                     solr = 'solr:8.5.2-slim'
@@ -442,7 +435,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
             plugins {
                 id 'java'
                 id 'com.intershop.gradle.icm.project' version '4.3.0'
-                id 'com.intershop.gradle.icm.docker.project'
+                id 'com.intershop.gradle.icm.docker.customization'
             }
             
             group = 'com.intershop.test'
@@ -450,22 +443,11 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop {
                 projectConfig {
-                    
-                    cartridges = [ 'com.intershop.cartridge:cartridge_test:1.0.0', 
-                                   'prjCartridge_prod',
-                                   'com.intershop.cartridge:cartridge_dev:1.0.0', 
-                                   'com.intershop.cartridge:cartridge_adapter:1.0.0',
-                                   'prjCartridge_adapter',
-                                   'prjCartridge_dev',
-                                   'prjCartridge_test',
-                                   'com.intershop.cartridge:cartridge_prod:1.0.0' ] 
-
-                    dbprepareCartridges = [ 'prjCartridge_prod',
-                                            'prjCartridge_test' ] 
 
                     base {
                         dependency = "com.intershop.icm:icm-as:1.0.0"
                         platforms = [ "com.intershop:libbom:1.0.0" ]
+                        image.set("intershopmock/icm-as-mock:latest")  
                     }
 
                     modules {
@@ -517,10 +499,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
             }
 
             intershop_docker {
-                images {
-                    icmbase = 'intershopmock/icm-as-mock:latest'
-                }
-
                 ishUnitTests {
                     test1 {
                         cartridge = 'ac_solr_cloud_test'
@@ -651,30 +629,20 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
             intershop {
                 projectConfig {
-                    
-                    cartridges = [ 'com.intershop.cartridge:cartridge_test:1.0.0', 
-                                   'prjCartridge_prod',
-                                   'com.intershop.cartridge:cartridge_dev:1.0.0', 
-                                   'com.intershop.cartridge:cartridge_adapter:1.0.0',
-                                   'prjCartridge_adapter',
-                                   'prjCartridge_dev',
-                                   'prjCartridge_test',
-                                   'com.intershop.cartridge:cartridge_prod:1.0.0' ] 
-
-                    dbprepareCartridges = [ 'prjCartridge_prod',
-                                            'prjCartridge_test' ] 
-
                     base {
                         dependency.set("com.intershop.icm:icm-as:1.0.0")
                         platforms = [ "com.intershop:libbom:1.0.0" ]
+                        image.set("intershopmock/icm-as-mock:latest")  
                     }
 
                     modules {
                         solrExt {
                             dependency.set("com.intershop.search:solrcloud:1.0.0")
+                            image.set("intershophub/icm-as:11.0.1")  
                         }
                         paymentExt {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
+                            image.set("intershophub/icm-as:11.0.1")  
                         }
                     }
 
@@ -725,7 +693,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
             intershop_docker {
                 images {
                     icmcustomizationbase = 'intershophub/icm-as-customization-base:1.0.0'
-                    icmbase = 'intershopmock/icm-as-mock:latest'
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
                     solr = 'solr:8.5.2-slim'
@@ -849,50 +816,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         return repoConf
     }
 
-    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
-    def 'pull image from extension'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result0 = getPreparedGradleRunner()
-                .withArguments("tasks", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result0.task(":tasks").outcome == SUCCESS
-
-        when:
-        def result = getPreparedGradleRunner()
-                .withArguments("pullAS", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result.task(":pullAS").outcome == SUCCESS
-
-        where:
-        gradleVersion << supportedGradleVersions
-
-    }
-
-    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
-    def 'pull image from extension with force'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result = getPreparedGradleRunner()
-                .withArguments("pullAS", "--forcePull", "-s")
-                .withGradleVersion(gradleVersion)
-                .buildAndFail()
-
-        then:
-        result.output.contains("pull access denied for intershopmock/icm-as-mock")
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
     def 'pull image from extension with alt image'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
@@ -931,94 +854,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result3.task(":removeContainer").outcome == SUCCESS
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
-    def 'run dbprepare'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result2 = getPreparedGradleRunner()
-                .withArguments("dbPrepare", "-s", "--clean-db=yes")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result2.task(":dbPrepare").outcome == SUCCESS
-        result2.output.contains("-classic --mode=auto --clean-db=yes")
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
-    def 'run dbprepare without parameters'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result2 = getPreparedGradleRunner()
-                .withArguments("dbPrepare", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result2.task(":dbPrepare").outcome == SUCCESS
-        result2.output.contains("-classic --mode=auto --clean-db=no")
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    @Ignore
-    def 'run ishunit'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result2 = getPreparedGradleRunner()
-                .withArguments("ishUnitTestReport", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result2.task(":ishUnitTestReport").outcome == SUCCESS
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    @Ignore
-    def 'run mssql db'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("startMSSQL", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result1.task(":startMSSQL").outcome == SUCCESS
-
-        when:
-        def result2 = getPreparedGradleRunner()
-                .withArguments("stopMSSQL", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result2.task(":stopMSSQL").outcome == SUCCESS
-
-        when:
-        def result3 = getPreparedGradleRunner()
-                .withArguments("removeMSSQL", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result3.task(":removeMSSQL").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
@@ -1094,76 +929,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         gradleVersion << supportedGradleVersions
     }
 
-    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
-    def 'buildImages for projects - complex'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("tasks", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-            result1.task(":tasks").outcome == SUCCESS
-
-        when:
-        def result2 = getPreparedGradleRunner()
-                .withArguments("buildMainImage","-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result2.task(":buildMainImage").outcome == SUCCESS
-
-        when:
-        def result4 = getPreparedGradleRunner()
-                .withArguments("buildTestImage", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result4.task(":buildTestImage").outcome == SKIPPED
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    @Ignore("disabled on behalf of T.Bergmann, see https://dev.azure.com/intershop-com/Products/_workitems/edit/70900")
-    def 'buildImages for projects - simple'() {
-        prepareSimpleBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("tasks", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result1.task(":tasks").outcome == SUCCESS
-
-        when:
-        def result2 = getPreparedGradleRunner()
-                .withArguments("buildMainImage","-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result2.task(":buildMainImage").outcome == SKIPPED
-
-        when:
-        def result4 = getPreparedGradleRunner()
-                .withArguments("buildTestImage", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result4.task(":buildTestImage").outcome == SKIPPED
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
     def 'buildCustomizationImage'() {
         prepareCustomizationBuildConfig(testProjectDir, settingsFile, buildFile)
 
@@ -1194,23 +959,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result3.task(":buildTestImage").outcome == SKIPPED // test image is disabled
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    @Ignore
-    def 'writeImageProperties for projects'() {
-        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("writeImageProperties", "-s", "-i", "-PrunOnCI=true")
-                .withGradleVersion(gradleVersion)
-                .build()
-
-        then:
-        result1.task(":writeImageProperties").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions

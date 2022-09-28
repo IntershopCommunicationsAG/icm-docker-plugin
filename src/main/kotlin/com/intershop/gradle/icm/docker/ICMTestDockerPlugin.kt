@@ -16,14 +16,16 @@
  */
 package com.intershop.gradle.icm.docker
 
-import com.bmuschko.gradle.docker.DockerRemoteApiPlugin
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.utils.mail.TestTaskPreparer as MailSrvPreparer
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.utils.appsrv.TestTaskPreparer
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.UnknownTaskException
 
-class ICMDockerTestPlugin: Plugin<Project> {
+class ICMTestDockerPlugin: Plugin<Project> {
 
     /**
      * Main method of a plugin.
@@ -37,11 +39,29 @@ class ICMDockerTestPlugin: Plugin<Project> {
                 IntershopDockerExtension::class.java
             ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java)
 
-            plugins.apply(DockerRemoteApiPlugin::class.java)
+            plugins.apply(ICMDockerPlugin::class.java)
 
-            val prepareNetwork = tasks.named("prepareNetwork", PrepareNetwork::class.java)
+            val createNetworkTask = project.tasks.named(TaskPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
 
-            MailSrvPreparer(this,  prepareNetwork)
+            val mailSrvTask = tasks.named(
+                "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.extName}",
+                StartExtraContainer::class.java)
+
+
+            val appSrvPreparer = TestTaskPreparer(project, createNetworkTask)
+
+            appSrvPreparer.getICMServerTaskPreparer().startTask.configure {
+                it.dependsOn(mailSrvTask)
+            }
+
+            try {
+                tasks.named("containerClean").configure {
+                    it.dependsOn( appSrvPreparer.getICMServerTaskPreparer().removeTask)
+                }
+            } catch (ex: UnknownTaskException) {
+                logger.info("Task containerClean is not available.")
+            }
+
         }
     }
 }

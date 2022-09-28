@@ -16,7 +16,6 @@
  */
 package com.intershop.gradle.icm.docker
 
-import com.intershop.gradle.icm.docker.ICMDockerProjectPlugin.Companion.TASK_DBPREPARE
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
@@ -31,7 +30,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_PASSWOR
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_HOSTLIST
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_INDEXPREFIX
 import com.intershop.gradle.icm.docker.utils.Configuration.SSL_VERIFICATION
-import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appsrv.ServerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -42,6 +41,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
 
     companion object {
         const val SOLR_GROUP = "Solr Cloud Support"
+        const val TASK_DBPREPARE = "dbPrepare"
     }
 
     /**
@@ -63,7 +63,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                         StartExtraContainer::class.java
                 )
                 val startASProvider = tasks.named(
-                        "start${CustomServerTaskPreparer.extName}",
+                        "start${ServerTaskPreparer.extName}",
                         StartServerContainer::class.java
                 )
 

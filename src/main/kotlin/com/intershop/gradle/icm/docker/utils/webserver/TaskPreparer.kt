@@ -33,7 +33,6 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
     companion object {
         const val TASK_EXT_VOLUMES = "WebVolumes"
         const val TASK_EXT_SERVER = "WebServer"
-
     }
 
     private val extension = project.extensions.getByType<IntershopDockerExtension>()
@@ -73,10 +72,6 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
             it.dependsOn(createVolumes)
         }
 
-        removeVolumes.configure {
-            it.dependsOn(waTasks.removeTask, waaTasks.removeTask)
-        }
-
         waaTasks.startTask.configure {
             it.dependsOn(createVolumes, waTasks.startTask)
         }
@@ -89,6 +84,7 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         project.tasks.register("stop${TASK_EXT_SERVER}") { task ->
             configureWebServerTasks(task, "Stop all components for ICM WebServer")
             task.dependsOn(waTasks.stopTask, waaTasks.stopTask)
+            task.finalizedBy(removeVolumes)
         }
 
         networkTasks.removeNetworkTask.configure {
@@ -98,6 +94,7 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         project.tasks.register("remove${TASK_EXT_SERVER}") { task ->
             configureWebServerTasks(task, "Removes all components for ICM WebServer")
             task.dependsOn(waTasks.removeTask, waaTasks.removeTask)
+            task.finalizedBy(removeVolumes)
         }
 
     }

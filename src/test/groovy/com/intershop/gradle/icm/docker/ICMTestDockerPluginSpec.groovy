@@ -21,14 +21,15 @@ import com.intershop.gradle.icm.ICMProjectPlugin
 import com.intershop.gradle.test.AbstractProjectSpec
 import org.gradle.api.Plugin
 
-class ICMDockerProjectPluginSpec extends AbstractProjectSpec {
+class ICMTestDockerPluginSpec extends AbstractProjectSpec {
 
     def setup() {
         project.plugins.apply(ICMProjectPlugin.class)
+        project.plugins.apply(ICMDockerPlugin.class)
     }
 
     @Override
     Plugin getPlugin() {
-        return new ICMDockerProjectPlugin()
+        return new ICMTestDockerPlugin()
     }
 }
