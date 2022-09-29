@@ -215,16 +215,19 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                         dependency.set("com.intershop.icm:icm-as:1.0.0")
                         platforms = [ "com.intershop:libbom:1.0.0" ]
                         image.set("intershopmock/icm-as-mock:latest")  
+                        testImage.set("intershopmock/icm-as-mock:latest")  
                     }
 
                     modules {
                         solrExt {
                             dependency.set("com.intershop.search:solrcloud:1.0.0")
-                            image.set("intershophub/icm-as:11.0.1")  
+                            image.set("intershophub/icm-as:11.0.1")
+                            testImage.set("intershopmock/icm-as-mock:latest")  
                         }
                         paymentExt {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
                             image.set("intershophub/icm-as:11.0.1")  
+                            testImage.set("intershopmock/icm-as-mock:latest")
                         }
                     }
 
