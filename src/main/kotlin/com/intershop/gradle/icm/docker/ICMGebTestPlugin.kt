@@ -37,12 +37,18 @@ import org.gradle.api.UnknownTaskException
 import org.gradle.api.plugins.GroovyPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
 
 
 class ICMGebTestPlugin : Plugin<Project> {
 
+    companion object {
+        const val USEBUILDCNR = "useBuildContainer"
+        const val USELOCALSRV = "useLocalServer"
+        const val SRVSTARTTASK = "serverStartTaskName"
+    }
     /**
      * Main method of a plugin.
      *
@@ -52,12 +58,17 @@ class ICMGebTestPlugin : Plugin<Project> {
         with(project) {
             val extension = rootProject.project.extensions.getByType<IntershopExtension>()
 
+            val waitForServer = project.tasks.register("waitForServer", WaitForServer::class.java)
+
+            initWebServer(rootProject, waitForServer)
+            initASServer(project, waitForServer)
+
             val gebExtension = extensions.findByType(GebConfiguration::class.java) ?:
                     extensions.create("gebConfiguration", GebConfiguration::class.java)
 
             plugins.apply(GroovyPlugin::class.java)
 
-            val sourceSets = project.extensions.getByType(JavaPluginExtension::class.java).sourceSets
+            val sourceSets = extensions.getByType(JavaPluginExtension::class.java).sourceSets
 
             val sourcesets = sourceSets.create("gebTest") {
                 it.java.srcDirs("src/gebTest/groovy")
@@ -76,56 +87,6 @@ class ICMGebTestPlugin : Plugin<Project> {
                 Configuration.WS_SECURE_URL,
                 Configuration.WS_SECURE_URL_VALUE
             )
-
-            val waitForServer = project.tasks.register("waitForServer", WaitForServer::class.java)
-
-            try {
-                val startWebSrv = rootProject.tasks.named(
-                    "start" + WATaskPreparer.extName,
-                    StartExtraContainer::class.java
-                )
-                waitForServer.configure {
-                    it.probes.addAll(provider { startWebSrv.get().probes.get() })
-                    it.mustRunAfter(startWebSrv)
-                }
-            } catch (ex: UnknownTaskException) {
-                project.logger.info("No start task for web server found.")
-            }
-
-            try {
-                val useBuildContainer = project.hasProperty("useBuildContainer") &&
-                        project.property("useBuildContainer") == "true"
-
-                val useLocalServer = project.hasProperty("useLocalServer") &&
-                        project.property("useLocalServer") == "true"
-
-                val startTaskName = if(project.hasProperty("serverStartTaskName")) {
-                                        project.property("serverStartTaskName").toString()
-                                    } else {
-                                        "start${ServerTaskPreparer.extName}"
-                                    }
-
-                if(useLocalServer == true && ! useBuildContainer) {
-
-                    val startASServer = rootProject.tasks.named(startTaskName)
-                    waitForServer.configure {
-                        it.mustRunAfter(startASServer)
-                    }
-                } else {
-                    val serverTaskName = if(useBuildContainer) {
-                            "start${ICMServerTaskPreparer.extName}"
-                        } else {
-                            startTaskName
-                        }
-                    val startASServer = rootProject.tasks.named(serverTaskName, StartServerContainer::class.java )
-                    waitForServer.configure {
-                        it.probes.addAll(provider { startASServer.get().probes.get() })
-                        it.mustRunAfter(startASServer)
-                    }
-                }
-            } catch (ex: UnknownTaskException) {
-                project.logger.info("No start task for appserver found.")
-            }
 
             val gebTest = tasks.register("gebTest", GebTest::class.java) {
                 it.testClassesDirs = sourcesets.output.classesDirs
@@ -176,4 +137,57 @@ class ICMGebTestPlugin : Plugin<Project> {
         }
     }
 
+    private fun initWebServer(project: Project, wfs: TaskProvider<WaitForServer>) {
+        with(project) {
+            try {
+                val startWebSrv = tasks.named(
+                    "start" + WATaskPreparer.extName,
+                    StartExtraContainer::class.java
+                )
+                wfs.configure {
+                    it.probes.addAll(provider { startWebSrv.get().probes.get() })
+                    it.mustRunAfter(startWebSrv)
+                }
+            } catch (ex: UnknownTaskException) {
+               logger.info("No start task for web server found.")
+            }
+        }
+    }
+
+    private fun initASServer(project: Project, wfs: TaskProvider<WaitForServer>) {
+        with(project) {
+            try {
+                val useBuildContainer = hasProperty(USEBUILDCNR) && property(USEBUILDCNR) == "true"
+
+                val useLocalServer = hasProperty(USELOCALSRV) && property(USELOCALSRV) == "true"
+
+                val startTaskName = if (hasProperty(SRVSTARTTASK)) {
+                    property(SRVSTARTTASK).toString()
+                } else {
+                    "start${ServerTaskPreparer.extName}"
+                }
+
+                if (useLocalServer == true && !useBuildContainer) {
+
+                    val startASServer = rootProject.tasks.named(startTaskName)
+                    wfs.configure {
+                        it.mustRunAfter(startASServer)
+                    }
+                } else {
+                    val serverTaskName = if (useBuildContainer) {
+                        "start${ICMServerTaskPreparer.extName}"
+                    } else {
+                        startTaskName
+                    }
+                    val startASServer = rootProject.tasks.named(serverTaskName, StartServerContainer::class.java)
+                    wfs.configure {
+                        it.probes.addAll(provider { startASServer.get().probes.get() })
+                        it.mustRunAfter(startASServer)
+                    }
+                }
+            } catch (ex: UnknownTaskException) {
+                project.logger.info("No start task for appserver found.")
+            }
+        }
+    }
 }
