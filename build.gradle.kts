@@ -23,7 +23,8 @@ plugins {
     // project plugins
     `java-gradle-plugin`
     groovy
-    kotlin("jvm") version "1.6.21"
+
+    kotlin("jvm") version "1.7.10"
 
     // test coverage
     jacoco
@@ -44,13 +45,13 @@ plugins {
     id("org.asciidoctor.jvm.convert") version "3.3.2"
 
     // documentation
-    id("org.jetbrains.dokka") version "1.4.32"
+    id("org.jetbrains.dokka") version "1.5.0"
 
     // code analysis for kotlin
-    id("io.gitlab.arturbosch.detekt") version "1.17.1"
+    id("io.gitlab.arturbosch.detekt") version "1.18.0"
 
     // plugin for publishing to Gradle Portal
-    id("com.gradle.plugin-publish") version "0.15.0"
+    id("com.gradle.plugin-publish") version "1.0.0"
 }
 
 scm {
@@ -64,11 +65,63 @@ version = scm.version.version
 val sonatypeUsername: String by project
 val sonatypePassword: String? by project
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+gradlePlugin {
+    plugins {
+        create("icmDockerPlugin") {
+            id = "com.intershop.gradle.icm.docker"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerPlugin"
+            displayName = "icm-docker-plugin"
+            description = "This ICM plugin contains Docker ICM integration."
+        }
+        create("icmDockerTestProjectPlugin") {
+            id = "com.intershop.gradle.icm.docker.test"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMTestDockerPlugin"
+            displayName = "icm-docker-test-plugin"
+            description = "This ICM plugin contains special Docker tasks for special test container."
+        }
+        create("icmDockerReadmePlugin") {
+            id = "com.intershop.gradle.icm.docker.readmepush"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerReadmePushPlugin"
+            displayName = "icm-readmepush-plugin"
+            description = "This ICM plugin integrates tasks to readme files to Dockerhub."
+        }
+        create("icmDockerCustomizationPlugin") {
+            id = "com.intershop.gradle.icm.docker.customization"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerCustomizationPlugin"
+            displayName = "icm-docker-customization-plugin"
+            description = "This ICM plugin integrate Docker tasks to an ICM customization project."
+        }
+        create("icmSolrCloudPlugin") {
+            id = "com.intershop.gradle.icm.docker.solrcloud"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMSolrCloudPlugin"
+            displayName = "icm-solrlcloud-plugin"
+            description = "This ICM plugin integrates tasks to maintain a ICM project."
+        }
+        create("icmGebTestPlugin") {
+            id = "com.intershop.gradle.icm.docker.gebtest"
+            implementationClass = "com.intershop.gradle.icm.docker.ICMGebTestPlugin"
+            displayName = "icm-gebtest-plugin"
+            description = "This ICM plugin integrates tasks to handle Geb Tests in a ICM project."
+        }
+    }
+}
+
+pluginBundle {
+    val pluginURL = "https://github.com/IntershopCommunicationsAG/${project.name}"
+    website = pluginURL
+    vcsUrl = pluginURL
+    tags = listOf("intershop", "build", "icm", "docker")
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-
-    withSourcesJar()
 }
 
 // set correct project status
@@ -77,7 +130,7 @@ if (project.version.toString().endsWith("-SNAPSHOT")) {
 }
 
 detekt {
-    input = files("src/main/kotlin")
+    source = files("src/main/kotlin")
     config = files("detekt.yml")
 }
 
@@ -93,7 +146,7 @@ tasks {
     }
 
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "7.2")
+        systemProperty("intershop.gradle.versions", "7.5.1")
 
         testLogging {
             showStandardStreams = true
@@ -103,7 +156,7 @@ tasks {
         dependsOn("jar")
     }
 
-    val copyAsciiDoc = register<Copy>("copyAsciiDoc") {
+    register<Copy>("copyAsciiDoc") {
         includeEmptyDirs = false
 
         val outputDir = file("$buildDir/tmp/asciidoctorSrc")
@@ -124,7 +177,7 @@ tasks {
     }
 
     withType<AsciidoctorTask> {
-        dependsOn(copyAsciiDoc)
+        dependsOn("copyAsciiDoc")
 
         setSourceDir(file("$buildDir/tmp/asciidoctorSrc"))
         sources(delegateClosureOf<PatternSet> {
@@ -167,73 +220,28 @@ tasks {
         outputDirectory.set(buildDir.resolve("dokka"))
     }
 
-    register<Jar>("javaDoc") {
-        dependsOn(dokkaJavadoc)
-        from(dokkaJavadoc)
-        archiveClassifier.set("javadoc")
-    }
-}
-
-gradlePlugin {
-    plugins {
-        create("icmDockerPlugin") {
-            id = "com.intershop.gradle.icm.docker"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerPlugin"
-            displayName = "icm-docker-plugin"
-            description = "This ICM plugin contains Docker ICM integration."
+    withType<Sign> {
+        val sign = this
+        withType<PublishToMavenLocal> {
+            this.dependsOn(sign)
         }
-        create("icmDockerTestProjectPlugin") {
-            id = "com.intershop.gradle.icm.docker.test"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerTestPlugin"
-            displayName = "icm-docker-test-plugin"
-            description = "This ICM plugin contains special Docker tasks for special test container."
-        }
-        create("icmDockerReadmePlugin") {
-            id = "com.intershop.gradle.icm.docker.readmepush"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerReadmePushPlugin"
-            displayName = "icm-readmepush-plugin"
-            description = "This ICM plugin integrates tasks to readme files to Dockerhub."
-        }
-        create("icmDockerProjectPlugin") {
-            id = "com.intershop.gradle.icm.docker.project"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerProjectPlugin"
-            displayName = "icm-docker-project-plugin"
-            description = "This ICM plugin integrate Docker tasks to an ICM project."
-        }
-        create("icmDockerCustomizationPlugin") {
-            id = "com.intershop.gradle.icm.docker.customization"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMDockerCustomizationPlugin"
-            displayName = "icm-docker-customization-plugin"
-            description = "This ICM plugin integrate Docker tasks to an ICM customization project."
-        }
-        create("icmSolrCloudPlugin") {
-            id = "com.intershop.gradle.icm.docker.solrcloud"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMSolrCloudPlugin"
-            displayName = "icm-solrlcloud-plugin"
-            description = "This ICM plugin integrates tasks to maintain a ICM project."
-        }
-        create("icmGebTestPlugin") {
-            id = "com.intershop.gradle.icm.docker.gebtest"
-            implementationClass = "com.intershop.gradle.icm.docker.ICMGebTestPlugin"
-            displayName = "icm-gebtest-plugin"
-            description = "This ICM plugin integrates tasks to handle Geb Tests in a ICM project."
+        withType<PublishToMavenRepository> {
+            this.dependsOn(sign)
         }
     }
-}
 
-pluginBundle {
-    val pluginURL = "https://github.com/IntershopCommunicationsAG/${project.name}"
-    website = pluginURL
-    vcsUrl = pluginURL
-    tags = listOf("intershop", "gradle", "plugin", "build", "icm", "docker")
+    afterEvaluate {
+        getByName<Jar>("javadocJar") {
+            dependsOn(dokkaJavadoc)
+            from(dokkaJavadoc)
+        }
+    }
 }
 
 publishing {
     publications {
         create("intershopMvn", MavenPublication::class.java) {
             from(components["java"])
-
-            artifact(tasks.getByName("javaDoc"))
 
             artifact(File(buildDir, "docs/asciidoc/html5/README.html")) {
                 classifier = "reference"
@@ -297,18 +305,11 @@ dependencies {
     implementation(gradleKotlinDsl())
 
     implementation("org.apache.solr:solr-solrj:8.11.2")
-    implementation("com.bmuschko:gradle-docker-plugin:7.1.0")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:5.5.1")
+    implementation("com.bmuschko:gradle-docker-plugin:8.1.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:5.6.0")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.5")
 
-    testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.1")
+    testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.2")
     testImplementation(gradleTestKit())
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven {
-        url = uri("https://plugins.gradle.org/m2/")
-    }
-}

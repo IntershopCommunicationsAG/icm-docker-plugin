@@ -36,7 +36,7 @@ class TaskPreparer(project: Project,
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.mailsrv
+    override fun getImage(): Provider<String> = dockerExtension.images.mailsrv
 
     init {
         initBaseTasks()

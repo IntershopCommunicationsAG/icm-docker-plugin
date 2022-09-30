@@ -25,6 +25,7 @@ import com.intershop.gradle.icm.docker.tasks.PullExtraImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
+import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -40,9 +41,10 @@ abstract class AbstractTaskPreparer(
     protected open fun getContainerExt(): String = getExtensionName().lowercase()
     protected abstract fun getImage(): Provider<String>
 
-    protected val extension = project.extensions.getByType<IntershopDockerExtension>()
+    protected val dockerExtension = project.extensions.getByType<IntershopDockerExtension>()
+    protected val icmExtension = project.extensions.getByType<IntershopExtension>()
 
-    fun getContainerName(): String = "${extension.containerPrefix}-${getContainerExt()}"
+    fun getContainerName(): String = "${dockerExtension.containerPrefix}-${getContainerExt()}"
 
     protected fun initBaseTasks() {
         project.tasks.register("pull${getExtensionName()}", PullExtraImage::class.java) { task ->

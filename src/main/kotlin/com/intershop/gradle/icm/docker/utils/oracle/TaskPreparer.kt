@@ -32,7 +32,7 @@ class TaskPreparer(project: Project,
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.oracledb
+    override fun getImage(): Provider<String> = dockerExtension.images.oracledb
 
     init {
         initBaseTasks()
@@ -44,7 +44,7 @@ class TaskPreparer(project: Project,
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            with(extension.developmentConfig) {
+            with(dockerExtension.developmentConfig) {
                 val port = getConfigProperty(
                     Configuration.DB_ORACLE_PORT,
                     Configuration.DB_ORACLE_PORT_VALUE
@@ -68,7 +68,7 @@ class TaskPreparer(project: Project,
                            "${listenerPort}:${containerListenerPort}")
                 )
             }
-            with(extension.developmentConfig) {
+            with(dockerExtension.developmentConfig) {
                 project.logger.quiet(
                     "The database can be connected with jdbc:oracle:thin:@{}:{}:XE",
                     task.containerName.get(),

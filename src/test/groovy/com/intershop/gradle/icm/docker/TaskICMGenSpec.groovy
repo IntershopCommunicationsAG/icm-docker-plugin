@@ -28,17 +28,27 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
 
+    final ICMGRADLEVERSION = "5.6.0"
+
     String buildfileContent =
             """
             plugins {
                 id 'java'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker'
             }
             """.stripIndent()
 
     String settingsfileContent =
             """
-            rootProject.name='rootproject'
+            pluginManagement {
+                repositories {
+                    gradlePluginPortal()
+                    mavenCentral()
+                    mavenLocal()
+                }
+            }
+           rootProject.name='rootproject'
             """.stripIndent()
 
     def 'test simple file creation'() {

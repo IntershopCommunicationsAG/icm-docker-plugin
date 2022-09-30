@@ -23,15 +23,11 @@ import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
-import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
-import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.CustomizationImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
-import com.intershop.gradle.icm.docker.utils.appserver.ContainerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.appserver.CustomServerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.appserver.TestContainerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appsrv.AbstractASTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
-import com.intershop.gradle.icm.docker.utils.solrcloud.StartSolrCloudTask
+import com.intershop.gradle.icm.docker.utils.appsrv.TaskPreparer as AppSrvPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -63,6 +59,10 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
         const val ISHUNIT_REGISTRY = "ishUnitTestTegistry"
         const val HTML_ANT_TESTREPORT_CONFIG = "junitXmlToHtml"
         const val ISHUNIT_TEST = "ISHUnitTest"
+
+        const val TASK_START_SERVER = "startServer"
+        const val TASK_STOP_SERVER = "stopServer"
+        const val TASK_REMOVE_SERVER = "removeServer"
     }
 
     /**
@@ -74,10 +74,10 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
         with(project) {
             if (project.rootProject == this) {
                 logger.info("ICM Docker build plugin for customizations will be initialized")
-                // docker tasks required
-                plugins.apply(ICMDockerPlugin::class.java)
                 // project tasks required
                 plugins.apply(ICMProjectPlugin::class.java)
+                // docker tasks required
+                plugins.apply(ICMDockerPlugin::class.java)
 
                 val dockerExtension = extensions.findByType(
                         IntershopDockerExtension::class.java
@@ -94,27 +94,24 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                         "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.extName}",
                         StartExtraContainer::class.java)
                 val startSolrCloud = tasks.named(
-                        "start${com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer.TASK_EXT_SERVER}",
-                        StartSolrCloudTask::class.java)
+                        "start${com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer.TASK_EXT_SERVER}")
 
                 val prepareNetwork = project.tasks.named(TaskPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
-                val containerPreparer = ContainerTaskPreparer(project, prepareNetwork)
-                val testContainerPreparer = TestContainerTaskPreparer(project, prepareNetwork)
-                val appServerPreparer = CustomServerTaskPreparer(project, prepareNetwork, startSolrCloud, mailSrvTask)
-                val startAS = appServerPreparer.startTask
+
+                val appSrvPreparer = AppSrvPreparer(project, prepareNetwork)
+                val containerPreparer = appSrvPreparer.getContainerTaskPreparer()
+
                 try {
                     tasks.named("containerClean").configure {
-                        it.dependsOn(
-                                containerPreparer.removeTask,
-                                testContainerPreparer.removeTask,
-                                appServerPreparer.removeTask,
-                        )
+                        it.dependsOn( containerPreparer.removeTask,
+                            appSrvPreparer.getServerTaskPreparer().removeTask)
                     }
                 } catch (ex: UnknownTaskException) {
                     logger.info("Task containerClean is not available.")
                 }
 
-                startAS.configure {
+                val asStartTask = appSrvPreparer.getServerTaskPreparer().startTask
+                asStartTask.configure {
                     it.mustRunAfter(startSolrCloud)
                     it.mustRunAfter(mailSrvTask)
                 }
@@ -123,25 +120,25 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val startWS = tasks.named(
                         "start${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
 
-                tasks.register(ICMDockerProjectPlugin.TASK_START_SERVER) { task ->
+                tasks.register(TASK_START_SERVER) { task ->
                     task.group = ICMDockerPlugin.GROUP_SERVERBUILD
                     task.description = "Start app server container with webserver containers"
                     task.dependsOn(startWS)
-                    task.dependsOn(startAS)
+                    task.dependsOn(asStartTask)
                 }
 
                 startWS.configure {
-                    it.mustRunAfter(startAS)
+                    it.mustRunAfter(asStartTask)
                 }
 
                 startWA.configure {
-                    it.mustRunAfter(startAS)
+                    it.mustRunAfter(asStartTask)
                 }
 
                 val stopWS = tasks.named(
                         "stop${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
 
-                tasks.register(ICMDockerProjectPlugin.TASK_STOP_SERVER) { task ->
+                tasks.register(TASK_STOP_SERVER) { task ->
                     task.group = ICMDockerPlugin.GROUP_SERVERBUILD
                     task.description = "Stop app server container and webserver containers"
                     task.dependsOn(containerPreparer.stopTask, stopWS)
@@ -150,25 +147,29 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val removeWS = tasks.named(
                         "remove${com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer.TASK_EXT_SERVER}")
 
-                tasks.register(ICMDockerProjectPlugin.TASK_REMOVE_SERVER) { task ->
+                tasks.register(TASK_REMOVE_SERVER) { task ->
                     task.group = ICMDockerPlugin.GROUP_SERVERBUILD
                     task.description = "Removes app server container and webserver containers"
                     task.dependsOn(containerPreparer.removeTask, removeWS)
                 }
 
-                val dbPrepare: TaskProvider<DBPrepareTask> =
-                        getDBPrepare(this, testContainerPreparer, mssqlDatabase, oracleDatabase)
-                configureISHUnitTest(this, dockerExtension, testContainerPreparer, dbPrepare, mssqlDatabase,
-                        oracleDatabase, startSolrCloud)
+                val dbPrepare: TaskProvider<DBPrepareTask> = getDBPrepare(this,
+                    containerPreparer, mssqlDatabase, oracleDatabase)
+
+                configureISHUnitTest(this,
+                    dockerExtension, containerPreparer, dbPrepare, mssqlDatabase, oracleDatabase)
+
                 addTestReportConfiguration(this)
 
                 val customizationName = project.getCustomizationName()
+
                 with(dockerExtension.imageBuild.images) {
                     mainImage.nameExtension.set("")
                     mainImage.description.set("customization $customizationName")
                     testImage.nameExtension.set("test")
                     testImage.description.set("test for customization $customizationName")
                 }
+
                 CustomizationImageBuildPreparer(this, dockerExtension.images,
                         dockerExtension.imageBuild.images).prepareImageBuilds()
             }
@@ -183,10 +184,10 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
     open fun Project.getCustomizationName(): String = name
 
     private fun getDBPrepare(
-            project: Project,
-            containerPreparer: ContainerTaskPreparer,
-            mssqlDatabase: TaskProvider<Task>,
-            oracleDatabase: TaskProvider<Task>,
+        project: Project,
+        containerPreparer: AbstractASTaskPreparer,
+        mssqlDatabase: TaskProvider<Task>,
+        oracleDatabase: TaskProvider<Task>,
     ): TaskProvider<DBPrepareTask> {
         return project.tasks.register(DBPrepareTask.TASK_NAME, DBPrepareTask::class.java) { task ->
             task.group = ICMDockerPlugin.GROUP_SERVERBUILD
@@ -201,12 +202,10 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
     private fun configureISHUnitTest(
             project: Project,
             extension: IntershopDockerExtension,
-            containerPreparer: ContainerTaskPreparer,
+            containerPreparer: AbstractASTaskPreparer,
             dbPrepare: TaskProvider<DBPrepareTask>,
             mssqlDatabase: TaskProvider<Task>,
-            oracleDatabase: TaskProvider<Task>,
-            startSolrCloud: TaskProvider<StartSolrCloudTask>,
-    ) {
+            oracleDatabase: TaskProvider<Task>) {
         project.gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY,
                 ISHUnitTestRegistry::class.java) {
             it.maxParallelUsages.set(1)
@@ -230,12 +229,6 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
 
                 task.finalizedBy(containerPreparer.removeTask)
                 task.mustRunAfter(dbPrepare, mssqlDatabase, oracleDatabase)
-
-                // use environment required by solrCloud
-                task.additionalEnvironment.set(ContainerEnvironment().add(
-                        ContainerEnvironment.propertyNameToEnvName(Configuration.SOLR_CLOUD_HOSTLIST),
-                        startSolrCloud.get().zookeeperHostList.get()
-                ))
             }
 
             ishUnitTest.configure { task ->

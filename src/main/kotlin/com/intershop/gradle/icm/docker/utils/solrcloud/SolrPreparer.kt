@@ -29,24 +29,24 @@ class SolrPreparer(
         networkTask: Provider<PrepareNetwork>,
         zkPreparer: ZKPreparer,
 ) : AbstractTaskPreparer(project, networkTask) {
-    val zookeeperHostList : Provider<String>
 
     companion object {
         const val extName: String = "Solr"
         const val CONTAINER_PORT = 8983
+        const val GROUP_NAME = "icm container solrcloud"
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.solr
+    override fun getImage(): Provider<String> = dockerExtension.images.solr
 
     init {
         initBaseTasks()
 
         pullTask.configure {
-            it.group = "icm container solrcloud"
+            it.group = GROUP_NAME
         }
         stopTask.configure {
-            it.group = "icm container solrcloud"
+            it.group = GROUP_NAME
             it.dependsOn(zkPreparer.stopTask)
         }
         removeTask.configure {
@@ -54,18 +54,15 @@ class SolrPreparer(
             it.dependsOn(zkPreparer.removeTask)
         }
 
-        val hostList = zkPreparer.renderedHostList
-        zookeeperHostList = project.provider { zkPreparer.renderedHostList }
-
         project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
-            task.group = "icm container solrcloud"
+            task.group = GROUP_NAME
             task.description = "Start Solr component of SolrCloud"
 
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            val portMapping = extension.developmentConfig.getPortMapping(
+            val portMapping = dockerExtension.developmentConfig.getPortMapping(
                     "SOLR",
                     Configuration.SOLR_CLOUD_HOST_PORT,
                     Configuration.SOLR_CLOUD_HOST_PORT_VALUE,
@@ -76,7 +73,7 @@ class SolrPreparer(
             task.envVars.set(
                     mutableMapOf(
                             "SOLR_PORT" to portMapping.containerPort.toString(),
-                            "ZK_HOST" to hostList,
+                            "ZK_HOST" to zkPreparer.renderedHostPort,
                             "SOLR_HOST" to "${IPFinder.getSystemIP().first}",
                             "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
                     )

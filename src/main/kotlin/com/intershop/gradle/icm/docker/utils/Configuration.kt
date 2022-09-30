@@ -58,6 +58,9 @@ object Configuration {
     const val DB_USER_NAME_VALUE = "intershop"
     const val DB_USER_PASSWORD_VALUE = "intershop"
 
+    const val AS_USE_TESTIMAGE = "intershop.as.use.testimage"
+    const val AS_USE_TESTIMAGE_VALUE = "true"
+    
     const val AS_CONNECTOR_PORT = "intershop.servletEngine.connector.port"
     const val AS_CONNECTOR_PORT_VALUE = 7743
 
@@ -151,7 +154,6 @@ object Configuration {
     const val MAIL_READINESS_PROBE_TIMEOUT = "mail.readinessProbe.timeout"
     const val MAIL_READINESS_PROBE_TIMEOUT_VALUE = 15 // 15 secs
 
-    /* TODO #72088
     const val NGINX_HTTP_PORT = "nginx.http.port"
     const val NGINX_HTTPS_PORT = "nginx.https.port"
 
@@ -163,5 +165,4 @@ object Configuration {
     const val NGINX_CERT_FILENAME_VALUE = "fullchain.pem"
     const val NGINX_PRIVATEKEY_FILENAME = "nginx.privatekey.filename"
     const val NGINX_PRIVATEKEY_FILENAME_VALUE = "privkey.pem"
-     */
 }

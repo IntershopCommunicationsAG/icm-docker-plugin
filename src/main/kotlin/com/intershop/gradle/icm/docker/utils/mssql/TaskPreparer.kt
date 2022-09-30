@@ -34,7 +34,7 @@ class TaskPreparer(project: Project,
     }
 
     override fun getExtensionName(): String = extName
-    override fun getImage(): Provider<String> = extension.images.mssqldb
+    override fun getImage(): Provider<String> = dockerExtension.images.mssqldb
 
     init {
         initBaseTasks()
@@ -48,7 +48,7 @@ class TaskPreparer(project: Project,
 
             val portMapping : PortMapping
             val dbName : String
-            with(extension.developmentConfig) {
+            with(dockerExtension.developmentConfig) {
                 portMapping = getPortMapping("JDBC",
                     Configuration.DB_MSSQL_PORT,
                     Configuration.DB_MSSQL_PORT_VALUE,
@@ -103,24 +103,24 @@ class TaskPreparer(project: Project,
 
                 // add data path if configured
                 val dataPath = getConfigProperty(Configuration.DATA_FOLDER_PATH,"")
-                val dataPahtFP = if(dataPath.isNullOrBlank()) {
+                val dataPahtFP = if(dataPath.isBlank()) {
                     project.layout.buildDirectory.dir("data_folder").get().asFile
                 } else {
                     File(dataPath)
                 }
 
-                volumeMap[dataPahtFP.absolutePath] = extension.developmentConfig.getConfigProperty(
+                volumeMap[dataPahtFP.absolutePath] = dockerExtension.developmentConfig.getConfigProperty(
                     Configuration.DATA_FOLDER_VOLUME,
                     Configuration.DATA_FOLDER_VOLUME_VALUE)
 
                 // add backup folder - default is build directory
-                var backupPath = getConfigProperty(Configuration.BACKUP_FOLDER_PATH)
-                val backupPathFP = if(backupPath.isNullOrBlank()) {
+                val backupPath = getConfigProperty(Configuration.BACKUP_FOLDER_PATH)
+                val backupPathFP = if(backupPath.isBlank()) {
                     project.layout.buildDirectory.dir("data_backup_folder").get().asFile
                 } else {
                     File(backupPath)
                 }
-                volumeMap[backupPathFP.absolutePath] = extension.developmentConfig.getConfigProperty(
+                volumeMap[backupPathFP.absolutePath] = dockerExtension.developmentConfig.getConfigProperty(
                                             Configuration.BACKUP_FOLDER_VOLUME,
                                             Configuration.BACKUP_FOLDER_VOLUME_VALUE)
 

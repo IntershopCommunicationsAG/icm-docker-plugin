@@ -23,7 +23,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 @Ignore
-class ICMDockerTestPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
+class ICMTestDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
 
     def 'test test mailserver configuration'() {
         settingsFile << """

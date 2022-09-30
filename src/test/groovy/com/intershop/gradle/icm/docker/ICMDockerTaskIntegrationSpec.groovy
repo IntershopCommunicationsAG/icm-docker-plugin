@@ -23,14 +23,24 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class ICMDockerTaskIntegrationSpec extends AbstractIntegrationGroovySpec {
 
+    final ICMGRADLEVERSION = "5.6.0"
+
     def 'test create volumes task'() {
         settingsFile << """
+        pluginManagement {
+            repositories {
+        		gradlePluginPortal()
+                mavenCentral()
+                mavenLocal()
+            }
+        }
         rootProject.name='rootproject'
         """.stripIndent()
 
         buildFile << """
             plugins {
                 id 'java'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker'
             }
             
@@ -92,12 +102,20 @@ class ICMDockerTaskIntegrationSpec extends AbstractIntegrationGroovySpec {
 
     def 'test webserver configuration'() {
         settingsFile << """
+        pluginManagement {
+            repositories {
+        		gradlePluginPortal()
+                mavenCentral()
+                mavenLocal()
+            }
+        }
         rootProject.name='rootproject'
         """.stripIndent()
 
         buildFile << """
             plugins {
                 id 'java'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker'
             }
             
