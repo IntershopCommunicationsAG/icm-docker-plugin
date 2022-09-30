@@ -28,11 +28,13 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
 
+    final ICMGRADLEVERSION = "5.6.0"
+
     String buildfileContent =
             """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '5.6.0-SNAPSHOT'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker'
             }
             """.stripIndent()
