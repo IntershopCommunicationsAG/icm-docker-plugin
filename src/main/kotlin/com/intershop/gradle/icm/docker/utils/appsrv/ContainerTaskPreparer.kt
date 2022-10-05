@@ -17,9 +17,13 @@
 package com.intershop.gradle.icm.docker.utils.appsrv
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.HostAndPort
+import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
 import org.gradle.api.Project
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.provider.Provider
 
 class ContainerTaskPreparer(
@@ -62,6 +66,37 @@ class ContainerTaskPreparer(
             })
             task.withPortMappings(*getPortMappings().toTypedArray())
             task.hostConfig.network.set(networkId)
+
+            if(mailServerTaskProvider != null) {
+                task.mailServer = project.provider {
+                    HostAndPort(
+                        mailServerTaskProvider!!.get().containerName.get(),
+                        mailServerTaskProvider!!.get().getPrimaryPortMapping().get().containerPort
+                    )
+                }
+            }
+
+            if(zkTaskProvider != null) {
+                task.solrCloudZookeeperHostList = project.provider {
+                    val containerPort = zkTaskProvider!!.get().getPortMappings().stream()
+                        .filter { it.name == ZKPreparer.CONTAINER_PORTMAPPING }
+                        .findFirst().get().containerPort
+                    "${zkTaskProvider!!.get().containerName.get()}:${containerPort}"
+                }
+            }
+
+        }
+    }
+
+    private val zkTaskProvider: Provider<StartExtraContainer>? by lazy {
+        try {
+            project.tasks.named(
+                "start${ZKPreparer.extName}",
+                StartExtraContainer::class.java
+            )
+        } catch (ex: UnknownTaskException) {
+            project.logger.info("ZooKeeper tasks not found")
+            null
         }
     }
 }
