@@ -21,7 +21,6 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
@@ -81,11 +80,9 @@ class TaskPreparer(project: Project,
             )
 
             task.hostConfig.binds.set( project.provider {
-                ContainerUtils.transformVolumes(
-                    mutableMapOf(
-                        project.layout.buildDirectory.dir("mailoutput").get().asFile.absolutePath
-                                to "/maildir"
-                    )
+                mutableMapOf(
+                    project.layout.buildDirectory.dir("mailoutput").get().asFile.absolutePath
+                            to "/maildir"
                 )
             })
 

@@ -19,7 +19,6 @@ package com.intershop.gradle.icm.docker.utils.mail
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
-import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -52,11 +51,9 @@ open class TestTaskPreparer(project: Project,
 
             task.hostConfig.portBindings.set(listOf("25:25"))
             task.hostConfig.binds.set( project.provider {
-                ContainerUtils.transformVolumes(
-                    mutableMapOf(
-                        project.layout.buildDirectory.dir("testMails").get().asFile.absolutePath
-                                to "/data/test-mails"
-                    )
+                mutableMapOf(
+                    project.layout.buildDirectory.dir("testMails").get().asFile.absolutePath
+                            to "/data/test-mails"
                 )
             })
 

@@ -23,7 +23,6 @@ import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import com.intershop.gradle.icm.docker.utils.OS
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import com.intershop.gradle.icm.tasks.CopyLibraries
@@ -86,9 +85,7 @@ abstract class AbstractASTaskPreparer(
         prepareSitesFolder()
 
         val volumes = mutableMapOf(
-            dockerExtension.developmentConfig.getConfigProperty(
-                Configuration.SITES_FOLDER_PATH,
-                project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath)
+                project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath
                     to "/intershop/sites",
             File(dockerExtension.developmentConfig.licenseDirectory).absolutePath
                     to "/intershop/license",
@@ -113,7 +110,7 @@ abstract class AbstractASTaskPreparer(
                     "/intershop/customizations/${dockerExtension.containerPrefix}-${dir.name}-libs/lib"
             }
         }
-        return ContainerUtils.transformVolumes(volumes)
+        return volumes
     }
 
     private fun getOutputPathFor(taskName: String, path: String): String {
@@ -145,7 +142,6 @@ abstract class AbstractASTaskPreparer(
             val sitesFolderPath = dockerExtension.developmentConfig.getConfigProperty(
                 Configuration.SITES_FOLDER_PATH, ""
             )
-
             val defaultSitesFolder =
                 project.layout.buildDirectory.dir("sites_folder").get().asFile
 
