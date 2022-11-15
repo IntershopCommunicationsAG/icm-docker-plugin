@@ -20,7 +20,6 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.ContainerUtils
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -126,7 +125,7 @@ class TaskPreparer(project: Project,
 
                 volumeMap.forEach { path, _ -> File(path).mkdirs() }
 
-                task.hostConfig.binds.set(ContainerUtils.transformVolumes(volumeMap))
+                task.hostConfig.binds.set(volumeMap)
             }
 
             // TODO #72420 replace by probe (SocketProbe will not help: socket gets available too early)
