@@ -29,6 +29,7 @@ import com.intershop.gradle.icm.docker.utils.appsrv.AbstractASTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
 import com.intershop.gradle.icm.docker.utils.appsrv.TaskPreparer as AppSrvPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
+import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -36,6 +37,7 @@ import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.getByType
 
 /**
  * Main plugin class of the customization plugin.
@@ -85,6 +87,8 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
 
                 extensions.findByName(INTERSHOP_EXTENSION_NAME)
                 ?: throw GradleException("This plugin requires the plugin 'com.intershop.gradle.icm.project'!")
+
+                val icmExtension = project.extensions.getByType<IntershopExtension>()
 
                 val mssqlDatabase = tasks.named(
                         "start${com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer.extName}")
@@ -171,7 +175,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 }
 
                 CustomizationImageBuildPreparer(this, dockerExtension.images,
-                        dockerExtension.imageBuild.images).prepareImageBuilds()
+                        dockerExtension.imageBuild.images, icmExtension.projectConfig).prepareImageBuilds()
             }
         }
     }

@@ -21,6 +21,8 @@ import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_MAIN_IMAG
 import com.intershop.gradle.icm.docker.ICMDockerPlugin.Companion.BUILD_TEST_IMAGE
 import com.intershop.gradle.icm.docker.tasks.BuildImage
 import com.intershop.gradle.icm.docker.tasks.ProvideResourceFromClasspath
+import com.intershop.gradle.icm.extension.ProjectConfiguration
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Tar
 import com.intershop.gradle.icm.docker.extension.Images as BaseImages
@@ -28,7 +30,8 @@ import com.intershop.gradle.icm.docker.extension.image.build.Images as BuildImag
 
 class CustomizationImageBuildPreparer(private val project: Project,
                                       private val images: BaseImages,
-                                      private val buildImages: BuildImages) {
+                                      private val buildImages: BuildImages,
+                                      private val projectConfig: ProjectConfiguration) {
 
     companion object {
         const val NAME_DOCKERFILE = "Dockerfile"
@@ -64,6 +67,21 @@ class CustomizationImageBuildPreparer(private val project: Project,
             task.buildArgs.put(ARG_PACKAGE_FILE, project.provider { mainPkgTask.get().outputs.files.singleFile.name })
             task.buildArgs.put(ARG_NAME, project.name)
             task.dockerfile.set(project.objects.fileProperty().fileProvider(dockerfileProvider))
+
+            // add labels for flux deployment and OPS support
+            val buildWith = mutableSetOf<String>()
+            val versions = mutableMapOf<String, String>()
+
+            addImage(projectConfig.base.image.get(), buildWith, versions)
+
+            projectConfig.modules.all {
+                addImage(it.image.get(), buildWith, versions)
+            }
+
+            task.labels.put("build.with",buildWith.joinToString(","))
+            versions.forEach {
+                task.labels.put(it.key, it.value)
+            }
         }
 
         val testPkgTask = project.tasks.named(testPkgTaskName, Tar::class.java)
@@ -82,4 +100,17 @@ class CustomizationImageBuildPreparer(private val project: Project,
         }
     }
 
+    private fun addImage(imagePath: String,
+                         buildWith: MutableSet<String>,
+                         versions: MutableMap<String, String>) {
+        val imageNameVersion = imagePath.split("/").last()
+        val list = imageNameVersion.split(":")
+
+        if(list.size < 2) {
+            throw GradleException("There is no image name / version available. Please check the config of $imagePath")
+        }
+
+        buildWith.add(list[0])
+        versions["${list[0]}.version"] = list[1]
+    }
 }
