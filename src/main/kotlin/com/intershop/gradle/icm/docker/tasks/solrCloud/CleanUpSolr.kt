@@ -16,6 +16,7 @@
  */
 package com.intershop.gradle.icm.docker.tasks.solrCloud
 
+import org.apache.solr.client.solrj.SolrClient
 import org.apache.solr.client.solrj.request.CollectionAdminRequest
 import org.apache.solr.client.solrj.request.ConfigSetAdminRequest
 import org.apache.solr.client.solrj.response.ConfigSetAdminResponse
@@ -29,19 +30,30 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
     @TaskAction
     fun removeSolrCollectionConfig() {
         val solrClient = getSolrClient()
+        val aliasesList = CollectionAdminRequest.ListAliases().process(solrClient).aliasesAsLists
+        var aliases = 0
+
+        aliasesList.forEach { al ->
+            if (al.key.startsWith(solrClusterPrefixProperty.get(), true)) {
+                try {
+                    removeAlias(solrClient, al.key)
+                } catch(ex: UnableToDropException) {
+                    throw GradleException("Unable to drop all aliases for prefix '${prefixName()}' (${ex.message})")
+                }
+                ++aliases
+            }
+        }
+
         val collectionsList = CollectionAdminRequest.List.listCollections(solrClient)
         var collections = 0
 
         collectionsList.forEach { col ->
             if (col.startsWith(solrClusterPrefixProperty.get(), true)) {
-                project.logger.info("Collection {} found for prefix '{}'", col, prefixName())
-
-                val deleteColl = CollectionAdminRequest.Delete.deleteCollection(col)
-                val deleteCollResponse = deleteColl.process(solrClient)
-                if (!deleteCollResponse.isSuccess) {
-                    throw GradleException("Unable to drop all collections for prefix '${prefixName()}'")
+                try {
+                    removeCollection(solrClient, col)
+                } catch(ex: UnableToDropException) {
+                    throw GradleException("Unable to drop all collections for prefix '${prefixName()}' (${ex.message})")
                 }
-
                 ++collections
             }
         }
@@ -53,27 +65,52 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
 
         actualConfigSets.forEach { conf ->
             if (conf.startsWith(solrClusterPrefixProperty.get(), true)) {
-                project.logger.info("Configuration set {} found for prefix '{}'", conf, prefixName())
-
-                val deleteConfRequest = ConfigSetAdminRequest.Delete()
-                deleteConfRequest.configSetName = conf
-                val deleteConfResponse = deleteConfRequest.process(solrClient)
-                if(deleteConfResponse.errorMessages != null && deleteConfResponse.errorMessages.size() > 0) {
-                    deleteConfResponse.errorMessages.forEach { err ->
-                        project.logger.error("${err.key}:${err.value}")
-                    }
-                    throw GradleException("Unable to drop all configuration sets for prefix '${prefixName()}'")
+                try {
+                    removeConfigurationSet(solrClient, conf)
+                } catch(ex: UnableToDropException) {
+                    throw GradleException("Unable to drop all configuration " +
+                                          "sets for prefix '${prefixName()}' (${ex.message})")
                 }
-
                 ++configs
             }
         }
 
         solrClient.close()
 
-        project.logger.quiet("{} collections and {} configuration sets for prefix '{}' deleted.",
-            collections, configs, prefixName())
+        project.logger.quiet("{} aliases, {} collections and {} configuration sets for prefix '{}' deleted.",
+            aliases, collections, configs, prefixName())
     }
 
+    private fun removeAlias(solrClient: SolrClient, alias: String) {
+        project.logger.info("Alias {} found for prefix '{}'", alias, prefixName())
+
+        val deleteAlias = CollectionAdminRequest.DeleteAlias.deleteAlias(alias)
+        val deleteAliasResponse = deleteAlias.process(solrClient)
+
+        if (deleteAliasResponse.status != 0) {
+            throw UnableToDropException("Status was ${deleteAliasResponse.status} instead of 0.")
+        }
+    }
+
+    private fun removeCollection(solrClient: SolrClient, colName: String) {
+        project.logger.info("Collection {} found for prefix '{}'", colName, prefixName())
+
+        val deleteColl = CollectionAdminRequest.Delete.deleteCollection(colName)
+        val deleteCollResponse = deleteColl.process(solrClient)
+        if (!deleteCollResponse.isSuccess) {
+            throw UnableToDropException("Request was not successfully - ${deleteCollResponse.errorMessages}.")
+        }
+    }
+
+    private fun removeConfigurationSet(solrClient: SolrClient, confName: String) {
+        project.logger.info("Configuration set {} found for prefix '{}'", confName, prefixName())
+
+        val deleteConfRequest = ConfigSetAdminRequest.Delete()
+        deleteConfRequest.configSetName = confName
+        val deleteConfResponse = deleteConfRequest.process(solrClient)
+        if(deleteConfResponse.errorMessages != null && deleteConfResponse.errorMessages.size() > 0) {
+            throw UnableToDropException("Request was not successfully - ${deleteConfResponse.errorMessages}.")
+        }
+    }
     private fun prefixName() = solrClusterPrefixProperty.get().ifBlank { "<emptyPrefix>" }
 }

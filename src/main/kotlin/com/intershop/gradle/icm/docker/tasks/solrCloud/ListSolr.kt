@@ -29,6 +29,15 @@ open class ListSolr @Inject constructor(objectFactory: ObjectFactory) : Abstract
     @TaskAction
     fun listSolrCollectionConfig() {
         val solrClient = getSolrClient()
+
+        val aliasesList = CollectionAdminRequest.ListAliases().process(solrClient).aliasesAsLists
+        aliasesList.forEach { al ->
+            if (al.key.startsWith(solrClusterPrefixProperty.get(), true)) {
+                project.logger.quiet("Alias {} found for {}",
+                    al.key, solrClusterPrefixProperty.get())
+            }
+        }
+
         val collectionsList = CollectionAdminRequest.List.listCollections(solrClient)
         collectionsList.forEach { col ->
             if (col.startsWith(solrClusterPrefixProperty.get(), true)) {
