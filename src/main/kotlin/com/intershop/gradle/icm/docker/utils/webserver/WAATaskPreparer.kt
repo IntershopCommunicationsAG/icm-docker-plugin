@@ -58,30 +58,27 @@ class WAATaskPreparer(project: Project,
             task.image.set(pullTask.get().image)
 
             with(dockerExtension.developmentConfig) {
-                val asHTTPPort = if (appserverAsContainer) {
-                    getIntProperty(
-                        Configuration.AS_CONNECTOR_CONTAINER_PORT,
-                        Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE
-                    )
-                } else {
-                    getIntProperty(
-                        Configuration.AS_CONNECTOR_PORT,
-                        Configuration.AS_CONNECTOR_PORT_VALUE
-                    )
-                }
+                val portMapping = asPortConfiguration.managementConnector.get()
 
-                val asHostname = if (appserverAsContainer) {
-                    "${dockerExtension.containerPrefix}-${ServerTaskPreparer.extName}"
+                val host: String
+                val port: Int
+                if (appserverAsContainer) {
+                    // started as container
+                    host = "${dockerExtension.containerPrefix}-${ServerTaskPreparer.extName.lowercase()}"
+                    port = portMapping.containerPort
                 } else {
-                    getConfigProperty(
-                        Configuration.LOCAL_CONNECTOR_HOST,
-                        Configuration.LOCAL_CONNECTOR_HOST_VALUE
+
+                    // started externally
+                    host = getConfigProperty(
+                            Configuration.LOCAL_CONNECTOR_HOST,
+                            Configuration.LOCAL_CONNECTOR_HOST_VALUE
                     )
+                    port = portMapping.hostPort
                 }
 
                 task.envVars.put(
                     "ICM_ICMSERVLETURLS",
-                    "cs.url.0=http://${asHostname}:${asHTTPPort}/servlet/ConfigurationServlet"
+                    "cs.url.0=http://${host}:${port}/servlet/ConfigurationServlet"
                 )
             }
             task.hostConfig.binds.set( volumes )

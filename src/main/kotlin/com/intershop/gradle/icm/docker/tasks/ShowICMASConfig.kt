@@ -51,8 +51,10 @@ open class ShowICMASConfig : DefaultTask() {
             ${GenICMProperties.webserverUrlProp} = http://$hostname:${Configuration.WS_HTTP_PORT_VALUE}
             ${GenICMProperties.webserverSecureUrlProp} = https://$hostname:${Configuration.WS_HTTPS_PORT_VALUE}
                 
-            # port number to start the servlet engine
-            ${Configuration.AS_CONNECTOR_PORT} = ${Configuration.AS_CONNECTOR_PORT_VALUE}
+            # port number to be used for service connector inside of the servlet engine
+            ${Configuration.AS_SERVICE_CONNECTOR_PORT} = ${Configuration.AS_SERVICE_CONNECTOR_PORT_VALUE}
+            # port number to be used for management connector inside of the servlet engine
+            ${Configuration.AS_MANAGEMENT_CONNECTOR_PORT} = ${Configuration.AS_MANAGEMENT_CONNECTOR_PORT_VALUE}
             
             # Host name / IP of the ICM Server (local installation)
             # both values must match    

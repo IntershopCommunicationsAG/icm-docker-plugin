@@ -163,7 +163,7 @@ class ICMContainerEnvironmentBuilder {
 
         // configure servlet engine port
         portConfig?.run {
-            env.add(ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT, servletEngine.get().containerPort)
+            env.add(ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT, serviceConnector.get().containerPort)
         }
 
         // configure servlet engine address
