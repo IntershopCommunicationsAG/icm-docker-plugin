@@ -472,8 +472,10 @@ The following properties are part of the <<PropertiesFile>>.
 |===
 | Key | Description | Co-domain | Mandatory/Optional | Default value
 
-| `intershop.as.connector.port` | the host port to be used for the appserver http port | Integer | Optional | `7743` +
-| `intershop.servletEngine.connector.container.port` | the container port to be used for the appserver http port (normally no need to change) | Integer | Optional | `7743` +
+| `intershop.as.connector.port` | the host port to be used for the appserver service connector http port | Integer | Optional | `7743` +
+| `intershop.servletEngine.connector.port` | the container port to be used for the appserver service connector http port (normally no need to change) | Integer | Optional | `7743` +
+| `intershop.as.managementConnector.port` | the host port to be used for the appserver management connector http port | Integer | Optional | `7743` +
+| `intershop.servletEngine.managementConnector.port` | the container port to be used for the appserver management connector http port (normally no need to change) | Integer | Optional | `7743` +
 | `intershop.as.jmx.connector.port` | the host port to be used for the appserver JMX port | Integer | Optional | `7747` +
 | `intershop.as.debug.port` | the host port to be used for the appserver debug port | Integer | Optional | `7746` +
 | `intershop.databaseType` | database type to be used | { `mssql`, `oracle` } | Mandatory | <none> +

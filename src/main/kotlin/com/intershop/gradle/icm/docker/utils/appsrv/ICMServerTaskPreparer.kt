@@ -83,7 +83,7 @@ class ICMServerTaskPreparer(
             task.withHttpProbe(
                 URI.create(
                     StartServerContainer.PATTERN_READINESS_PROBE_URL.format(
-                        devConfig.asPortConfiguration.servletEngine.get().hostPort
+                        devConfig.asPortConfiguration.serviceConnector.get().hostPort
                     )
                 ),
                 devConfig.getDurationProperty(

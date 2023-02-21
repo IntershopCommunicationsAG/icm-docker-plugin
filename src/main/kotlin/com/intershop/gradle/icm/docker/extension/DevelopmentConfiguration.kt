@@ -65,7 +65,8 @@ open class DevelopmentConfiguration
         const val LICENSE_FILE_NAME = "license.xml"
         const val CONFIG_FILE_NAME = "icm.properties"
 
-        const val PORT_MAPPING_AS_CONNECTOR = "CONNECTOR"
+        const val PORT_MAPPING_AS_SERVICE_CONNECTOR = "SERVICE_CONNECTOR"
+        const val PORT_MAPPING_AS_MANAGEMENT_CONNECTOR = "MANAGEMENT_CONNECTOR"
         const val PORT_MAPPING_AS_DEBUG = "DEBUG"
         const val PORT_MAPPING_AS_JMX = "JMX"
     }
@@ -177,7 +178,7 @@ open class DevelopmentConfiguration
             return strValue.toInt()
         } catch (e: NumberFormatException) {
             throw GradleException(
-                    "Configuration property ${Configuration.AS_CONNECTOR_CONTAINER_PORT} is not a valid int value", e)
+                    "Configuration property 'property' is not a valid int value", e)
         }
     }
 
@@ -212,12 +213,19 @@ open class DevelopmentConfiguration
      */
     val asPortConfiguration: ASPortConfiguration by lazy {
         val config = ASPortConfiguration(objectFactory)
-        config.servletEngine.value(getPortMapping(
-                PORT_MAPPING_AS_CONNECTOR,
-                Configuration.AS_CONNECTOR_HOST_PORT,
-                Configuration.AS_CONNECTOR_HOST_PORT_VALUE,
-                Configuration.AS_CONNECTOR_CONTAINER_PORT,
-                Configuration.AS_CONNECTOR_CONTAINER_PORT_VALUE,
+        config.serviceConnector.value(getPortMapping(
+                PORT_MAPPING_AS_SERVICE_CONNECTOR,
+                Configuration.AS_SERVICE_CONNECTOR_HOST_PORT,
+                Configuration.AS_SERVICE_CONNECTOR_HOST_PORT_VALUE,
+                Configuration.AS_SERVICE_CONNECTOR_PORT,
+                Configuration.AS_SERVICE_CONNECTOR_PORT_VALUE,
+                true))
+        config.managementConnector.value(getPortMapping(
+                PORT_MAPPING_AS_MANAGEMENT_CONNECTOR,
+                Configuration.AS_MANAGEMENT_CONNECTOR_HOST_PORT,
+                Configuration.AS_MANAGEMENT_CONNECTOR_HOST_PORT_VALUE,
+                Configuration.AS_MANAGEMENT_CONNECTOR_PORT,
+                Configuration.AS_MANAGEMENT_CONNECTOR_PORT_VALUE,
                 true))
         config.debug.value(getPortMapping(
                 PORT_MAPPING_AS_DEBUG,
@@ -242,7 +250,8 @@ open class DevelopmentConfiguration
     }
 
     class ASPortConfiguration(objectFactory: ObjectFactory) : Serializable {
-        val servletEngine: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+        val serviceConnector: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
+        val managementConnector: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
         val debug: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
         val jmx: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
     }

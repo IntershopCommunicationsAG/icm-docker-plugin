@@ -16,7 +16,6 @@
  */
 package com.intershop.gradle.icm.docker.tasks.utils
 
-import org.gradle.api.GradleException
 import org.gradle.api.provider.Provider
 import java.io.Serializable
 import java.lang.IllegalStateException

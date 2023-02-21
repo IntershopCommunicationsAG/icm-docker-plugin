@@ -106,8 +106,7 @@ class WATaskPreparer(
 
 
                 val servletUrlProvider = project.provider {
-                    val portMapping = asPortConfiguration.servletEngine.get()
-
+                    val portMapping = asPortConfiguration.managementConnector.get()
 
                     val host: String
                     val port: Int

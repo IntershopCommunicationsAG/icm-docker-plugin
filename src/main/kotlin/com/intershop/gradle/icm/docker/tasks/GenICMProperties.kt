@@ -93,7 +93,7 @@ open class GenICMProperties @Inject constructor(
         const val webserverUrlProp = "intershop.WebServerURL"
         const val webserverSecureUrlProp = "intershop.WebServerSecureURL"
 
-        const val asConnectorAdressProp = Configuration.AS_CONNECTOR_CONTAINER_ADDRESS
+        const val asConnectorAdressProp = Configuration.AS_CONNECTOR_ADDRESS
 
         const val asSolrZKListProp = Configuration.SOLR_CLOUD_HOSTLIST
         const val asSolrPrefixProp = Configuration.SOLR_CLOUD_INDEXPREFIX
@@ -403,8 +403,10 @@ open class GenICMProperties @Inject constructor(
             if (icmasOption.get()) {
                 val wstext =
                         """
-                # port number to start the servlet engine
-                $AS_CONNECTOR_PORT = $AS_CONNECTOR_PORT_VALUE
+                # port number to be used for service connector inside of the servlet engine
+                $AS_SERVICE_CONNECTOR_PORT = $AS_SERVICE_CONNECTOR_PORT_VALUE
+                # port number to be used for management connector inside of the servlet engine
+                $AS_MANAGEMENT_CONNECTOR_PORT = $AS_MANAGEMENT_CONNECTOR_PORT_VALUE
             
                 # Host name / IP of the ICM Server (local installation)
                 # both values must match    
@@ -420,13 +422,15 @@ open class GenICMProperties @Inject constructor(
                         """
                     # do not change this configuration, if you use the standard
                     # both ports must match
-                    # port number to start the servlet engine
-                    $AS_CONNECTOR_PORT = $AS_CONNECTOR_PORT_VALUE
-                    # container port for the servle engine
-                    $AS_CONNECTOR_CONTAINER_PORT = $AS_CONNECTOR_CONTAINER_PORT_VALUE
+                    # port number to be used for service connector inside of the servlet engine
+                    $AS_SERVICE_CONNECTOR_PORT = $AS_SERVICE_CONNECTOR_PORT_VALUE
+                    # port number to be used for management connector inside of the servlet engine
+                    $AS_MANAGEMENT_CONNECTOR_PORT = $AS_MANAGEMENT_CONNECTOR_PORT_VALUE
                     
-                    # port number of the exposed port
-                    $AS_CONNECTOR_HOST_PORT = $AS_CONNECTOR_HOST_PORT_VALUE
+                    # port number of the exposed port for the service connector
+                    $AS_SERVICE_CONNECTOR_HOST_PORT = $AS_SERVICE_CONNECTOR_HOST_PORT_VALUE
+                    # port number of the exposed port for the management connector
+                    $AS_MANAGEMENT_CONNECTOR_HOST_PORT = $AS_MANAGEMENT_CONNECTOR_HOST_PORT_VALUE
                     
                     # jmx configuration
                     $AS_JMX_CONNECTOR_PORT = $AS_JMX_CONNECTOR_PORT_VALUE

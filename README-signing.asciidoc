@@ -1,0 +1,54 @@
+= Signing the artifacts during while executing publishing tasks
+
+== Problem
+When publishing artifacts using any gradle publishing tasks (or for instance `publish` or `publishToMavenLocal`) the build requires the build system to provide a valid gpg key to successfully sign the build artifacts.
+
+== Solution
+To fulfill this requirement the following steps have to be executed.
+
+Generate a GPG-key
+[source,bash]
+----
+gpg --quick-generate-key --batch --pinentry-mode loopback --passphrase=<passphrase> <emailAddress>
+----
+
+which results in an output like
+[source,bash]
+----
+gpg: key CBC0FD16BA0996A4 marked as ultimately trusted
+gpg: revocation certificate stored as '/c/Users/skiesewetter/.gnupg/openpgp-revocs.d/E5D6961A381EA1E597F3D3D9CBC0FD16BA0996A4.rev'
+----
+
+Remember the last 8 digits of the key id for example
+[source,bash]
+----
+KEY_ID=BA0996A4
+----
+
+Export the key into a file
+[source,bash]
+----
+gpg --batch --passphrase="<passphrase>" --pinentry-mode loopback --export-secret-keys $KEY_ID > $HOME/.gnupg/gradle-signing-key.gpg
+----
+
+The key is now stored in `$HOME/.gnupg/gradle-signing-key.gpg`.
+
+Now tell `gradle` the singing data by adding the following lines into `$GRADLE_USER_HOME/gradle.properties`
+[source,properties]
+----
+signing.secretKeyRingFile=<USER_HOME>/.gnupg/gradle-signing-key.gpg
+signing.keyId=<KEY_ID>
+signing.password=<PASSPHRASE>
+----
+
+From now on the publishing tasks also execute the signing tasks without any failure
+[source,bash]
+----
+$ ./gradlew publishToMavenLocal
+.
+.
+BUILD SUCCESSFUL in 30s
+37 actionable tasks: 37 executed
+----
+
+TIP: When using Windows one can either use the git-bash which provides the gpg command, use https://learn.microsoft.com/en-us/windows/wsl/install[WLS] or install https://www.gpg4win.de/[Gpg4win].
