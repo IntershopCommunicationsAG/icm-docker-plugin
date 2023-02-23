@@ -74,7 +74,7 @@ abstract class AbstractASTaskPreparer(
      */
     protected fun getPortMappings(): Set<PortMapping> =
         with(dockerExtension.developmentConfig.asPortConfiguration){
-            setOf( serviceConnector.get(), debug.get(), jmx.get() )
+            setOf( serviceConnector.get(), managementConnector.get(), debug.get(), jmx.get() )
         }
 
     protected fun getServerVolumes(task: Task, customization: Boolean): Map<String,String> {

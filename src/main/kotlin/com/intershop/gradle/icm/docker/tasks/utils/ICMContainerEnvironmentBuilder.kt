@@ -44,6 +44,8 @@ class ICMContainerEnvironmentBuilder {
         const val ENV_CARTRIDGE_CLASSPATH_LAYOUT = "CARTRIDGE_CLASSPATH_LAYOUT"
         const val ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_ADDRESS = "INTERSHOP_SERVLETENGINE_CONNECTOR_ADDRESS"
         const val ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT = "INTERSHOP_SERVLETENGINE_CONNECTOR_PORT"
+        const val ENV_INTERSHOP_SERVLETENGINE_MANAGEMENTCONNECTOR_PORT =
+                "INTERSHOP_SERVLETENGINE_MANAGEMENTCONNECTOR_PORT"
         const val ENV_SERVER_NAME = "SERVER_NAME"
         const val ENV_ENABLE_HEAPDUMP = "ENABLE_HEAPDUMP"
         const val ENV_ENABLE_GCLOG = "ENABLE_GCLOG"
@@ -161,9 +163,10 @@ class ICMContainerEnvironmentBuilder {
                 .add(ENV_INTERSHOP_WEBSERVERSECUREURL, webserverSecureURL.get())
         }
 
-        // configure servlet engine port
+        // configure servlet engine connector ports
         portConfig?.run {
             env.add(ENV_INTERSHOP_SERVLETENGINE_CONNECTOR_PORT, serviceConnector.get().containerPort)
+            env.add(ENV_INTERSHOP_SERVLETENGINE_MANAGEMENTCONNECTOR_PORT, managementConnector.get().containerPort)
         }
 
         // configure servlet engine address
