@@ -219,14 +219,15 @@ open class DevelopmentConfiguration
                 Configuration.AS_SERVICE_CONNECTOR_HOST_PORT_VALUE,
                 Configuration.AS_SERVICE_CONNECTOR_PORT,
                 Configuration.AS_SERVICE_CONNECTOR_PORT_VALUE,
-                true))
+                true
+        ))
         config.managementConnector.value(getPortMapping(
                 PORT_MAPPING_AS_MANAGEMENT_CONNECTOR,
                 Configuration.AS_MANAGEMENT_CONNECTOR_HOST_PORT,
                 Configuration.AS_MANAGEMENT_CONNECTOR_HOST_PORT_VALUE,
                 Configuration.AS_MANAGEMENT_CONNECTOR_PORT,
-                Configuration.AS_MANAGEMENT_CONNECTOR_PORT_VALUE,
-                true))
+                Configuration.AS_MANAGEMENT_CONNECTOR_PORT_VALUE
+        ))
         config.debug.value(getPortMapping(
                 PORT_MAPPING_AS_DEBUG,
                 Configuration.AS_DEBUG_PORT,
