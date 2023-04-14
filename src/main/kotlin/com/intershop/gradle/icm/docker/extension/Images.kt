@@ -60,6 +60,6 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
         testmailsrv.convention("docker-internal.rnd.intershop.de/icm-test/iste-mail:latest")
 
-        nginx.convention("intershophub/nginx-intershop:1.0.0")
+        nginx.convention("intershophub/icm-nginx:latest")
     }
 }
