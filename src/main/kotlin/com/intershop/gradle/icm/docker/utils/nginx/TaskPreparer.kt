@@ -17,13 +17,17 @@
 package com.intershop.gradle.icm.docker.utils.nginx
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
+import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import com.intershop.gradle.icm.docker.utils.Configuration
+import org.gradle.api.GradleException
+import java.io.File
 
 class TaskPreparer(project: Project,
-                   networkTask: Provider<PrepareNetwork>
+                   networkTask: Provider<PrepareNetwork>, waTaskPreparer:WATaskPreparer
     ) : AbstractTaskPreparer(project, networkTask){
 
     companion object {
@@ -41,7 +45,7 @@ class TaskPreparer(project: Project,
 
     override fun getExtensionName(): String = extName
 
-    override fun getImage(): Provider<String> = project.provider { "TODO" }/* TODO #72088extension.images.nginx
+    override fun getImage(): Provider<String> = dockerExtension.images.nginx
 
     init {
         initBaseTasks()
@@ -53,7 +57,7 @@ class TaskPreparer(project: Project,
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(pullTask.get().image)
 
-            with(extension.developmentConfig) {
+            with(dockerExtension.developmentConfig) {
                 val httpPortMapping = getPortMapping("HTTP",
                     Configuration.NGINX_HTTP_PORT,
                     Configuration.NGINX_HTTP_PORT_VALUE,
@@ -86,7 +90,7 @@ class TaskPreparer(project: Project,
                     )
                 )
 
-                val certPath =  extension.developmentConfig.getConfigProperty(Configuration.NGINX_CERT_PATH)
+                val certPath =  dockerExtension.developmentConfig.getConfigProperty(Configuration.NGINX_CERT_PATH)
                 if (certPath.isBlank()){
                     throw GradleException("Missing or empty property '${Configuration.NGINX_CERT_PATH}' in your " +
                                           "icm.properties!")
@@ -98,12 +102,12 @@ class TaskPreparer(project: Project,
                 }
 
                 task.hostConfig.binds.set(
-                        ContainerUtils.transformVolumes(mutableMapOf(certDir.absolutePath to VOLUME_SSL))
+                        mutableMapOf(certDir.absolutePath to VOLUME_SSL)
                 )
             }
             task.mustRunAfter(waTaskPreparer.startTask)
             task.dependsOn(pullTask, networkTask)
         }
     }
-    */
+
 }

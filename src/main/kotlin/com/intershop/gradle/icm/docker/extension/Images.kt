@@ -43,9 +43,7 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val testmailsrv: Property<String> = objectFactory.property(String::class.java)
 
-    /* TODO #72088
     val nginx: Property<String> = objectFactory.property(String::class.java)
-     */
 
     init {
         icmcustomizationbase.convention("intershophub/icm-as-customization-base:latest")
@@ -62,8 +60,6 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
         testmailsrv.convention("docker-internal.rnd.intershop.de/icm-test/iste-mail:latest")
 
-        /* TODO #72088
         nginx.convention("intershophub/nginx-intershop:1.0.0")
-         */
     }
 }

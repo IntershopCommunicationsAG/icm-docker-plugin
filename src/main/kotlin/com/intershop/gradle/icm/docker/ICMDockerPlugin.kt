@@ -43,6 +43,7 @@ import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloud
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebTaskPreparer
+import com.intershop.gradle.icm.docker.utils.nginx.TaskPreparer as NginxTaskPreparer
 
 /**
  * Main plugin class of the project plugin.
@@ -83,9 +84,7 @@ open class ICMDockerPlugin : Plugin<Project> {
             val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
             val webServerTasks = WebServerPreparer(project, networkTasks)
-            /* TODO #72088
             val nginxTasks = NginxTaskPreparer(project, networkTasks.createNetworkTask, webServerTasks.waTasks)
-             */
 
             try {
                 tasks.named("dbPrepare").configure {
@@ -104,6 +103,7 @@ open class ICMDockerPlugin : Plugin<Project> {
                         mssqlTasks.removeTask,
                         mailSrvTask.removeTask,
                         webServerTasks.removeTask,
+                        nginxTasks.removeTask,
                         oracleTasks.removeTask,
                         solrcloudPreparer.removeTask)
             }
@@ -154,9 +154,9 @@ open class ICMDockerPlugin : Plugin<Project> {
             if (list.contains("oracle")) {
                 task.dependsOn("start${OracleTaskPreparer.extName}")
             }
-            /* TODO #72088 if (list.contains("nginx")) {
+            if (list.contains("nginx")) {
                 task.dependsOn("start${NginxTaskPreparer.extName}")
-            }*/
+            }
         }
 
         project.tasks.register("stopEnv") { task ->
@@ -177,9 +177,9 @@ open class ICMDockerPlugin : Plugin<Project> {
             if (list.contains("oracle")) {
                 task.dependsOn("stop${OracleTaskPreparer.extName}")
             }
-            /* TODO #72088 if (list.contains("nginx")) {
+            if (list.contains("nginx")) {
                 task.dependsOn("stop${NginxTaskPreparer.extName}")
-            }*/
+            }
         }
     }
 
