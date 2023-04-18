@@ -21,6 +21,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import javax.inject.Inject
@@ -86,4 +87,12 @@ open class ImageConfiguration @Inject constructor(objectFactory: ObjectFactory) 
         get() = this.enabled
 
     val enabled: Property<Boolean> = objectFactory.property(Boolean::class.java)
+
+    val tagsProvider: Provider<List<String>>
+        get() = this.tags
+
+    /**
+     * Image tags - build an image with different tags
+     */
+    val tags: ListProperty<String> = objectFactory.listProperty(String::class.java)
 }

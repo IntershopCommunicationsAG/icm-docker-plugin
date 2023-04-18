@@ -64,6 +64,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                            addFiles(tasks.createMainPkg.outputs.files)
                            dockerBuildDir = "main"
                            enabled = true
+                           tags = [ project.version, "latest" ]
                         }
                     } 
                 }
