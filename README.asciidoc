@@ -210,6 +210,7 @@ imageBuild {
 |`mailsrv`  | `Property<String>` | `mailhog/mailhog:latest`       | A mail server for testing the mail feature of the application.
 |`solr`   | `Property<String>`      | `solr/latest`       | This image is used for the Solr Cloud configuration with a single node.
 |`zookeeper`   | `Property<String>` | `zookeeper:latest`  | This image is used for the Solr Cloud configuration with a single node.
+|`icm-nginx`   | `Property<String>` | `icm-nginx:latest`  | This image is used for the Nginx reverse proxy for development without the WebAdapter.
 |===
 
 ===== Image Build Configuration `ProjectConfiguration`[[ProjectConfiguration]]
@@ -287,7 +288,7 @@ For all properties configurations methods with a closure or an action are availa
 | *showICMASConfig*  | Shows a special part of icm.properties for local application server development.
 | *startEnv*         | Starts a docker based environment based on "intershop.environment.container" in the icm properties file.
 | *stopEnv*          | Stops the docker based environment based on "intershop.environment.container" in the icm properties file.
-
+| **NGINX* | These tasks pull, start, stop and remove the ICM NGINX image. This image contains a NGINX configured to terminate TLS and reverse proxy directly to the Application Server.
 |===
 
 ==== *generateICMProps* Parameters
@@ -370,6 +371,18 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.ws.readinessProbe.interval` | interval in seconds to be used to check if the WebAdapter is ready | Integer | Optional | `2` +
 | `intershop.ws.readinessProbe.timeout` | max. number of seconds to wait for the WebAdapter to become ready | Integer | Optional | `30` +
 | `webserver.use.http2` | enables/disables usage of HTTP2 | Boolean | Optional | `false` +
+|===
+
+===== NGINX [[NGINXConfiguration]]
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `nginx.http.port` | the host port to be used for the NGINX http port | Integer | Optional | `8080` +
+| `nginx.https.port` | the host port to be used for the WebAdapter https port | Integer | Optional | `8443` +
+| `nginx.cert.path` | the host path to look for TLS certificate and private key (if not defined the certificates will be mounted from the Webserver certificate path) | Path | Optional | <none> +
+| `nginx.cert.filename` | name of the certificate file | String | Optional | `fullchain.pem` +
+| `nginx.privatekey.filename` | name of the certificate private key file | String | Optional | `privkey.pem` +
 |===
 
 ===== Solr [[SolrConfiguration]]
