@@ -272,7 +272,19 @@ open class ICMDockerPlugin : Plugin<Project> {
                 } else {
                     ""
                 }
-                mutableListOf("${prjconf.baseImageName.get()}${nameComplete}:${project.version}")
-            }
+                val tagList = imgConf.tags.get()
+                val imageName = "${prjconf.baseImageName.get()}${nameComplete}"
 
+                val rvList = if( tagList.isEmpty() ) {
+                    mutableListOf("${imageName}:${project.version}")
+                } else {
+                    val tmpList = mutableListOf<String>()
+                    tagList.distinct().forEach {
+                        tmpList.add("${imageName}:${it}")
+                    }
+                    tmpList
+                }
+
+                rvList
+            }
 }
