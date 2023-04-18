@@ -84,7 +84,7 @@ open class ICMDockerPlugin : Plugin<Project> {
             val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
             val webServerTasks = WebServerPreparer(project, networkTasks)
-            val nginxTasks = NginxTaskPreparer(project, networkTasks.createNetworkTask, webServerTasks.waTasks)
+            val nginxTasks = NginxTaskPreparer(project, networkTasks.createNetworkTask)
 
             try {
                 tasks.named("dbPrepare").configure {
