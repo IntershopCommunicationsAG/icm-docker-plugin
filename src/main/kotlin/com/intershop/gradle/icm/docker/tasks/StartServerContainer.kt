@@ -164,6 +164,7 @@ open class StartServerContainer
         withEnvironment(
                 ICMContainerEnvironmentBuilder()
                         .withDatabaseConfig(devConfig.databaseConfiguration)
+                        .withDevelopmentConfig(devConfig.developmentProperties)
                         .withWebserverConfig(devConfig.webserverConfiguration)
                         .withPortConfig(devConfig.asPortConfiguration)
                         .withCartridgeList(devConfig.cartridgeList.get())

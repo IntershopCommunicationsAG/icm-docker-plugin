@@ -20,6 +20,7 @@ package com.intershop.gradle.icm.docker.tasks.utils
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DevelopmentProperties
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.JavaDebugSupport
@@ -68,6 +69,7 @@ class ICMContainerEnvironmentBuilder {
     private var enableGCLog: Boolean? = null
     private var solrCloudTZookeeperHostList : Provider<String>? = null
     private var mailServer : Provider<HostAndPort>? = null
+    private var developmentProperties: DevelopmentProperties? = null
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
@@ -139,6 +141,11 @@ class ICMContainerEnvironmentBuilder {
         return this
     }
 
+    fun withDevelopmentConfig(developmentProperties: DevelopmentProperties): ICMContainerEnvironmentBuilder {
+        this.developmentProperties = developmentProperties
+        return this
+    }
+
     fun build() : ContainerEnvironment {
         val env = ContainerEnvironment()
         additionalParameters?.run {
@@ -207,6 +214,11 @@ class ICMContainerEnvironmentBuilder {
                 val value : HostAndPort = get()
                 env.add(ENV_MAIL, "$PROP_MAIL_HOST=${value.hostName},$PROP_MAIL_PORT=${value.port}")
             }
+        }
+
+        val properties = developmentProperties?.developmentConfig?.orNull
+        properties?.keys?.forEach {
+            env.add(it.replace(".", "_").uppercase(), properties[it])
         }
 
         return env
