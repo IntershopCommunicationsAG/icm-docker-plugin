@@ -21,6 +21,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.SetProperty
@@ -69,6 +70,42 @@ open class DevelopmentConfiguration
         const val PORT_MAPPING_AS_MANAGEMENT_CONNECTOR = "MANAGEMENT_CONNECTOR"
         const val PORT_MAPPING_AS_DEBUG = "DEBUG"
         const val PORT_MAPPING_AS_JMX = "JMX"
+
+        val DEVPROPS = listOf(
+            "intershop.extensions.CheckSource",
+            "intershop.queries.CheckSource",
+            "intershop.pipelines.CheckSource",
+            "intershop.pagelets.CheckSource",
+            "intershop.webforms.CheckSource",
+            "intershop.template.CheckSource",
+            "intershop.template.CheckSourceModified",
+            "intershop.template.isfilebundle.CheckSource",
+            "intershop.urlrewrite.CheckSource",
+
+            "intershop.pipelines.PreloadFromCartridges",
+            "intershop.pipelines.PreloadFromSites",
+            "intershop.pipelets.PreloadFromCartridges",
+            "intershop.template.CompileOnStartup",
+            "intershop.webforms.Preload",
+            "intershop.queries.Preload",
+
+            "intershop.pipelines.strict.CheckParameterTypes",
+            "intershop.pipelets.OnLoadError",
+
+            "intershop.monitoring.requests",
+            "intershop.monitoring.pipelines",
+            "intershop.monitoring.pipelets",
+            "intershop.monitoring.pipelinenodes",
+            "intershop.monitoring.templates",
+            "intershop.monitoring.queries",
+            "intershop.monitoring.sql",
+            "intershop.monitoring.class",
+            "intershop.monitoring.maxSensors",
+
+            "intershop.template.PrintTemplateName",
+            "intershop.template.PrintTemplateMarker",
+            "intershop.session.TimeOut",
+            "intershop.CSRFGuard.allowRecovery")
     }
 
     private val licenseDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
@@ -208,6 +245,17 @@ open class DevelopmentConfiguration
         config
     }
 
+    val developmentProperties: DevelopmentProperties by lazy {
+        val config = DevelopmentProperties(objectFactory)
+        DEVPROPS.forEach {
+            val p = getConfigProperty(it)
+            if(p.isNotEmpty()) {
+                config.developmentConfig.put( it, p)
+            }
+        }
+        config
+    }
+
     /**
      * The port configuration (initialized lazily)
      */
@@ -248,6 +296,11 @@ open class DevelopmentConfiguration
         val jdbcUrl: Property<String> = objectFactory.property(String::class.java)
         val jdbcUser: Property<String> = objectFactory.property(String::class.java)
         val jdbcPassword: Property<String> = objectFactory.property(String::class.java)
+    }
+
+    class DevelopmentProperties(objectFactory: ObjectFactory) : Serializable {
+        val developmentConfig: MapProperty<String, String> =
+            objectFactory.mapProperty(String::class.java, String::class.java)
     }
 
     class ASPortConfiguration(objectFactory: ObjectFactory) : Serializable {
