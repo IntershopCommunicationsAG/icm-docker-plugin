@@ -67,19 +67,21 @@ open class PushImages
         availableimages.forEach { img ->
             images.get().forEach { imgName ->
                 if(img.repoTags != null && img.repoTags.contains(imgName)) {
-                    logger.info("add {} with id {} for push", img.id, img.repoTags.get(0))
-                    imageIDs.put(img.id.split(":").get(1).substring(0,12), imgName)
+                    logger.info("add image id {} with tag {} for push", img.id, imgName)
+                    imageIDs.put(imgName, img.id.split(":").get(1).substring(0,12))
                 }
             }
         }
 
+        logger.quiet(".. pushImages: {}", imageIDs)
         images.get().forEach {
-            if(! imageIDs.values.contains(it)) {
+            logger.debug("check image {} for push", it)
+            if(! imageIDs.keys.contains(it)) {
                 logger.warn("Image {} is not available! Please call buildImage before.", it)
             }
         }
 
-        imageIDs.forEach { id, name ->
+        imageIDs.forEach { name, id ->
             logger.quiet("Pushing image '{}' with ID '{}'.", name, id)
             val pushImageCmd = dockerClient.pushImageCmd(name)
             val authConfig = registryAuthLocator.lookupAuthConfig(name, registryCredentials)
