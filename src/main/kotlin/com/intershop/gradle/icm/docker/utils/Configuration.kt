@@ -19,6 +19,8 @@ package com.intershop.gradle.icm.docker.utils
 
 object Configuration {
 
+    const val ICM_AS_ENVIRONMENT = "environment"
+
     const val DB_MSSQL_PORT = "intershop.db.mssql.port"
     const val DB_MSSQL_CONTAINER_PORT = "intershop.db.container.mssql.hostport"
 

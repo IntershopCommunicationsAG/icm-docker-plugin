@@ -33,6 +33,7 @@ class ICMContainerEnvironmentBuilder {
 
     companion object {
         const val ENV_IS_DBPREPARE = "IS_DBPREPARE"
+        const val ENV_ENVIRONMENT = "ENVIRONMENT"
         const val ENV_DEBUG_ICM = "DEBUG_ICM"
         const val ENV_DB_TYPE = "INTERSHOP_DATABASETYPE"
         const val ENV_DB_JDBC_URL = "INTERSHOP_JDBC_URL"
@@ -57,6 +58,7 @@ class ICMContainerEnvironmentBuilder {
 
     private var classpathLayout: Set<ClasspathLayout> = setOf()
     private var triggerDbPrepare: Boolean? = null
+    private var asEnvironment: String? = null
     private var serverName: String? = null
     private var containerName: String? = null
     private var databaseConfig: DatabaseParameters? = null
@@ -73,6 +75,11 @@ class ICMContainerEnvironmentBuilder {
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
+        return this
+    }
+
+    fun withEnvironment(asEnvironment: String?) : ICMContainerEnvironmentBuilder {
+        this.asEnvironment = asEnvironment
         return this
     }
 
@@ -198,6 +205,11 @@ class ICMContainerEnvironmentBuilder {
         triggerDbPrepare?.run {
             env.add(ENV_IS_DBPREPARE, this)
         }
+
+        asEnvironment?.run {
+            env.add(ENV_ENVIRONMENT, this)
+        }
+
         enableHeapDump?.run {
             env.add(ENV_ENABLE_HEAPDUMP, this)
         }
@@ -218,7 +230,7 @@ class ICMContainerEnvironmentBuilder {
 
         val properties = developmentProperties?.developmentConfig?.orNull
         properties?.keys?.forEach {
-            env.add(it.replace(".", "_").uppercase(), properties[it])
+            env.add(ContainerEnvironment.propertyNameToEnvName(it), properties[it])
         }
 
         return env

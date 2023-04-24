@@ -235,6 +235,13 @@ open class DevelopmentConfiguration
         config
     }
 
+    val asEnvironment: String? by lazy {
+        val environment = getConfigProperty(Configuration.ICM_AS_ENVIRONMENT)
+        environment.ifEmpty {
+            null
+        }
+    }
+
     /**
      * The webserver configuration (initialized lazily)
      */
