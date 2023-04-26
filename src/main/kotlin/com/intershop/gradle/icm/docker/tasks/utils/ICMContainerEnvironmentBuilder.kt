@@ -21,6 +21,7 @@ import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.Webser
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DevelopmentProperties
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.EnvironmentProperties
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.JavaDebugSupport
@@ -72,6 +73,7 @@ class ICMContainerEnvironmentBuilder {
     private var solrCloudTZookeeperHostList : Provider<String>? = null
     private var mailServer : Provider<HostAndPort>? = null
     private var developmentProperties: DevelopmentProperties? = null
+    private var intershopEnvironmentProperties: EnvironmentProperties? = null
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
@@ -153,6 +155,11 @@ class ICMContainerEnvironmentBuilder {
         return this
     }
 
+    fun withEnvironmentProperties(environmentProperties: EnvironmentProperties) : ICMContainerEnvironmentBuilder {
+        this.intershopEnvironmentProperties = environmentProperties
+        return this
+    }
+
     fun build() : ContainerEnvironment {
         val env = ContainerEnvironment()
         additionalParameters?.run {
@@ -231,6 +238,12 @@ class ICMContainerEnvironmentBuilder {
         val properties = developmentProperties?.developmentConfig?.orNull
         properties?.keys?.forEach {
             env.add(ContainerEnvironment.propertyNameToEnvName(it), properties[it])
+        }
+
+        intershopEnvironmentProperties?.run {
+            this.config.get().forEach { (key, value) ->
+                env.add(key, value)
+            }
         }
 
         return env

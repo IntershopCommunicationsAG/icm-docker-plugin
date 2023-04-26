@@ -169,4 +169,6 @@ object Configuration {
     const val NGINX_CERT_FILENAME_VALUE = "fullchain.pem"
     const val NGINX_PRIVATEKEY_FILENAME = "nginx.privatekey.filename"
     const val NGINX_PRIVATEKEY_FILENAME_VALUE = "privkey.pem"
+
+    const val INTERSHOP_ENVIRONMENT_PREFIX = "intershop.environment."
 }
