@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Serializable
 import java.time.Duration
+import java.util.Locale
 import java.util.Properties
 import javax.inject.Inject
 
@@ -70,6 +71,8 @@ open class DevelopmentConfiguration
         const val PORT_MAPPING_AS_MANAGEMENT_CONNECTOR = "MANAGEMENT_CONNECTOR"
         const val PORT_MAPPING_AS_DEBUG = "DEBUG"
         const val PORT_MAPPING_AS_JMX = "JMX"
+
+        const val ENV_PREFIX = "ISH_ENV_"
 
         val DEVPROPS = listOf(
             "intershop.extensions.CheckSource",
@@ -112,6 +115,7 @@ open class DevelopmentConfiguration
     private val configDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
     private val appserverAsContainerProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
     private val configProperties: Properties = Properties()
+    private val environmentProperties: MutableMap<String, String> = mutableMapOf<String, String>()
 
     init {
         // read environment
@@ -235,6 +239,13 @@ open class DevelopmentConfiguration
         config
     }
 
+    val asEnvironment: String? by lazy {
+        val environment = getConfigProperty(Configuration.ICM_AS_ENVIRONMENT)
+        environment.ifEmpty {
+            null
+        }
+    }
+
     /**
      * The webserver configuration (initialized lazily)
      */
@@ -254,6 +265,19 @@ open class DevelopmentConfiguration
             }
         }
         config
+    }
+
+    val intershopEnvironmentProperties: EnvironmentProperties by lazy {
+        val envConfig = EnvironmentProperties(objectFactory)
+        val keys = configProperties.keys.filter {it.toString().startsWith(Configuration.INTERSHOP_ENVIRONMENT_PREFIX)}
+            .stream().map { it.toString()}
+        keys.forEach {
+            val p = getConfigProperty(it)
+            it.replaceFirst(Configuration.INTERSHOP_ENVIRONMENT_PREFIX, ENV_PREFIX)
+                .uppercase(Locale.getDefault())
+            envConfig.config.put(it, p)
+        }
+        envConfig
     }
 
     /**
@@ -300,6 +324,11 @@ open class DevelopmentConfiguration
 
     class DevelopmentProperties(objectFactory: ObjectFactory) : Serializable {
         val developmentConfig: MapProperty<String, String> =
+            objectFactory.mapProperty(String::class.java, String::class.java)
+    }
+
+    class EnvironmentProperties(objectFactory: ObjectFactory) : Serializable {
+        val config: MapProperty<String, String> =
             objectFactory.mapProperty(String::class.java, String::class.java)
     }
 

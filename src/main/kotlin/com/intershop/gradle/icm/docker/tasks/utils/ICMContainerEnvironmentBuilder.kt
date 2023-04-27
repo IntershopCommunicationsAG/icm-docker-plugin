@@ -21,6 +21,7 @@ import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.Webser
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DevelopmentProperties
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.EnvironmentProperties
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.JavaDebugSupport
@@ -33,6 +34,7 @@ class ICMContainerEnvironmentBuilder {
 
     companion object {
         const val ENV_IS_DBPREPARE = "IS_DBPREPARE"
+        const val ENV_ENVIRONMENT = "ENVIRONMENT"
         const val ENV_DEBUG_ICM = "DEBUG_ICM"
         const val ENV_DB_TYPE = "INTERSHOP_DATABASETYPE"
         const val ENV_DB_JDBC_URL = "INTERSHOP_JDBC_URL"
@@ -57,6 +59,7 @@ class ICMContainerEnvironmentBuilder {
 
     private var classpathLayout: Set<ClasspathLayout> = setOf()
     private var triggerDbPrepare: Boolean? = null
+    private var asEnvironment: String? = null
     private var serverName: String? = null
     private var containerName: String? = null
     private var databaseConfig: DatabaseParameters? = null
@@ -70,9 +73,15 @@ class ICMContainerEnvironmentBuilder {
     private var solrCloudTZookeeperHostList : Provider<String>? = null
     private var mailServer : Provider<HostAndPort>? = null
     private var developmentProperties: DevelopmentProperties? = null
+    private var intershopEnvironmentProperties: EnvironmentProperties? = null
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
+        return this
+    }
+
+    fun withEnvironment(asEnvironment: String?) : ICMContainerEnvironmentBuilder {
+        this.asEnvironment = asEnvironment
         return this
     }
 
@@ -146,6 +155,11 @@ class ICMContainerEnvironmentBuilder {
         return this
     }
 
+    fun withEnvironmentProperties(environmentProperties: EnvironmentProperties) : ICMContainerEnvironmentBuilder {
+        this.intershopEnvironmentProperties = environmentProperties
+        return this
+    }
+
     fun build() : ContainerEnvironment {
         val env = ContainerEnvironment()
         additionalParameters?.run {
@@ -198,6 +212,11 @@ class ICMContainerEnvironmentBuilder {
         triggerDbPrepare?.run {
             env.add(ENV_IS_DBPREPARE, this)
         }
+
+        asEnvironment?.run {
+            env.add(ENV_ENVIRONMENT, this)
+        }
+
         enableHeapDump?.run {
             env.add(ENV_ENABLE_HEAPDUMP, this)
         }
@@ -218,7 +237,13 @@ class ICMContainerEnvironmentBuilder {
 
         val properties = developmentProperties?.developmentConfig?.orNull
         properties?.keys?.forEach {
-            env.add(it.replace(".", "_").uppercase(), properties[it])
+            env.add(ContainerEnvironment.propertyNameToEnvName(it), properties[it])
+        }
+
+        intershopEnvironmentProperties?.run {
+            this.config.get().forEach { (key, value) ->
+                env.add(key, value)
+            }
         }
 
         return env
