@@ -31,7 +31,8 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Serializable
 import java.time.Duration
-import java.util.*
+import java.util.Locale
+import java.util.Properties
 import javax.inject.Inject
 
 /**
@@ -273,7 +274,6 @@ open class DevelopmentConfiguration
         keys.forEach {
             val p = getConfigProperty(it)
             it.replaceFirst(Configuration.INTERSHOP_ENVIRONMENT_PREFIX, ENV_PREFIX)
-                .replace(".", "_")
                 .uppercase(Locale.getDefault())
             envConfig.config.put(it, p)
         }
