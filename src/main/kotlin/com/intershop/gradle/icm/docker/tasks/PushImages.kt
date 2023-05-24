@@ -19,9 +19,9 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.DockerRegistryCredentials
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
-import com.github.dockerjava.api.model.Identifier
 import com.github.dockerjava.api.model.PushResponseItem
 import com.intershop.gradle.icm.docker.tasks.utils.PushImageCallback
+import com.intershop.gradle.icm.docker.tasks.utils.TaskAuthLocatorHelper
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.SetProperty
@@ -68,7 +68,7 @@ open class PushImages
             images.get().forEach { imgName ->
                 if(img.repoTags != null && img.repoTags.contains(imgName)) {
                     logger.info("add image id {} with tag {} for push", img.id, imgName)
-                    imageIDs.put(imgName, img.id.split(":").get(1).substring(0,12))
+                    imageIDs.put(imgName, img.id.split(":")[1].substring(0,12))
                 }
             }
         }
@@ -84,7 +84,8 @@ open class PushImages
         imageIDs.forEach { name, id ->
             logger.quiet("Pushing image '{}' with ID '{}'.", name, id)
             val pushImageCmd = dockerClient.pushImageCmd(name)
-            val authConfig = registryAuthLocator.lookupAuthConfig(name, registryCredentials)
+            val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
+            val authConfig = regAuthLocator.lookupAuthConfig(name, registryCredentials)
             pushImageCmd.withAuthConfig(authConfig)
             val callback = createCallback(nextHandler)
             pushImageCmd.exec(callback).awaitCompletion()
