@@ -22,6 +22,7 @@ import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
 import com.github.dockerjava.api.command.BuildImageResultCallback
 import com.github.dockerjava.api.model.BuildResponseItem
+import com.intershop.gradle.icm.docker.tasks.utils.TaskAuthLocatorHelper
 import org.gradle.api.Action
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileSystemOperations
@@ -253,7 +254,8 @@ open class BuildImage
             buildImageCmd.withTarget(target.get())
         }
 
-        val authConfigurations = registryAuthLocator.lookupAllAuthConfigs(registryCredentials)
+        val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
+        val authConfigurations = regAuthLocator.lookupAllAuthConfigs(registryCredentials)
         buildImageCmd.withBuildAuthConfigs(authConfigurations)
 
         if (buildArgs.get().isNotEmpty()) {

@@ -37,13 +37,13 @@ import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPrepar
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
+import com.intershop.gradle.icm.docker.utils.nginx.TaskPreparer as NginxTaskPreparer
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebTaskPreparer
-import com.intershop.gradle.icm.docker.utils.nginx.TaskPreparer as NginxTaskPreparer
 
 /**
  * Main plugin class of the project plugin.

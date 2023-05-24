@@ -51,7 +51,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                 projectConfig {                   
                     base {
                         dependency.set("com.intershop.icm:icm-as:1.0.0")
-                        image.set("intershopmock/icm-as-mock:latest")  
+                        image.set("intershopmock/icm-as-mock:mock")  
                     }
                 }
             }
@@ -215,20 +215,20 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     base {
                         dependency.set("com.intershop.icm:icm-as:1.0.0")
                         platforms = [ "com.intershop:libbom:1.0.0" ]
-                        image.set("intershopmock/icm-as-mock:latest")  
-                        testImage.set("intershopmock/icm-as-mock:latest")  
+                        image.set("intershopmock/icm-as-mock:mock")  
+                        testImage.set("intershopmock/icm-as-mock:mock")  
                     }
 
                     modules {
                         solrExt {
                             dependency.set("com.intershop.search:solrcloud:1.0.0")
                             image.set("intershophub/icm-as:11.0.1")
-                            testImage.set("intershopmock/icm-as-mock:latest")  
+                            testImage.set("intershopmock/icm-as-mock:mock")  
                         }
                         paymentExt {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
                             image.set("intershophub/icm-as:11.0.1")  
-                            testImage.set("intershopmock/icm-as-mock:latest")
+                            testImage.set("intershopmock/icm-as-mock:mock")
                         }
                     }
 
@@ -451,7 +451,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     base {
                         dependency = "com.intershop.icm:icm-as:1.0.0"
                         platforms = [ "com.intershop:libbom:1.0.0" ]
-                        image.set("intershopmock/icm-as-mock:latest")  
+                        image.set("intershopmock/icm-as-mock:mock")  
                     }
 
                     modules {
@@ -636,7 +636,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     base {
                         dependency.set("com.intershop.icm:icm-as:1.0.0")
                         platforms = [ "com.intershop:libbom:1.0.0" ]
-                        image.set("intershopmock/icm-as-mock:latest")  
+                        image.set("intershopmock/icm-as-mock:mock")  
                     }
 
                     modules {

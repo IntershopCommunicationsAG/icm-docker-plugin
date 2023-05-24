@@ -21,12 +21,14 @@ import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.bmuschko.gradle.docker.tasks.RegistryCredentialsAware
 import com.github.dockerjava.api.command.PullImageResultCallback
 import com.github.dockerjava.api.model.PullResponseItem
+import com.intershop.gradle.icm.docker.tasks.utils.TaskAuthLocatorHelper
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
+import java.util.Locale
 import javax.inject.Inject
 
 abstract class AbstractPullImage
@@ -79,24 +81,34 @@ abstract class AbstractPullImage
         with(project) {
             logger.quiet("Check for image '${image.get()}'")
 
+            val imageString = image.get().lowercase(Locale.getDefault())
+
+            val latestPull = imageString.endsWith("snapshot") || imageString.endsWith("latest")
+            if(latestPull) {
+                logger.info("The image ends with snapshot or latest.")
+            }
 
             var pull = true
 
-            if(! force.get()) {
+            if(!(force.get() || latestPull)) {
                 val listImagesCmd = dockerClient.listImagesCmd()
                 listImagesCmd.filters["reference"] = listOf(image.get())
                 val images = listImagesCmd.exec()
                 pull = images.size < 1
             }
 
-            logger.quiet("Pulling image '${image.get()}'")
-
             if(pull) {
+                logger.quiet("Pulling image '${image.get()}'")
+
                 val pullImageCmd = dockerClient.pullImageCmd(image.get())
-                val authConfig = registryAuthLocator.lookupAuthConfig(image.get(), registryCredentials)
+                val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
+
+                val authConfig = regAuthLocator.lookupAuthConfig(image.get(), registryCredentials)
                 pullImageCmd.withAuthConfig(authConfig)
                 val callback = createCallback(nextHandler)
                 pullImageCmd.exec(callback).awaitCompletion()
+            } else {
+                logger.quiet("Image '${image.get()}' will be not pulled, because it is available.")
             }
         }
     }
