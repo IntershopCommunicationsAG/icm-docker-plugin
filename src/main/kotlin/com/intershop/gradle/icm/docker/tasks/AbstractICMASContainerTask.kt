@@ -207,12 +207,16 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Subclasses may overwrite this method to add some extract environment variables (keep super-variables).
      */
     protected open fun createContainerEnvironment(): ContainerEnvironment {
+        val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+
         return ICMContainerEnvironmentBuilder()
                 .withContainerName(containerName)
                 .withDatabaseConfig(databaseConfiguration.get())
                 .withWebserverConfig(webserverConfiguration.get())
                 .withPortConfig(portConfiguration.get())
                 .withCartridgeList(createCartridgeList().get())
+                .withDevelopmentConfig(devConfig.developmentProperties)
+                .withEnvironmentProperties(devConfig.intershopEnvironmentProperties)
                 .withAdditionalParameters(createAdditionalParameters())
                 .withDebugOptions(debugProperty.get())
                 // ensure release (product cartridges) and source (customization cartridges) layouts are recognized
