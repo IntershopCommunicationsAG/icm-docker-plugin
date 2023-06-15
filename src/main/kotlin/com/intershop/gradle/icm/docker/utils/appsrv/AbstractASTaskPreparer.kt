@@ -113,8 +113,6 @@ abstract class AbstractASTaskPreparer(
         )
 
         if(customization) {
-            volumes[getOutputPathFor(TaskPreparer.TASK_CREATECONFIG, "system-conf")] = "/intershop/system-conf"
-
             project.tasks.withType(CopyLibraries::class.java) {
                 task.dependsOn(it)
 

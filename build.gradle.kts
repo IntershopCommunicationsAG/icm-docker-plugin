@@ -306,7 +306,7 @@ dependencies {
 
     implementation("org.apache.solr:solr-solrj:8.11.2")
     implementation("com.bmuschko:gradle-docker-plugin:8.1.0")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:5.6.4")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:5.7.0")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.5")
 
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.2")
