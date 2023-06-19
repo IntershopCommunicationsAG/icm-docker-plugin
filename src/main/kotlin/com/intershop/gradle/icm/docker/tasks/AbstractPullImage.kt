@@ -82,10 +82,13 @@ abstract class AbstractPullImage
             logger.quiet("Check for image '${image.get()}'")
 
             val imageString = image.get().lowercase(Locale.getDefault())
+            val tagName = imageString.split(":").last()
 
-            val latestPull = imageString.endsWith("snapshot") || imageString.endsWith("latest")
+            val latestPull = (tagName.endsWith("snapshot") || imageString.endsWith("latest"))
+                    && ! tagName.startsWith("local")
+
             if(latestPull) {
-                logger.info("The image ends with snapshot or latest.")
+                logger.info("The image ends with snapshot or latest and is not located on the local machine.")
             }
 
             var pull = true
@@ -98,7 +101,7 @@ abstract class AbstractPullImage
             }
 
             if(pull) {
-                logger.quiet("Pulling image '${image.get()}'")
+                logger.quiet("Pulling image '${image.get()}' - the image is locally not available")
 
                 val pullImageCmd = dockerClient.pullImageCmd(image.get())
                 val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
