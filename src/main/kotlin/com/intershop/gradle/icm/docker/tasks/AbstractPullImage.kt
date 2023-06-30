@@ -82,6 +82,7 @@ abstract class AbstractPullImage
             logger.quiet("Check for image '${image.get()}'")
 
             val imageString = image.get().lowercase(Locale.getDefault())
+
             if(imageString.contains("SNAPSHOT")) {
                 logger.quiet("Please not the local available image is used. " +
                         "If you want update the existing please use the 'forcePull' flag.")
@@ -96,7 +97,7 @@ abstract class AbstractPullImage
             }
 
             if(pull) {
-                logger.quiet("Pulling image '${image.get()}'")
+                logger.quiet("Pulling image '${image.get()}' - the image is locally not available")
 
                 val pullImageCmd = dockerClient.pullImageCmd(image.get())
                 val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
