@@ -82,15 +82,13 @@ abstract class AbstractPullImage
             logger.quiet("Check for image '${image.get()}'")
 
             val imageString = image.get().lowercase(Locale.getDefault())
-
-            val latestPull = imageString.endsWith("snapshot") || imageString.endsWith("latest")
-            if(latestPull) {
-                logger.info("The image ends with snapshot or latest.")
+            if(imageString.contains("SNAPSHOT")) {
+                logger.quiet("Please not the local available image is used. " +
+                        "If you want update the existing please use the 'forcePull' flag.")
             }
-
             var pull = true
 
-            if(!(force.get() || latestPull)) {
+            if(! force.get()) {
                 val listImagesCmd = dockerClient.listImagesCmd()
                 listImagesCmd.filters["reference"] = listOf(image.get())
                 val images = listImagesCmd.exec()

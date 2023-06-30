@@ -104,14 +104,6 @@ class ICMGebTestPlugin : Plugin<Project> {
                 it.dependsOn(tasks.named("waitForServer"))
             }
 
-            try {
-                tasks.named("check").configure {
-                    it.dependsOn(gebTest)
-                }
-            } catch(ex: UnknownTaskException) {
-                logger.quiet("There is no check task available.")
-            }
-
             if(localDriverConfig.isNotBlank() && os != null) {
                 gebExtension.localDriver.all { localDriver ->
                     localDriver.osPackages.all { driverDownLoad ->
