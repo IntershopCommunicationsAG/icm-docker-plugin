@@ -52,18 +52,34 @@ open class DevelopmentConfiguration
          */
         val log: Logger = LoggerFactory.getLogger(this::class.java.name)
 
+        @Deprecated(
+            message = "Environment variable LICENSEDIR is unsupported since 2.9.0 and no longer used",
+            level = DeprecationLevel.WARNING
+        )
         const val LICENSE_DIR_ENV = "LICENSEDIR"
         const val CONFIG_DIR_ENV = "CONFIGDIR"
 
+        @Deprecated(
+            message = "LICENSE_DIR_SYS is unsupported since 2.9.0 and no longer used",
+            level = DeprecationLevel.WARNING
+        )
         const val LICENSE_DIR_SYS = "licenseDir"
         const val CONFIG_DIR_SYS = "configDir"
 
         const val APPSRV_AS_CONTAINER_ENV = "APPSRVASCONTAINER"
         const val APPSRV_AS_CONTAINER_SYS = "appSrvAsContainer"
 
+        @Deprecated(
+            message = "DEFAULT_LIC_PATH is unsupported since 2.9.0 and no longer used",
+            level = DeprecationLevel.WARNING
+        )
         const val DEFAULT_LIC_PATH = "icm-default/lic"
         const val DEFAULT_CONFIG_PATH = "icm-default/conf"
 
+        @Deprecated(
+            message = "LICENSE_FILE_NAME is unsupported since 2.9.0 and no longer used",
+            level = DeprecationLevel.WARNING
+        )
         const val LICENSE_FILE_NAME = "license.xml"
         const val CONFIG_FILE_NAME = "icm.properties"
 
@@ -111,7 +127,6 @@ open class DevelopmentConfiguration
             "intershop.CSRFGuard.allowRecovery")
     }
 
-    private val licenseDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
     private val configDirectoryProperty: Property<String> = objectFactory.property(String::class.java)
     private val appserverAsContainerProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
     private val configProperties: Properties = Properties()
@@ -121,24 +136,10 @@ open class DevelopmentConfiguration
         // read environment
         val gradleUserHomePath = GradleUserHomeLookup.gradleUserHome().absolutePath
 
-        var licDirPath = providerFactory.environmentVariable(LICENSE_DIR_ENV).orNull
         var configDirPath = providerFactory.environmentVariable(CONFIG_DIR_ENV).orNull
-
-        // read system if necessary
-        if (licDirPath == null) {
-            licDirPath = providerFactory.systemProperty(LICENSE_DIR_SYS).orNull
-        }
 
         if (configDirPath == null) {
             configDirPath = providerFactory.systemProperty(CONFIG_DIR_SYS).orNull
-        }
-
-        if (licDirPath == null) {
-            try {
-                licDirPath = providerFactory.gradleProperty(LICENSE_DIR_SYS).orNull
-            } catch (ise: IllegalStateException) {
-                log.error(ise.message)
-            }
         }
 
         if (configDirPath == null) {
@@ -149,15 +150,10 @@ open class DevelopmentConfiguration
             }
         }
 
-        if (licDirPath == null) {
-            licDirPath = File(File(gradleUserHomePath), DEFAULT_LIC_PATH).absolutePath
-        }
-
         if (configDirPath == null) {
             configDirPath = File(File(gradleUserHomePath), DEFAULT_CONFIG_PATH).absolutePath
         }
 
-        licenseDirectoryProperty.set(licDirPath)
         configDirectoryProperty.set(configDirPath)
 
         val configFile = File(configDirectory, CONFIG_FILE_NAME)
@@ -190,11 +186,19 @@ open class DevelopmentConfiguration
     /**
      * License directory path of the project.
      */
+    @Deprecated(
+        message = "licenseDirectory is unsupported since 2.9.0 and no longer used",
+        level = DeprecationLevel.WARNING
+    )
     val licenseDirectory: String
-        get() = licenseDirectoryProperty.get()
+        get() = ""
 
+    @Deprecated(
+        message = "licenseFilePath is unsupported since 2.9.0 and no longer used",
+        level = DeprecationLevel.WARNING
+    )
     val licenseFilePath: String
-        get() = File(licenseDirectory, LICENSE_FILE_NAME).absolutePath
+        get() = ""
 
     /**
      * Local configuration path of the project.

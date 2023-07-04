@@ -100,8 +100,6 @@ abstract class AbstractASTaskPreparer(
                 Configuration.SITES_FOLDER_PATH,
                 project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath)
                     to "/intershop/sites",
-            File(dockerExtension.developmentConfig.licenseDirectory).absolutePath
-                    to "/intershop/license",
             addDirectories.getValue(TaskPreparer.SERVERLOGS).get().asFile.absolutePath
                     to "/intershop/logs",
             addDirectories.getValue(TaskPreparer.ISHUNITOUT).get().asFile.absolutePath
