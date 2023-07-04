@@ -1,7 +1,7 @@
 ARG USERNAME=intershop
 ARG USERID=150
 
-FROM ubuntu:20.10 as BUILD
+FROM ubuntu:20.10 AS BUILD
 ARG USERNAME=intershop
 ARG USERID=150
 
@@ -22,7 +22,6 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     mkdir -p /intershop-prj/project/extraCartridges && \
     mkdir -p /intershop-prj/project/libs && \
     mkdir -p /intershop-prj/project/extraCartridgesLibs && \
-    mkdir -p /intershop-prj/license && \
     mkdir -p /intershop-prj/logs && \
     mkdir -p /intershop-prj/clusterid && \
     mkdir -p /intershop-prj/testrunner/output && \
@@ -62,7 +61,6 @@ VOLUME /intershop/logs
 VOLUME /intershop/project/cartridges
 VOLUME /intershop/project/extraCartridges
 VOLUME /intershop/project/libs
-VOLUME /intershop/license
 VOLUME /intershop/clusterid
 
 VOLUME /intershop/testrunner/output
