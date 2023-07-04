@@ -176,9 +176,11 @@ imageBuild {
 |Property               | Type      | Default value | Description
 
 |`appserverAsContainer` | `Boolean` | `false`       | If the appserver runs as a container this value must be true. This is used for customer projects.
-|`licenseDirectory`     | `String` | `<GRADLE_USER_HOME>/icm-default/lic` | The directory with a valid license file for the running project.
+|`licenseDirectory`     | `String` | `<GRADLE_USER_HOME>/icm-default/lic` | The directory with a valid license file for the running project. +
+*Deprecated since 2.9.0:* Property licenseDirectory is unsupported.
 |`configDirectory`     | `String` | `<GRADLE_USER_HOME>/icm-default/conf` | This directory contains the environment specific development configuration for ICM. See <<PropertiesFile>>.
-|`licenseFilePath`      | `String` | `<licenseDirectory>/license.xml` | The file path of the license file (read only).
+|`licenseFilePath`      | `String` | `<licenseDirectory>/license.xml` | The file path of the license file (read only). +
+*Deprecated since 2.9.0:* Property licenseFilePath is unsupported.
 |`configFilePath`      | `String` | `<configDirectory>/icm.properties` | The path of the configuration file (read only).
 |`cartridgeList`      | `SetProperty<String>` | _none_ | The names of the cartridges to be used whenever an ICM-AS server is started inside a container.
 
