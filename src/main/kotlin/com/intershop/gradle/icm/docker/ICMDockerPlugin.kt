@@ -240,7 +240,7 @@ open class ICMDockerPlugin : Plugin<Project> {
                 buildImage.srcFiles.from(imgConf.srcFiles)
                 buildImage.dirname.set(imgConf.dockerBuildDirProvider)
 
-                configureLables(buildImage.labels, project, imgBuild)
+                configureLabels(buildImage.labels, project, imgBuild)
 
                 with(buildImage.labels) {
                     put("description", project.provider {
@@ -250,7 +250,7 @@ open class ICMDockerPlugin : Plugin<Project> {
                 buildImage.images.set(images)
             }
 
-    private fun configureLables(
+    private fun configureLabels(
             property: MapProperty<String, String>,
             project: Project,
             imageBuild: ProjectConfiguration,
