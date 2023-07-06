@@ -96,12 +96,19 @@ class ICMServerTaskPreparer(
                 )
             )
 
-            if(mailServerTaskProvider != null) {
+            val mailPort = devConfig.getConfigProperty(Configuration.MAIL_SMTP_PORT)
+            val mailHost = devConfig.getConfigProperty(Configuration.MAIL_SMTP_HOST)
+
+            if(mailServerTaskProvider != null && mailPort.isEmpty() && mailHost.isEmpty()) {
                 task.mailServer = project.provider {
                     HostAndPort(
                         mailServerTaskProvider!!.get().containerName.get(),
                         mailServerTaskProvider!!.get().getPrimaryPortMapping().get().containerPort
                     )
+                }
+            } else if (mailPort.isNotEmpty() && mailHost.isNotEmpty()){
+                task.mailServer = project.provider {
+                    HostAndPort(mailHost, mailPort.toInt())
                 }
             }
         }

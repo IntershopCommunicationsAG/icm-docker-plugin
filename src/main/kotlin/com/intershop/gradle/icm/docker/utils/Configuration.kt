@@ -150,6 +150,8 @@ object Configuration {
     const val BACKUP_FOLDER_VOLUME_VALUE = "/var/opt/mssql/backup"
 
     const val MAIL_SMTP_HOST_PORT = "mail.smtp.host.port"
+    const val MAIL_SMTP_HOST = "mail.smtp.host"
+    const val MAIL_SMTP_PORT = "mail.smtp.port"
     const val MAIL_SMTP_HOST_PORT_VALUE = 25
     const val MAIL_ADMIN_HOST_PORT = "mail.admin.host.port"
     const val MAIL_ADMIN_HOST_PORT_VALUE = 8025
