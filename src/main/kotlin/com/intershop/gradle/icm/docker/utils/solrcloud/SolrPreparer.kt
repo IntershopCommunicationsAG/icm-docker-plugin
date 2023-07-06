@@ -23,6 +23,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import java.io.File
 
 class SolrPreparer(
         project: Project,
@@ -78,6 +79,18 @@ class SolrPreparer(
                             "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
                     )
             )
+
+            val volumeMap = mutableMapOf<String, String>()
+
+            // add data path if configured
+            val dataPath = dockerExtension.developmentConfig.getConfigProperty(Configuration.SOLR_DATA_FOLDER_PATH,"")
+            val dataPahtFP = if (dataPath.isNotEmpty()) File(dataPath) else null
+
+            if(dataPahtFP != null) {
+                volumeMap[dataPahtFP.absolutePath] = "/var/solr"
+                volumeMap.forEach { path, _ -> File(path).mkdirs() }
+                task.hostConfig.binds.set(volumeMap)
+            }
 
             task.hostConfig.network.set(networkId)
             task.logger.quiet(
