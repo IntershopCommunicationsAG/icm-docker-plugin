@@ -79,6 +79,10 @@ class TaskPreparer(project: Project,
                     )
             )
 
+            if(! project.layout.buildDirectory.dir("mailoutput").get().asFile.exists()) {
+                project.layout.buildDirectory.dir("mailoutput").get().asFile.mkdir()
+            }
+
             task.hostConfig.binds.set( project.provider {
                 mutableMapOf(
                     project.layout.buildDirectory.dir("mailoutput").get().asFile.absolutePath
