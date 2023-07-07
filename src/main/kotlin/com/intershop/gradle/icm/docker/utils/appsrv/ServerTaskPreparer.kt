@@ -100,21 +100,40 @@ class ServerTaskPreparer(
                 )
             )
 
-            if(zkTaskProvider != null) {
+            val solrCloudHostList = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_HOSTLIST)
+            val solrCloudIndexPrefix = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_INDEXPREFIX)
+
+            val mailPort = devConfig.getConfigProperty(Configuration.MAIL_SMTP_PORT)
+            val mailHost = devConfig.getConfigProperty(Configuration.MAIL_SMTP_HOST)
+
+            if(zkTaskProvider != null && solrCloudHostList.isEmpty()) {
                 task.solrCloudZookeeperHostList = project.provider {
                     val containerPort = zkTaskProvider!!.get().getPortMappings().stream()
                             .filter { it.name == ZKPreparer.CONTAINER_PORTMAPPING }
                             .findFirst().get().containerPort
                     "${zkTaskProvider!!.get().containerName.get()}:${containerPort}"
                 }
+            } else if (solrCloudHostList.isNotEmpty()){
+                task.solrCloudZookeeperHostList = project.provider {
+                    solrCloudHostList
+                }
+
+                if(solrCloudIndexPrefix.isNotEmpty()) {
+                    task.withEnvironment(ICMContainerEnvironmentBuilder().
+                        withAdditionalEnvironment("SOLR_CLUSTERINDEXPREFIX", solrCloudIndexPrefix).build())
+                }
             }
 
-            if(mailServerTaskProvider != null) {
+            if(mailServerTaskProvider != null && mailPort.isEmpty() && mailHost.isEmpty()) {
                task.mailServer = project.provider {
                     HostAndPort(
                         mailServerTaskProvider!!.get().containerName.get(),
                         mailServerTaskProvider!!.get().getPrimaryPortMapping().get().containerPort
                     )
+                }
+            } else if (mailPort.isNotEmpty() && mailHost.isNotEmpty()){
+                task.mailServer = project.provider {
+                    HostAndPort(mailHost, mailPort.toInt())
                 }
             }
         }

@@ -16,15 +16,18 @@
  */
 package com.intershop.gradle.icm.docker.utils.appsrv
 
+import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.getByType
 
 class ContainerTaskPreparer(
     project: Project,
@@ -67,21 +70,43 @@ class ContainerTaskPreparer(
             task.withPortMappings(*getPortMappings().toTypedArray())
             task.hostConfig.network.set(networkId)
 
-            if(mailServerTaskProvider != null) {
+            val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+
+            val solrCloudHostList = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_HOSTLIST)
+            val solrCloudIndexPrefix = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_INDEXPREFIX)
+
+            val mailPort = devConfig.getConfigProperty(Configuration.MAIL_SMTP_PORT)
+            val mailHost = devConfig.getConfigProperty(Configuration.MAIL_SMTP_HOST)
+
+            if(zkTaskProvider != null && solrCloudHostList.isEmpty()) {
+                task.solrCloudZookeeperHostList = project.provider {
+                    val containerPort = zkTaskProvider!!.get().getPortMappings().stream()
+                        .filter { it.name == ZKPreparer.CONTAINER_PORTMAPPING }
+                        .findFirst().get().containerPort
+                    "${zkTaskProvider!!.get().containerName.get()}:${containerPort}"
+                }
+            } else if (solrCloudHostList.isNotEmpty()){
+                task.solrCloudZookeeperHostList = project.provider {
+                    solrCloudHostList
+                }
+
+                if(solrCloudIndexPrefix.isNotEmpty()) {
+                    task.withEnvironment(
+                        ICMContainerEnvironmentBuilder().
+                    withAdditionalEnvironment("SOLR_CLUSTERINDEXPREFIX", solrCloudIndexPrefix).build())
+                }
+            }
+
+            if(mailServerTaskProvider != null && mailPort.isEmpty() && mailHost.isEmpty()) {
                 task.mailServer = project.provider {
                     HostAndPort(
                         mailServerTaskProvider!!.get().containerName.get(),
                         mailServerTaskProvider!!.get().getPrimaryPortMapping().get().containerPort
                     )
                 }
-            }
-
-            if(zkTaskProvider != null) {
-                task.solrCloudZookeeperHostList = project.provider {
-                    val containerPort = zkTaskProvider!!.get().getPortMappings().stream()
-                        .filter { it.name == ZKPreparer.CONTAINER_PORTMAPPING }
-                        .findFirst().get().containerPort
-                    "${zkTaskProvider!!.get().containerName.get()}:${containerPort}"
+            } else if (mailPort.isNotEmpty() && mailHost.isNotEmpty()){
+                task.mailServer = project.provider {
+                    HostAndPort(mailHost, mailPort.toInt())
                 }
             }
 

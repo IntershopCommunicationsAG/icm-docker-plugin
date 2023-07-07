@@ -17,15 +17,16 @@
 @file:Suppress("TooManyFunctions")
 package com.intershop.gradle.icm.docker.tasks.utils
 
-import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DevelopmentProperties
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.EnvironmentProperties
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.JavaDebugSupport
 import org.gradle.api.provider.Provider
+import java.util.Properties
 
 /**
  * Encapsulates a builder for [ContainerEnvironment] instances for an ICM appserver.
@@ -74,6 +75,7 @@ class ICMContainerEnvironmentBuilder {
     private var mailServer : Provider<HostAndPort>? = null
     private var developmentProperties: DevelopmentProperties? = null
     private var intershopEnvironmentProperties: EnvironmentProperties? = null
+    private var addEnvironmentProperties = Properties()
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
@@ -157,6 +159,11 @@ class ICMContainerEnvironmentBuilder {
 
     fun withEnvironmentProperties(environmentProperties: EnvironmentProperties) : ICMContainerEnvironmentBuilder {
         this.intershopEnvironmentProperties = environmentProperties
+        return this
+    }
+
+    fun withAdditionalEnvironment(key: String, value: String) : ICMContainerEnvironmentBuilder {
+        addEnvironmentProperties.setProperty(key, value)
         return this
     }
 
@@ -244,6 +251,10 @@ class ICMContainerEnvironmentBuilder {
             this.config.get().forEach { (key, value) ->
                 env.add(key, value)
             }
+        }
+
+        addEnvironmentProperties.forEach { key, value ->
+            env.add(key.toString(), value.toString())
         }
 
         return env
