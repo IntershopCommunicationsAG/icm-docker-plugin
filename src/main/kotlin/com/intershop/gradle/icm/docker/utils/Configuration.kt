@@ -123,6 +123,7 @@ object Configuration {
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
     const val SOLR_CLOUD_HOST_PORT = "solr.port"
     const val SOLR_CLOUD_HOST_PORT_VALUE = 8983
+    const val SOLR_DATA_FOLDER_PATH = "solr.data.folder.path"
 
     const val ZOOKEEPER_HOST_PORT = "zookeeper.port"
     const val ZOOKEEPER_HOST_PORT_VALUE = 2181
