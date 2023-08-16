@@ -62,7 +62,7 @@ group = "com.intershop.gradle.icm.docker"
 description = "Intershop Commerce Management Plugins for Docker Integration"
 version = scm.version.version
 
-val sonatypeUsername: String by project
+val sonatypeUsername: String? by project
 val sonatypePassword: String? by project
 
 repositories {
