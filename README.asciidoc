@@ -213,6 +213,7 @@ imageBuild {
 |`solr`   | `Property<String>`      | `solr/latest`       | This image is used for the Solr Cloud configuration with a single node.
 |`zookeeper`   | `Property<String>` | `zookeeper:latest`  | This image is used for the Solr Cloud configuration with a single node.
 |`icm-nginx`   | `Property<String>` | `icm-nginx:latest`  | This image is used for the Nginx reverse proxy for development without the WebAdapter.
+|`redis`   | `Property<String>` | `redis:latest`  | This image is used for a local redis instance, which can be used as a pagecache when the WebAdapter is disabled.
 |===
 
 ===== Image Build Configuration `ProjectConfiguration`[[ProjectConfiguration]]
@@ -291,6 +292,7 @@ For all properties configurations methods with a closure or an action are availa
 | *startEnv*         | Starts a docker based environment based on "intershop.environment.container" in the icm properties file.
 | *stopEnv*          | Stops the docker based environment based on "intershop.environment.container" in the icm properties file.
 | **NGINX* | These tasks pull, start, stop and remove the ICM NGINX image. This image contains a NGINX configured to terminate TLS and reverse proxy directly to the Application Server.
+| **Redis* | These tasks pull, start, stop and remove the redis image. Redis is always started on Port 6379.
 |===
 
 ==== *generateICMProps* Parameters

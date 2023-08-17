@@ -40,6 +40,7 @@ import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPrep
 import com.intershop.gradle.icm.docker.utils.nginx.TaskPreparer as NginxTaskPreparer
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
 import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
+import com.intershop.gradle.icm.docker.utils.redis.TaskPreparer as RedisTaskPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.TaskPreparer as WebServerPreparer
@@ -85,6 +86,7 @@ open class ICMDockerPlugin : Plugin<Project> {
 
             val webServerTasks = WebServerPreparer(project, networkTasks)
             val nginxTasks = NginxTaskPreparer(project, networkTasks.createNetworkTask)
+            val redisTasks = RedisTaskPreparer(project, networkTasks.createNetworkTask)
 
             try {
                 tasks.named("dbPrepare").configure {
@@ -105,7 +107,8 @@ open class ICMDockerPlugin : Plugin<Project> {
                         webServerTasks.removeTask,
                         nginxTasks.removeTask,
                         oracleTasks.removeTask,
-                        solrcloudPreparer.removeTask)
+                        solrcloudPreparer.removeTask,
+                        redisTasks.removeTask)
             }
 
             networkTasks.removeNetworkTask.configure {
@@ -157,6 +160,9 @@ open class ICMDockerPlugin : Plugin<Project> {
             if (list.contains("nginx")) {
                 task.dependsOn("start${NginxTaskPreparer.extName}")
             }
+            if (list.contains("redis")) {
+                task.dependsOn("start${RedisTaskPreparer.extName}")
+            }
         }
 
         project.tasks.register("stopEnv") { task ->
@@ -179,6 +185,9 @@ open class ICMDockerPlugin : Plugin<Project> {
             }
             if (list.contains("nginx")) {
                 task.dependsOn("stop${NginxTaskPreparer.extName}")
+            }
+            if (list.contains("redis")) {
+                task.dependsOn("stop${RedisTaskPreparer.extName}")
             }
         }
     }
