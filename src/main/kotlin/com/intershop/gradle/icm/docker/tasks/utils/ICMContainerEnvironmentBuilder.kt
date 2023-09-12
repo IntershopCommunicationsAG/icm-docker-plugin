@@ -209,7 +209,7 @@ class ICMContainerEnvironmentBuilder {
 
         // ensure release (product cartridges) and source (customization cartridges) layouts are recognized
         if (classpathLayout.isNotEmpty()) {
-            env.add(ENV_CARTRIDGE_CLASSPATH_LAYOUT, classpathLayout.joinToString(separator = ",") { it.value })
+            env.add(ENV_CARTRIDGE_CLASSPATH_LAYOUT, ClasspathLayout.render(classpathLayout))
         }
 
         serverName?.run {
@@ -260,7 +260,4 @@ class ICMContainerEnvironmentBuilder {
         return env
     }
 
-    enum class ClasspathLayout(val value: String) {
-        RELEASE("release"), SOURCE("source"), ECLIPSE("eclipse")
-    }
 }

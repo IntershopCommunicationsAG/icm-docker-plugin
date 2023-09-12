@@ -27,7 +27,7 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder.ClasspathLayout
+import com.intershop.gradle.icm.docker.tasks.utils.ClasspathLayout
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.utils.JavaDebugSupport
 import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VALUE_FALSE
@@ -42,6 +42,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
@@ -61,6 +62,9 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
     }
 
     private val debugProperty: Property<JavaDebugSupport> = project.objects.property(JavaDebugSupport::class.java)
+    private val classpathLayoutProperty: SetProperty<ClasspathLayout> = project.objects
+            .setProperty(ClasspathLayout::class.java)
+            .convention(ClasspathLayout.default())
 
     /**
      * The database configuration. It is lazily determined from
@@ -124,11 +128,13 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      */
     @set:Option(
             option = "debug-icm",
-            description = "Enable/control debugging for the process. The following values are supported: " +
-                          "$TASK_OPTION_VALUE_TRUE/$TASK_OPTION_VALUE_YES - " +
-                          "enable debugging, $TASK_OPTION_VALUE_SUSPEND - enable debugging in " +
-                          "suspend-mode, every other value - disable debugging. The debugging port is controlled by " +
-                          "icm-property '${Configuration.AS_DEBUG_PORT}'."
+            description = """
+                Enable/control debugging for the process. The following values are supported:
+                  $TASK_OPTION_VALUE_TRUE/$TASK_OPTION_VALUE_YES - enable debugging, 
+                  $TASK_OPTION_VALUE_SUSPEND - enable debugging in suspend-mode, 
+                  <every other value> - disable debugging. 
+                The debugging port is controlled by icm-property '${Configuration.AS_DEBUG_PORT}'.                
+            """
     )
     @get:Input
     var debug: String
@@ -141,6 +147,22 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
     @OptionValues("debug-icm")
     fun getDebugOptionValues(): Collection<String> = listOf(TASK_OPTION_VALUE_TRUE, TASK_OPTION_VALUE_YES,
             TASK_OPTION_VALUE_SUSPEND, TASK_OPTION_VALUE_FALSE, TASK_OPTION_VALUE_NO)
+
+    /**
+     * Provide a custom classpath layout. Default value is `sourceJar,release`.
+     *
+     * @property classpathLayout is the task property
+     */
+    @set:Option(
+            option = "classpathLayout",
+            description = "Provide a custom classpath layout (comma separated list of " +
+                          "{release,source,sourceJar,eclipse}, default value is 'sourceJar,release')."
+    )
+    @get:Optional
+    @get:Input
+    var classpathLayout: String?
+        get() = ClasspathLayout.render(classpathLayoutProperty.get())
+        set(value) = classpathLayoutProperty.set(ClasspathLayout.parse(value))
 
     init {
         debugProperty.convention(JavaDebugSupport.defaults(project))
@@ -219,8 +241,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
                 .withEnvironmentProperties(devConfig.intershopEnvironmentProperties)
                 .withAdditionalParameters(createAdditionalParameters())
                 .withDebugOptions(debugProperty.get())
-                // ensure release (product cartridges) and source (customization cartridges) layouts are recognized
-                .withClasspathLayout(setOf(ClasspathLayout.RELEASE, ClasspathLayout.SOURCE))
+                .withClasspathLayout(classpathLayoutProperty.get())
                 .build()
     }
 
