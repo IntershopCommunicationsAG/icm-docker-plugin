@@ -535,8 +535,9 @@ Configuration of <<DBPrepareConfiguration>> also applies to the container starte
 | `property-keys` | controls which preparers are actually executed | comma-separated list of preparer property keys to execute | <none>
 | `additional-parameter` | additional command line parameters to be passed to `dbPrepare`. Use more than once to passed more than 1 parameter | String | <none>
 | `debug-icm` | controls if the Java code inside of `dbPrepare` can be debugged and if the JVM suspends until a debug client connects + | { `no`, `yes`, `suspend` } + | `no` +
+| `classpathLayout` | sets a custom classpath layout + | comma separated list of {`release`,`source`,`sourceJar`,`eclipse`}, default value is `sourceJar,release` | `sourceJar,release` +
 |===
-
+NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localVersion` has to be set to `true` (see https://github.com/IntershopCommunicationsAG/gitflow-version-gradle-plugin#gradle-properties).
 ++++
 <details>
 <summary>Examples</summary>
@@ -570,8 +571,9 @@ Configuration of <<DBPrepareConfiguration>> also applies to the container starte
 | `gclog` | toggles if GC logs are written by the application server + | Switch | `false` +
 | `heapdump` | toggles if a heapdump is written by the application server in case of an `OutOfMemoryError` + | Switch | `false` +
 | `appserver-name` | sets a custom name for the application server + | String | `appserver` +
+| `classpathLayout` | sets a custom classpath layout + | comma separated list of {`release`,`source`,`sourceJar`,`eclipse`}, default value is `sourceJar,release` | `sourceJar,release` +
 |===
-
+NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localVersion` has to be set to `true` (see https://github.com/IntershopCommunicationsAG/gitflow-version-gradle-plugin#gradle-properties).
 ++++
 <details>
 <summary>Examples</summary>
@@ -601,8 +603,9 @@ NOTE: the application server can be started using a custom image (e.g. different
 | Parameter | Description | Co-domain | Default value
 
 | `debug-icm` | controls if the Java code inside application server can be debugged and if the JVM suspends until a debug client connects + | { `no`, `yes`, `suspend` } + | `no` +
+| `classpathLayout` | sets a custom classpath layout + | comma separated list of {`release`,`source`,`sourceJar`,`eclipse`}, default value is `sourceJar,release` | `sourceJar,release` +
 |===
-
+NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localVersion` has to be set to `true` (see https://github.com/IntershopCommunicationsAG/gitflow-version-gradle-plugin#gradle-properties).
 ++++
 <details>
 <summary>Examples</summary>
