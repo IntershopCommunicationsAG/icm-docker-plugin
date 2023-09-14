@@ -200,6 +200,7 @@ open class StartServerContainer
                         .withWebserverConfig(devConfig.webserverConfiguration)
                         .withPortConfig(devConfig.asPortConfiguration)
                         .withCartridgeList(devConfig.cartridgeList.get())
+                        .withClasspathLayout(classpathLayoutProperty.get())
                         .build()
         )
     }

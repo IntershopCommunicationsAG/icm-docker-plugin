@@ -29,6 +29,7 @@ import org.gradle.api.Task
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 class TestTaskPreparer (val project: Project, private val networkTask: Provider<PrepareNetwork>) {
 
@@ -76,7 +77,12 @@ class TestTaskPreparer (val project: Project, private val networkTask: Provider<
 
         icmServerTaskPreparer = ICMServerTaskPreparer(project, networkTask)
         icmServerTaskPreparer.startTask.configure {
-            it.dependsOn(customizationStartTasks, icmServerTaskPreparer.pullTask, networkTask)
+            it.dependsOn(
+                project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME), // ensure all jars are built
+                customizationStartTasks,
+                icmServerTaskPreparer.pullTask,
+                networkTask
+            )
         }
 
         icmServerTaskPreparer.removeTask.configure {
