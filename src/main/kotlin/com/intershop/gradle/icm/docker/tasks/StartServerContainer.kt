@@ -48,7 +48,7 @@ open class StartServerContainer
     private val mailServerProperty: Property<HostAndPort> = objectFactory.property(HostAndPort::class.java)
     private val classpathLayoutProperty: SetProperty<ClasspathLayout> = project.objects
             .setProperty(ClasspathLayout::class.java)
-            .convention(setOf(ClasspathLayout.SOURCE_JAR, ClasspathLayout.RELEASE))
+            .convention(ClasspathLayout.default())
 
     companion object {
         const val PATTERN_READINESS_PROBE_URL = "http://localhost:%d/status/ReadinessProbe"
