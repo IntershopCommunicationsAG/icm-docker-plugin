@@ -499,6 +499,8 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.jdbc.url` | JDBC URL pointing to the database to be used | URL | Mandatory | <none> +
 | `intershop.jdbc.user` | JDBC database user | String | Mandatory | <none> +
 | `intershop.jdbc.password` | JDBC database password | String | Mandatory | <none> +
+| `intershop.environment.intershop.dbinit.breakOnError` | if `true` dbPrepare/startAS fails if any init-preparation step fails | Boolean | Optional | `false` +
+| `intershop.environment.intershop.dbmigrate.breakOnError` | if `true` dbPrepare/startAS fails if any migrate-preparation step fails | Boolean | Optional | `false` +
 |===
 
 --
