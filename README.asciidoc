@@ -1057,7 +1057,7 @@ intershop.WebServerSecureURL=https://host:8443
 
 # webserver configuration
 webserver.http.port = 8080
-webserver.https.port = 8080
+webserver.https.port = 8443
 
 # database container configuration
 intershop.db.mssql.dbname = dbname
