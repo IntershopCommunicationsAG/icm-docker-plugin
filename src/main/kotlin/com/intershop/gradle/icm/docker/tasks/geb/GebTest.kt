@@ -25,7 +25,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 
-open class GebTest : Test() {
+abstract class GebTest : Test() {
 
     @get:Input
     val containerNetwork: Property<String> = objectFactory.property(String::class.java)
@@ -62,7 +62,7 @@ open class GebTest : Test() {
         }
 
         systemProperty("geb.env", gebEnvironment.get())
-        systemProperty("geb.build.reportsDir", "${project.buildDir}/geb-reports/${gebEnvironment.get()}")
+        systemProperty("geb.build.reportsDir", "${project.layout.buildDirectory.asFile.get()}/geb-reports/${gebEnvironment.get()}")
 
         useJUnitPlatform()
 

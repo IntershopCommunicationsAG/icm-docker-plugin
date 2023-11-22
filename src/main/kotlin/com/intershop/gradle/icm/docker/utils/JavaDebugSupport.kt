@@ -138,6 +138,8 @@ class JavaDebugSupport(private val options: JavaDebugOptions) : JavaDebugOptions
 
     override fun getEnabled(): Property<Boolean> = options.enabled.convention(false)
 
+    override fun getHost(): Property<String> = options.host.convention("localhost")
+
     override fun getPort(): Property<Int> = options.port.convention(5005)
 
     override fun getServer(): Property<Boolean> = options.server.convention(true)

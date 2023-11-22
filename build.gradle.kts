@@ -24,7 +24,7 @@ plugins {
     `java-gradle-plugin`
     groovy
 
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.9.20"
 
     // test coverage
     jacoco
@@ -45,7 +45,7 @@ plugins {
     id("org.asciidoctor.jvm.convert") version "3.3.2"
 
     // documentation
-    id("org.jetbrains.dokka") version "1.5.0"
+    id("org.jetbrains.dokka") version "1.9.10"
 
     // code analysis for kotlin
     id("io.gitlab.arturbosch.detekt") version "1.18.0"
@@ -111,13 +111,13 @@ gradlePlugin {
         }
     }
 }
-
+/*
 pluginBundle {
     val pluginURL = "https://github.com/IntershopCommunicationsAG/${project.name}"
     website = pluginURL
     vcsUrl = pluginURL
     tags = listOf("intershop", "build", "icm", "docker")
-}
+}*/
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11

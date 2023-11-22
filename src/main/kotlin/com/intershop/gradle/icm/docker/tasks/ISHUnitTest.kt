@@ -76,8 +76,7 @@ open class ISHUnitTest
         val locks = ArrayList(super.getSharedResources())
         val serviceRegistry = services.get(BuildServiceRegistryInternal::class.java)
         val testResourceProvider = getBuildService(serviceRegistry, ISHUNIT_REGISTRY)
-        val resource = serviceRegistry.forService(testResourceProvider)
-        locks.add(resource.getResourceLock())
+        locks.addAll(serviceRegistry.getSharedResources(setOf( testResourceProvider)))
 
         return Collections.unmodifiableList(locks)
     }
