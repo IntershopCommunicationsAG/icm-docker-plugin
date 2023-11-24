@@ -69,12 +69,6 @@ class ICMServerTaskPreparer(
             task.hostConfig.network.set(networkId)
             task.withEnvironment(
                 ICMContainerEnvironmentBuilder()
-                    .withClasspathLayout(
-                        setOf(
-                            ICMContainerEnvironmentBuilder.ClasspathLayout.RELEASE,
-                            ICMContainerEnvironmentBuilder.ClasspathLayout.SOURCE
-                        )
-                    )
                     .withContainerName(getContainerName())
                     .build()
             )

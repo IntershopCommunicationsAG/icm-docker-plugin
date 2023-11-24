@@ -273,13 +273,14 @@ open class DevelopmentConfiguration
 
     val intershopEnvironmentProperties: EnvironmentProperties by lazy {
         val envConfig = EnvironmentProperties(objectFactory)
-        val keys = configProperties.keys.filter {it.toString().startsWith(Configuration.INTERSHOP_ENVIRONMENT_PREFIX)}
+        val keys = configProperties.keys.filter {it.toString().startsWith(Configuration.INTERSHOP_ENVIRONMENT_PREFIX)
+                && ! it.equals(Configuration.CONTAINER_ENV_PROP)}
             .stream().map { it.toString()}
         keys.forEach {
             val p = getConfigProperty(it)
-            it.replaceFirst(Configuration.INTERSHOP_ENVIRONMENT_PREFIX, ENV_PREFIX)
+            val k = it.replaceFirst(Configuration.INTERSHOP_ENVIRONMENT_PREFIX, ENV_PREFIX)
                 .uppercase(Locale.getDefault())
-            envConfig.config.put(it, p)
+            envConfig.config.put(k, p)
         }
         envConfig
     }

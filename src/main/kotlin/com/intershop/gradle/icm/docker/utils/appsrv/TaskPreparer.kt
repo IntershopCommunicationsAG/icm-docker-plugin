@@ -29,6 +29,7 @@ import org.gradle.api.Task
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 class TaskPreparer (val project: Project, private val networkTask: Provider<PrepareNetwork>) {
 
@@ -87,8 +88,13 @@ class TaskPreparer (val project: Project, private val networkTask: Provider<Prep
 
         containerTaskPreparer = ContainerTaskPreparer(project, networkTask)
         containerTaskPreparer.startTask.configure {
-            it.dependsOn(customizationStartTasks, containerTaskPreparer.prepareServer,
-                    containerTaskPreparer.pullTask, networkTask)
+            it.dependsOn(
+                project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME), // ensure all jars are built
+                customizationStartTasks,
+                containerTaskPreparer.prepareServer,
+                containerTaskPreparer.pullTask,
+                networkTask
+            )
         }
 
         containerTaskPreparer.removeTask.configure {
@@ -103,8 +109,13 @@ class TaskPreparer (val project: Project, private val networkTask: Provider<Prep
 
         serverTaskPreparer = ServerTaskPreparer(project, networkTask)
         serverTaskPreparer.startTask.configure {
-            it.dependsOn(customizationStartTasks, serverTaskPreparer.prepareServer,
-                    serverTaskPreparer.pullTask, networkTask)
+            it.dependsOn(
+                project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME), // ensure all jars are built
+                customizationStartTasks,
+                serverTaskPreparer.prepareServer,
+                serverTaskPreparer.pullTask,
+                networkTask
+            )
         }
 
         serverTaskPreparer.removeTask.configure {

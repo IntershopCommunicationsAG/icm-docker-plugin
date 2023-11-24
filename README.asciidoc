@@ -213,6 +213,7 @@ imageBuild {
 |`solr`   | `Property<String>`      | `solr/latest`       | This image is used for the Solr Cloud configuration with a single node.
 |`zookeeper`   | `Property<String>` | `zookeeper:latest`  | This image is used for the Solr Cloud configuration with a single node.
 |`icm-nginx`   | `Property<String>` | `icm-nginx:latest`  | This image is used for the Nginx reverse proxy for development without the WebAdapter.
+|`redis`   | `Property<String>` | `redis:latest`  | This image is used for a local redis instance, which can be used as a pagecache when the WebAdapter is disabled.
 |===
 
 ===== Image Build Configuration `ProjectConfiguration`[[ProjectConfiguration]]
@@ -291,6 +292,7 @@ For all properties configurations methods with a closure or an action are availa
 | *startEnv*         | Starts a docker based environment based on "intershop.environment.container" in the icm properties file.
 | *stopEnv*          | Stops the docker based environment based on "intershop.environment.container" in the icm properties file.
 | **NGINX* | These tasks pull, start, stop and remove the ICM NGINX image. This image contains a NGINX configured to terminate TLS and reverse proxy directly to the Application Server.
+| **Redis* | These tasks pull, start, stop and remove the redis image. Redis is always started on Port 6379.
 |===
 
 ==== *generateICMProps* Parameters
@@ -487,16 +489,18 @@ The following properties are part of the <<PropertiesFile>>.
 |===
 | Key | Description | Co-domain | Mandatory/Optional | Default value
 
-| `intershop.as.connector.port` | the host port to be used for the appserver service connector http port | Integer | Optional | `7743` +
-| `intershop.servletEngine.connector.port` | the container port to be used for the appserver service connector http port (normally no need to change) | Integer | Optional | `7743` +
-| `intershop.as.managementConnector.port` | the host port to be used for the appserver management connector http port | Integer | Optional | `7743` +
-| `intershop.servletEngine.managementConnector.port` | the container port to be used for the appserver management connector http port (normally no need to change) | Integer | Optional | `7743` +
+| `intershop.as.connector.port` | the container port to be used for the appserver service connector http port (normally no need to change) | Integer | Optional | `7743` +
+| `intershop.servletEngine.connector.port` | the host port to be used for the appserver service connector http port | Integer | Optional | `7743` +
+| `intershop.as.managementConnector.port` | the container port to be used for the appserver management connector http port (normally no need to change) | Integer | Optional | `7743` +
+| `intershop.servletEngine.managementConnector.port` | the host port to be used for the appserver management connector http port | Integer | Optional | `7743` +
 | `intershop.as.jmx.connector.port` | the host port to be used for the appserver JMX port | Integer | Optional | `7747` +
 | `intershop.as.debug.port` | the host port to be used for the appserver debug port | Integer | Optional | `7746` +
 | `intershop.databaseType` | database type to be used | { `mssql`, `oracle` } | Mandatory | <none> +
 | `intershop.jdbc.url` | JDBC URL pointing to the database to be used | URL | Mandatory | <none> +
 | `intershop.jdbc.user` | JDBC database user | String | Mandatory | <none> +
 | `intershop.jdbc.password` | JDBC database password | String | Mandatory | <none> +
+| `intershop.environment.intershop.dbinit.breakOnError` | if `true` dbPrepare/startAS fails if any init-preparation step fails | Boolean | Optional | `false` +
+| `intershop.environment.intershop.dbmigrate.breakOnError` | if `true` dbPrepare/startAS fails if any migrate-preparation step fails | Boolean | Optional | `false` +
 |===
 
 --
@@ -533,8 +537,9 @@ Configuration of <<DBPrepareConfiguration>> also applies to the container starte
 | `property-keys` | controls which preparers are actually executed | comma-separated list of preparer property keys to execute | <none>
 | `additional-parameter` | additional command line parameters to be passed to `dbPrepare`. Use more than once to passed more than 1 parameter | String | <none>
 | `debug-icm` | controls if the Java code inside of `dbPrepare` can be debugged and if the JVM suspends until a debug client connects + | { `no`, `yes`, `suspend` } + | `no` +
+| `classpathLayout` | sets a custom classpath layout + | comma separated list of {`release`,`source`,`sourceJar`,`eclipse`}, default value is `sourceJar,release` | `sourceJar,release` +
 |===
-
+NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localVersion` has to be set to `true` (see https://github.com/IntershopCommunicationsAG/gitflow-version-gradle-plugin#gradle-properties).
 ++++
 <details>
 <summary>Examples</summary>
@@ -568,8 +573,9 @@ Configuration of <<DBPrepareConfiguration>> also applies to the container starte
 | `gclog` | toggles if GC logs are written by the application server + | Switch | `false` +
 | `heapdump` | toggles if a heapdump is written by the application server in case of an `OutOfMemoryError` + | Switch | `false` +
 | `appserver-name` | sets a custom name for the application server + | String | `appserver` +
+| `classpathLayout` | sets a custom classpath layout + | comma separated list of {`release`,`source`,`sourceJar`,`eclipse`}, default value is `sourceJar,release` | `sourceJar,release` +
 |===
-
+NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localVersion` has to be set to `true` (see https://github.com/IntershopCommunicationsAG/gitflow-version-gradle-plugin#gradle-properties).
 ++++
 <details>
 <summary>Examples</summary>
@@ -599,8 +605,9 @@ NOTE: the application server can be started using a custom image (e.g. different
 | Parameter | Description | Co-domain | Default value
 
 | `debug-icm` | controls if the Java code inside application server can be debugged and if the JVM suspends until a debug client connects + | { `no`, `yes`, `suspend` } + | `no` +
+| `classpathLayout` | sets a custom classpath layout + | comma separated list of {`release`,`source`,`sourceJar`,`eclipse`}, default value is `sourceJar,release` | `sourceJar,release` +
 |===
-
+NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localVersion` has to be set to `true` (see https://github.com/IntershopCommunicationsAG/gitflow-version-gradle-plugin#gradle-properties).
 ++++
 <details>
 <summary>Examples</summary>
@@ -1050,7 +1057,7 @@ intershop.WebServerSecureURL=https://host:8443
 
 # webserver configuration
 webserver.http.port = 8080
-webserver.https.port = 8080
+webserver.https.port = 8443
 
 # database container configuration
 intershop.db.mssql.dbname = dbname

@@ -19,12 +19,17 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
+import com.intershop.gradle.icm.docker.tasks.utils.ClasspathLayout
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.JavaDebugSupport
+import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VALUE_SUSPEND
+import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VALUE_TRUE
+import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VALUE_YES
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
@@ -41,6 +46,9 @@ open class StartServerContainer
     private val appserverNameProperty: Property<String> = objectFactory.property(String::class.java)
     private val solrCloudZookeeperHostListProperty: Property<String> = objectFactory.property(String::class.java)
     private val mailServerProperty: Property<HostAndPort> = objectFactory.property(HostAndPort::class.java)
+    private val classpathLayoutProperty: SetProperty<ClasspathLayout> = project.objects
+            .setProperty(ClasspathLayout::class.java)
+            .convention(ClasspathLayout.default())
 
     companion object {
         const val PATTERN_READINESS_PROBE_URL = "http://localhost:%d/status/ReadinessProbe"
@@ -56,11 +64,13 @@ open class StartServerContainer
      */
     @set:Option(
             option = "debug-icm",
-            description = "Enable/control debugging for the process. The following values are supported: " +
-                          "${JavaDebugSupport.TASK_OPTION_VALUE_TRUE}/${JavaDebugSupport.TASK_OPTION_VALUE_YES} - " +
-                          "enable debugging, ${JavaDebugSupport.TASK_OPTION_VALUE_SUSPEND} - enable debugging in " +
-                          "suspend-mode, every other value - disable debugging. The debugging port is controlled by " +
-                          "icm-property '${Configuration.AS_DEBUG_PORT}'."
+            description = """
+                Enable/control debugging for the process. The following values are supported:
+                  $TASK_OPTION_VALUE_TRUE/$TASK_OPTION_VALUE_YES - enable debugging, 
+                  $TASK_OPTION_VALUE_SUSPEND - enable debugging in suspend-mode, 
+                  <every other value> - disable debugging. 
+                The debugging port is controlled by icm-property '${Configuration.AS_DEBUG_PORT}'.                
+            """
     )
     @get:Input
     var debug: String
@@ -75,9 +85,10 @@ open class StartServerContainer
      * Return the possible values for the task option [debug]
      */
     @OptionValues("debug-icm")
-    fun getDebugOptionValues(): Collection<String> = listOf(JavaDebugSupport.TASK_OPTION_VALUE_TRUE,
-            JavaDebugSupport.TASK_OPTION_VALUE_YES,
-            JavaDebugSupport.TASK_OPTION_VALUE_SUSPEND, JavaDebugSupport.TASK_OPTION_VALUE_FALSE,
+    fun getDebugOptionValues(): Collection<String> = listOf(TASK_OPTION_VALUE_TRUE,
+            TASK_OPTION_VALUE_YES,
+            TASK_OPTION_VALUE_SUSPEND,
+            JavaDebugSupport.TASK_OPTION_VALUE_FALSE,
             JavaDebugSupport.TASK_OPTION_VALUE_NO)
 
     /**
@@ -153,6 +164,25 @@ open class StartServerContainer
             withEnvironment(ICMContainerEnvironmentBuilder().withMailServer(value).build())
         }
 
+    /**
+     * Provide a custom classpath layout. Default value is `sourceJar,release`.
+     *
+     * @property classpathLayout is the task property
+     */
+    @set:Option(
+            option = "classpathLayout",
+            description = "Provide a custom classpath layout (comma separated list of " +
+                          "{release,source,sourceJar,eclipse}, default value is 'sourceJar,release')."
+    )
+    @get:Optional
+    @get:Input
+    var classpathLayout: String?
+        get() = ClasspathLayout.render(classpathLayoutProperty.get())
+        set(value) {
+            classpathLayoutProperty.set(ClasspathLayout.parse(value))
+            withEnvironment(ICMContainerEnvironmentBuilder().withClasspathLayout(classpathLayoutProperty.get()).build())
+        }
+
     init {
         debugProperty.convention(JavaDebugSupport.defaults(project))
         gcLogProperty.convention(false)
@@ -170,10 +200,7 @@ open class StartServerContainer
                         .withWebserverConfig(devConfig.webserverConfiguration)
                         .withPortConfig(devConfig.asPortConfiguration)
                         .withCartridgeList(devConfig.cartridgeList.get())
-                        .withClasspathLayout(setOf(
-                                ICMContainerEnvironmentBuilder.ClasspathLayout.SOURCE,
-                                ICMContainerEnvironmentBuilder.ClasspathLayout.RELEASE
-                        ))
+                        .withClasspathLayout(classpathLayoutProperty.get())
                         .build()
         )
     }
