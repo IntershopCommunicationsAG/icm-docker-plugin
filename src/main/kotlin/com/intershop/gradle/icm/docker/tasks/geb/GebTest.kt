@@ -62,7 +62,8 @@ abstract class GebTest : Test() {
         }
 
         systemProperty("geb.env", gebEnvironment.get())
-        systemProperty("geb.build.reportsDir", "${project.layout.buildDirectory.asFile.get()}/geb-reports/${gebEnvironment.get()}")
+        val buildDir = project.layout.buildDirectory.asFile.get()
+        systemProperty("geb.build.reportsDir", "$buildDir/geb-reports/${gebEnvironment.get()}")
 
         useJUnitPlatform()
 

@@ -151,7 +151,7 @@ tasks {
     }
 
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "7.5.1")
+        systemProperty("intershop.gradle.versions", "8.4")
 
         testLogging {
             showStandardStreams = true
