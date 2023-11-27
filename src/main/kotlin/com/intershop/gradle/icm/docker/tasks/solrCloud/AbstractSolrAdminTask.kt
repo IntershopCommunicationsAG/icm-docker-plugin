@@ -26,6 +26,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
@@ -64,7 +65,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
 
     }
 
-    private fun getClient(connectStr: String):CloudSolrClient {
+    private fun getClient(connectStr: String): CloudSolrClient {
         val pathList = connectStr.split("/")
 
         val path = if (pathList.size > 1) {
@@ -74,9 +75,8 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
         }
         val zkHosts = pathList[0].split(";")
 
-        val client = CloudSolrClient.Builder(zkHosts, path).build()
-        client.setZkConnectTimeout(connectionTimeout.get())
-
-        return client
+        return CloudSolrClient.Builder(zkHosts, path)
+            .withZkConnectTimeout(connectionTimeout.get(), TimeUnit.MILLISECONDS)
+            .build()
     }
 }

@@ -24,7 +24,7 @@ plugins {
     `java-gradle-plugin`
     groovy
 
-    kotlin("jvm") version "1.9.20"
+    kotlin("jvm") version "1.9.21"
 
     // test coverage
     jacoco
@@ -48,10 +48,10 @@ plugins {
     id("org.jetbrains.dokka") version "1.9.10"
 
     // code analysis for kotlin
-    id("io.gitlab.arturbosch.detekt") version "1.18.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.4"
 
     // plugin for publishing to Gradle Portal
-    id("com.gradle.plugin-publish") version "1.0.0"
+    id("com.gradle.plugin-publish") version "1.2.1"
 }
 
 scm {
@@ -122,7 +122,6 @@ gradlePlugin {
         }
     }
 }
-
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
@@ -134,8 +133,8 @@ if (project.version.toString().endsWith("-SNAPSHOT")) {
 }
 
 detekt {
-    source = files("src/main/kotlin")
-    config = files("detekt.yml")
+    source.setFrom(files("src/main/kotlin"))
+    config.setFrom(files("detekt.yml"))
 }
 
 val shaded by configurations.creating
@@ -309,12 +308,13 @@ dependencies {
 
     implementation(gradleKotlinDsl())
 
-    implementation("org.apache.solr:solr-solrj:8.11.2")
+    implementation("org.apache.solr:solr-solrj:9.4.0")
     implementation("com.bmuschko:gradle-docker-plugin:8.1.0")
     implementation("com.intershop.gradle.icm:icm-gradle-plugin:5.8.0")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:1.0.5")
 
     testImplementation("com.intershop.gradle.test:test-gradle-plugin:4.1.2")
     testImplementation(gradleTestKit())
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.4")
 }
 
