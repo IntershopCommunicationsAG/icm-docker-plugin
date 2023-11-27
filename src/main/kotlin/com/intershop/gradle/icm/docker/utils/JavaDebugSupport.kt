@@ -34,7 +34,7 @@ import org.gradle.process.internal.DefaultJavaDebugOptions
 class JavaDebugSupport(private val options: JavaDebugOptions) : JavaDebugOptions {
 
     companion object {
-        const val PATTERN_COMMAND_LINE = "-agentlib:jdwp=transport=dt_socket,server=%s,suspend=%s,address=*:%d"
+        const val PATTERN_COMMAND_LINE = "-agentlib:jdwp=transport=dt_socket,server=%s,suspend=%s,address=%s:%d"
 
         const val TASK_OPTION_VALUE_TRUE = "TRUE"
         const val TASK_OPTION_VALUE_YES = "YES"
@@ -108,7 +108,7 @@ class JavaDebugSupport(private val options: JavaDebugOptions) : JavaDebugOptions
         if (!enabled.get()) {
             return ""
         }
-        return PATTERN_COMMAND_LINE.format(renderYesNo(server), renderYesNo(suspend), port.get())
+        return PATTERN_COMMAND_LINE.format(renderYesNo(server), renderYesNo(suspend), host.get(), port.get())
     }
 
     /**
@@ -137,6 +137,8 @@ class JavaDebugSupport(private val options: JavaDebugOptions) : JavaDebugOptions
             }
 
     override fun getEnabled(): Property<Boolean> = options.enabled.convention(false)
+
+    override fun getHost(): Property<String> = options.host.convention("*")
 
     override fun getPort(): Property<Int> = options.port.convention(5005)
 

@@ -31,7 +31,7 @@ import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.net.URL
+import java.nio.file.Paths
 import javax.inject.Inject
 
 open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
@@ -60,7 +60,7 @@ open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
         val targetFile = File(targetDir, "driver.${extension.get()}")
 
         try {
-            URL(url.get()).openStream().use { input ->
+            Paths.get(url.get()).toUri().toURL().openStream().use { input ->
                 FileOutputStream(targetFile).use { output ->
                     input.copyTo(output)
                 }
