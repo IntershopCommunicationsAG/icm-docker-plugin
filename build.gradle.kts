@@ -24,7 +24,7 @@ plugins {
     `java-gradle-plugin`
     groovy
 
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.9.20"
 
     // test coverage
     jacoco
@@ -45,7 +45,7 @@ plugins {
     id("org.asciidoctor.jvm.convert") version "3.3.2"
 
     // documentation
-    id("org.jetbrains.dokka") version "1.5.0"
+    id("org.jetbrains.dokka") version "1.9.10"
 
     // code analysis for kotlin
     id("io.gitlab.arturbosch.detekt") version "1.18.0"
@@ -72,51 +72,55 @@ repositories {
 }
 
 gradlePlugin {
+    val pluginURL = "https://github.com/IntershopCommunicationsAG/${project.name}"
+    val pluginTags = listOf("intershop", "build", "icm", "docker")
+    website = pluginURL
+    vcsUrl = pluginURL
     plugins {
+
         create("icmDockerPlugin") {
             id = "com.intershop.gradle.icm.docker"
             implementationClass = "com.intershop.gradle.icm.docker.ICMDockerPlugin"
             displayName = "icm-docker-plugin"
             description = "This ICM plugin contains Docker ICM integration."
+            tags = pluginTags
         }
         create("icmDockerTestProjectPlugin") {
             id = "com.intershop.gradle.icm.docker.test"
             implementationClass = "com.intershop.gradle.icm.docker.ICMTestDockerPlugin"
             displayName = "icm-docker-test-plugin"
             description = "This ICM plugin contains special Docker tasks for special test container."
+            tags = pluginTags
         }
         create("icmDockerReadmePlugin") {
             id = "com.intershop.gradle.icm.docker.readmepush"
             implementationClass = "com.intershop.gradle.icm.docker.ICMDockerReadmePushPlugin"
             displayName = "icm-readmepush-plugin"
             description = "This ICM plugin integrates tasks to readme files to Dockerhub."
+            tags = pluginTags
         }
         create("icmDockerCustomizationPlugin") {
             id = "com.intershop.gradle.icm.docker.customization"
             implementationClass = "com.intershop.gradle.icm.docker.ICMDockerCustomizationPlugin"
             displayName = "icm-docker-customization-plugin"
             description = "This ICM plugin integrate Docker tasks to an ICM customization project."
+            tags = pluginTags
         }
         create("icmSolrCloudPlugin") {
             id = "com.intershop.gradle.icm.docker.solrcloud"
             implementationClass = "com.intershop.gradle.icm.docker.ICMSolrCloudPlugin"
             displayName = "icm-solrlcloud-plugin"
             description = "This ICM plugin integrates tasks to maintain a ICM project."
+            tags = pluginTags
         }
         create("icmGebTestPlugin") {
             id = "com.intershop.gradle.icm.docker.gebtest"
             implementationClass = "com.intershop.gradle.icm.docker.ICMGebTestPlugin"
             displayName = "icm-gebtest-plugin"
             description = "This ICM plugin integrates tasks to handle Geb Tests in a ICM project."
+            tags = pluginTags
         }
     }
-}
-
-pluginBundle {
-    val pluginURL = "https://github.com/IntershopCommunicationsAG/${project.name}"
-    website = pluginURL
-    vcsUrl = pluginURL
-    tags = listOf("intershop", "build", "icm", "docker")
 }
 
 java {
@@ -137,6 +141,7 @@ detekt {
 val shaded by configurations.creating
 val compileOnly = configurations.getByName("compileOnly")
 compileOnly.extendsFrom(shaded)
+val buildDir = project.layout.buildDirectory.asFile.get()
 
 tasks {
     withType<KotlinCompile>().configureEach {
@@ -146,7 +151,7 @@ tasks {
     }
 
     withType<Test>().configureEach {
-        systemProperty("intershop.gradle.versions", "7.5.1")
+        systemProperty("intershop.gradle.versions", "8.4")
 
         testLogging {
             showStandardStreams = true
@@ -207,7 +212,7 @@ tasks {
             xml.required.set(true)
             html.required.set(true)
 
-            html.outputLocation.set( File(project.buildDir, "jacocoHtml"))
+            html.outputLocation.set( File(project.layout.buildDirectory.asFile.get(), "jacocoHtml"))
         }
 
         val jacocoTestReport by tasks
