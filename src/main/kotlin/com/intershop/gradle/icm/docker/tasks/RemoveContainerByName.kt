@@ -16,6 +16,8 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import com.github.dockerjava.api.exception.ConflictException
+import com.github.dockerjava.api.exception.NotFoundException
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
@@ -37,8 +39,13 @@ open class RemoveContainerByName
             removeContainerCmd.withForce(true)
 
             logger.quiet("Removing container with ID '${it}'('${containerName.get()}').")
-
-            removeContainerCmd.exec()
+            try {
+                removeContainerCmd.exec()
+            } catch(ex: ConflictException) {
+                logger.info("Removal of ${it} is in progress. (${ex.message})")
+            } catch(ex: NotFoundException) {
+                logger.info("Can not find ${it}. (${ex.message})")
+            }
         }
     }
 }
