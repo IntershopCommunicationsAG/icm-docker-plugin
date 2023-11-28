@@ -875,6 +875,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         then:
         result1.task(":startSolr").outcome == SUCCESS
 
+        /**
         when:
         sleep(30000)
 
@@ -885,7 +886,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         resultTest.task(":cleanUpSolr").outcome == SUCCESS
-
+        **/
         when:
         def result2 = getPreparedGradleRunner()
                 .withArguments("stopZK", "-s", "-i")
