@@ -279,7 +279,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
             intershop_docker {
                 images {
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
-                    
+                    mailsrv = 'mailhog/mailhog:latest'
                     solr = 'solr:8.5.2-slim'
                     zookeeper = 'zookeeper:3.6.2'
                 }
@@ -875,7 +875,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         then:
         result1.task(":startSolr").outcome == SUCCESS
 
-        /**
         when:
         sleep(30000)
 
@@ -886,7 +885,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         resultTest.task(":cleanUpSolr").outcome == SUCCESS
-        **/
+
         when:
         def result2 = getPreparedGradleRunner()
                 .withArguments("stopZK", "-s", "-i")
@@ -904,6 +903,36 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result3.task(":removeSolr").outcome == SUCCESS
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'start mail server'() {
+        prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        when:
+        def result1 = getPreparedGradleRunner()
+                .withArguments("startMailSrv", "-s", "-i")
+                //.withGradleVersion(gradleVersion)
+                .withGradleVersion("7.5")
+                .build()
+
+        then:
+        result1.task(":startMailSrv").outcome == SUCCESS
+        file("build/mailoutput").exists()
+
+
+        when:
+        sleep(30000)
+
+        def result2 = getPreparedGradleRunner()
+                .withArguments("removeMailSrv", "-s", "-i")
+                .withGradleVersion(gradleVersion)
+                .build()
+
+        then:
+        result2.task(":removeMailSrv").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
