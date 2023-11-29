@@ -31,8 +31,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
-import org.gradle.nativeplatform.platform.OperatingSystem
-import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 abstract class AbstractTaskPreparer(
         protected val project: Project,
@@ -93,11 +91,5 @@ abstract class AbstractTaskPreparer(
         task.hostConfig.autoRemove.set(true)
 
         task.containerName.set(getContainerName())
-
-        val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
-        if(! os.isWindows) {
-            val uid = com.sun.security.auth.module.UnixSystem().uid
-            task.user.set(uid.toString())
-        }
     }
 }
