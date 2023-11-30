@@ -915,7 +915,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         def result1 = getPreparedGradleRunner()
                 .withArguments("startMailSrv", "-s", "-i")
                 //.withGradleVersion(gradleVersion)
-                .withGradleVersion("7.5")
+                .withGradleVersion(gradleVersion)
                 .build()
 
         then:
