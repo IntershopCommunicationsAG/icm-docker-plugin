@@ -24,6 +24,8 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.nativeplatform.platform.OperatingSystem
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 class TaskPreparer(project: Project,
                    networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
@@ -42,6 +44,13 @@ class TaskPreparer(project: Project,
 
         project.tasks.register ("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
             configureContainerTask(task)
+
+            val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
+            if(! os.isWindows) {
+                val uid = com.sun.security.auth.module.UnixSystem().uid
+                task.user.set(uid.toString())
+            }
+
             task.description = "Starts an local mail server for testing"
 
             task.targetImageId( project.provider { pullTask.get().image.get() } )
