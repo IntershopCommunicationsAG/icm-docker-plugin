@@ -24,6 +24,7 @@ import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import java.io.File
+import java.nio.file.Paths
 
 class TaskPreparer(project: Project,
                    networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask){
@@ -102,20 +103,20 @@ class TaskPreparer(project: Project,
 
                 // add data path if configured
                 val dataPath = getConfigProperty(Configuration.DATA_FOLDER_PATH,"")
-                val dataPahtFP = if(dataPath.isBlank()) {
-                    project.layout.buildDirectory.dir("data_folder").get().asFile
+                val dataPathFP = if(dataPath.isBlank()) {
+                    Paths.get(System.getProperty("user.home"),"icmdb","data").toFile()
                 } else {
                     File(dataPath)
                 }
 
-                volumeMap[dataPahtFP.absolutePath] = dockerExtension.developmentConfig.getConfigProperty(
+                volumeMap[dataPathFP.absolutePath] = dockerExtension.developmentConfig.getConfigProperty(
                     Configuration.DATA_FOLDER_VOLUME,
                     Configuration.DATA_FOLDER_VOLUME_VALUE)
 
                 // add backup folder - default is build directory
                 val backupPath = getConfigProperty(Configuration.BACKUP_FOLDER_PATH)
                 val backupPathFP = if(backupPath.isBlank()) {
-                    project.layout.buildDirectory.dir("data_backup_folder").get().asFile
+                    Paths.get(System.getProperty("user.home"),"icmdb","backup").toFile()
                 } else {
                     File(backupPath)
                 }
