@@ -14,10 +14,16 @@ gpg --quick-generate-key --batch --pinentry-mode loopback --passphrase=<passphra
 
 which results in an output like
 [source,bash]
+// used example key is not a real example (just a random hex value)
+----
+gpg: key CBC0FD16BA0996A4 marked as ultimately trusted
+gpg: revocation certificate stored as '/c/Users/myuser/.gnupg/openpgp-revocs.d/B4F305E66AF51773BD04140AABC700315B07837C.rev'
 ----
 
 Remember the last 8 digits of the key id for example
 [source,bash]
+----
+KEY_ID=5B07837C
 ----
 
 Export the key into a file
