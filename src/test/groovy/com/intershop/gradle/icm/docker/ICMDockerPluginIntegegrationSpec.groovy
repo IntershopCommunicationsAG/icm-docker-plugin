@@ -231,48 +231,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                             testImage.set("intershopmock/icm-as-mock:mock")
                         }
                     }
-
-                    serverDirConfig {
-                        base {
-                                dirs {
-                                    main {
-                                        dir.set(file("config/base"))
-                                        exclude("**/cluster/test.properties")
-                                    }
-                                }
-                                exclude("**/cluster/cartridgelist.properties")
-                        }
-                        prod {
-
-                                dirs {
-                                    main {
-                                        dir.set(file("config/prod"))
-                                    }
-                                }
-                        }
-                        test {
-
-                                dirs {
-                                    main {
-                                        dir.set(file("config/test"))
-                                    }
-                                }
-                            
-                        }
-                        dev {
-
-                                dirs {
-                                    main {
-                                        dir.set(file("config/dev"))
-                                    }
-                                    test {
-                                        dir.set(file("config/test"))
-                                        exclude("**/cluster/test.properties")
-                                    }
-                                }
-                            
-                        }
-                    }
                 }
             }
 
@@ -462,43 +420,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
                         }
                     }
-
-                    serverDirConfig {
-                        base {
-                                dirs {
-                                    main {
-                                        dir.set(file("config/base"))
-                                        exclude("**/cluster/test.properties")
-                                    }
-                                }
-                                exclude("**/cluster/cartridgelist.properties")
-                        }
-                        prod {
-                                dirs {
-                                    main {
-                                        dir.set(file("config/prod"))
-                                    }
-                                }
-                        }
-                        test {
-                                dirs {
-                                    main {
-                                        dir.set(file("config/test"))
-                                    }
-                                }
-                        }
-                        dev {
-                                dirs {
-                                    main {
-                                        dir.set(file("config/dev"))
-                                    }
-                                    test {
-                                        dir.set(file("config/test"))
-                                        exclude("**/cluster/test.properties")
-                                    }
-                                }
-                        }
-                    }
                 }
             }
 
@@ -647,48 +568,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                         paymentExt {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
                             image.set("intershophub/icm-as:11.0.1")  
-                        }
-                    }
-
-                    serverDirConfig {
-                        base {
-                                dirs {
-                                    main {
-                                        dir.set(file("config/base"))
-                                        exclude("**/cluster/test.properties")
-                                    }
-                                }
-                                exclude("**/cluster/cartridgelist.properties")
-                        }
-                        prod {
-
-                                dirs {
-                                    main {
-                                        dir.set(file("config/prod"))
-                                    }
-                                }
-                        }
-                        test {
-
-                                dirs {
-                                    main {
-                                        dir.set(file("config/test"))
-                                    }
-                                }
-                            
-                        }
-                        dev {
-
-                                dirs {
-                                    main {
-                                        dir.set(file("config/dev"))
-                                    }
-                                    test {
-                                        dir.set(file("config/test"))
-                                        exclude("**/cluster/test.properties")
-                                    }
-                                }
-                            
                         }
                     }
                 }

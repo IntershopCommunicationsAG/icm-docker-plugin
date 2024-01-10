@@ -32,7 +32,7 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     chown -R ${USERNAME}:intershop /intershop-init
 
 # FROM busybox:latest
-FROM eclipse-temurin:11.0.14.1_1-jre
+FROM eclipse-temurin:17.0.9_9-jre
 ARG USERNAME=intershop
 ARG USERID=150
 
@@ -41,7 +41,7 @@ RUN chmod a+x -R /usr/bin/dirdiff
 
 RUN addgroup --gid 150 intershop && \
     useradd -m --uid ${USERID} -g intershop --shell /bin/sh ${USERNAME} && \
-    useradd --uid 151 -g intershop --shell /bin/sh intershop
+    useradd --uid 151 -g intershop --shell /bin/sh intershop2
 
 COPY --from=BUILD /intershop-prj/ /intershop/
 COPY --from=BUILD /intershop-init/ /intershop-init/

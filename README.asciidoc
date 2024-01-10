@@ -1,5 +1,5 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 1.2.5
+:latestRevision: 4.0.0
 :toc:
 :icons: font
 
@@ -7,7 +7,7 @@
 This plugin collection contains plugins for building container images and
 starting container of and for Intershop Commerce Management. It is necessary
 that the link:https://github.com/IntershopCommunicationsAG/icm-gradle-plugin['ICM Gradle plugin'] was
-applied to the project. Version 3.4.0 of this plugin is the minimum version.
+applied to the project. Version 6.0.0 of this plugin is the minimum version.
 
 This plugin is based on link:https://github.com/bmuschko/gradle-docker-plugin['Gradle Docker plugin'] and
 the link:https://github.com/docker-java/docker-java['Docker-Java Framework'].
@@ -24,6 +24,7 @@ The plugins must be applied to the root project.
 ++++
 .build.gradle
 [source,groovy]
+[subs=+attributes]
 ----
 plugins {
     id 'com.intershop.gradle.icm.base' version '3.4.14'
@@ -82,6 +83,7 @@ intershop_docker {
 ++++
 .build.gradle.kts
 [source,kotlin]
+[subs=+attributes]
 ----
 plugins {
     id("com.intershop.gradle.icm.base") version "3.4.14"
@@ -216,7 +218,7 @@ imageBuild {
 |`redis`   | `Property<String>` | `redis:latest`  | This image is used for a local redis instance, which can be used as a pagecache when the WebAdapter is disabled.
 |===
 
-===== Image Build Configuration `ProjectConfiguration`[[ProjectConfiguration]]
+[[ProjectConfiguration]]===== Image Build Configuration `ProjectConfiguration`
 
 *Properties*
 
@@ -669,9 +671,10 @@ Furthermore it depends on the configuration of Geb self (`GebConfig.groovy`).
 ++++
 .build.gradle
 [source,groovy]
+[subs=+attributes]
 ----
 plugins {
-    id 'com.intershop.gradle.icm.docker.gebtest' version '3.4.0'
+    id 'com.intershop.gradle.icm.docker.gebtest' version '{latestRevision}'
 }
 
 gebConfiguration {
@@ -727,9 +730,10 @@ gebConfiguration {
 ++++
 .build.gradle.kts
 [source,kotlin]
+[subs=+attributes]
 ----
 plugins {
-    id("com.intershop.gradle.icm.docker.gebtest") version "3.4.0"
+    id("com.intershop.gradle.icm.docker.gebtest") version "{latestRevision}"
 }
 
 extensions.getByType(GebConfiguration::class.java).apply {
@@ -788,6 +792,7 @@ The plugin is based on the following GebTest configuration:
 
 .resources/GebConfig.groovy
 [source,groovy]
+[subs=+attributes]
 ----
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -1044,6 +1049,7 @@ This is a minimum set of properties.
 
 icm.properties
 [source, properties]
+[subs=+attributes]
 ----
 # database connection configuration
 intershop.databaseType = oracle|mssql
