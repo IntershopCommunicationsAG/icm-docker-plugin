@@ -19,6 +19,11 @@ jobs:
     steps:
       - name: Setup
         uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-setup@v1.0
+      - name: Prepare Docker
+        uses: ./.github/actions/prepare-docker
+        with:
+          docker-user: ${{ secrets.DOCKERUSER }}
+          docker-password: ${{ secrets.DOCKERPASSWD }}
       - name: Release
         uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-release@v1.0
         with:

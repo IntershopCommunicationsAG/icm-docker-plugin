@@ -1,0 +1,12 @@
+name: Preparations for later docker usage
+description: prepares the access to docker.io and builds an image using createimage.sh
+
+runs:
+  using: composite
+  steps:
+    - name: Run docker login
+      shell: bash
+      run: echo ${{ inputs.docker-password }} | docker login -u ${{ inputs.docker-user }} --password-stdin
+    - name: Create Test container
+      shell: bash
+      run: cd testdocker && ./createimage.sh && cd ..
