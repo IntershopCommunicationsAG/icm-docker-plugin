@@ -704,7 +704,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         when:
         def result = getPreparedGradleRunner()
-                .withArguments("pullAS", "--altImage=intershophub/icm-webadapter:2.2.0", "--forcePull", "-s")
+                .withArguments("pullAS", "--altImage=busybox:latest", "--forcePull", "-s")
                 .withGradleVersion(gradleVersion)
         .withDebug(true)
                 .build()
