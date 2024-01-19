@@ -42,6 +42,11 @@ abstract class AbstractTaskPreparer(
     protected abstract fun getExtensionName(): String
     protected open fun getContainerExt(): String = getExtensionName().lowercase()
     protected abstract fun getImage(): Provider<String>
+    protected fun useHostUser() : Boolean {
+        return dockerExtension.developmentConfig.getBooleanProperty(getUseHostUserConfigProperty(), useHostUserDefaultValue())
+    }
+    protected open fun useHostUserDefaultValue() : Boolean = false
+    protected abstract fun getUseHostUserConfigProperty() : String;
 
     protected val dockerExtension = project.extensions.getByType<IntershopDockerExtension>()
     protected val icmExtension = project.extensions.getByType<IntershopExtension>()
@@ -90,13 +95,17 @@ abstract class AbstractTaskPreparer(
         task.group = "icm container ${getContainerExt()}"
         task.attachStderr.set(true)
         task.attachStdout.set(true)
-        task.hostConfig.autoRemove.set(true)
+        //task.hostConfig.autoRemove.set(true)
 
         task.containerName.set(getContainerName())
 
         val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
-        if(! os.isWindows) {
-            val uid = com.sun.security.auth.module.UnixSystem().uid
+        if(useHostUser() && !os.isWindows) {
+            val system = com.sun.security.auth.module.UnixSystem()
+            val uid = system.uid
+            val userName = system.username
+            val gid = system.gid
+            project.logger.info("Using user {}({}:{}) to start container {}", userName, uid, gid, getContainerName())
             task.user.set(uid.toString())
         }
     }

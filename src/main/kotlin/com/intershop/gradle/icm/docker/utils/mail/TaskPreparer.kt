@@ -36,6 +36,7 @@ class TaskPreparer(project: Project,
 
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.mailsrv
+    override fun getUseHostUserConfigProperty(): String = Configuration.MAIL_USE_HOST_USER
 
     init {
         initBaseTasks()

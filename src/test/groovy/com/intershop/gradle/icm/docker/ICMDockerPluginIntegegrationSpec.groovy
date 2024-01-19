@@ -222,12 +222,12 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     modules {
                         solrExt {
                             dependency.set("com.intershop.search:solrcloud:1.0.0")
-                            image.set("intershophub/icm-as:11.0.1")
+                            image.set("intershophub/icm-as:11.7.0")
                             testImage.set("intershopmock/icm-as-mock:mock")  
                         }
                         paymentExt {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
-                            image.set("intershophub/icm-as:11.0.1")  
+                            image.set("intershophub/icm-as:11.7.0")  
                             testImage.set("intershopmock/icm-as-mock:mock")
                         }
                     }
@@ -563,11 +563,11 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
                     modules {
                         solrExt {
                             dependency.set("com.intershop.search:solrcloud:1.0.0")
-                            image.set("intershophub/icm-as:11.0.1")  
+                            image.set("intershophub/icm-as:11.7.0")  
                         }
                         paymentExt {
                             dependency.set("com.intershop.payment:paymenttest:1.0.0")
-                            image.set("intershophub/icm-as:11.0.1")  
+                            image.set("intershophub/icm-as:11.7.0")  
                         }
                     }
                 }
@@ -704,8 +704,9 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         when:
         def result = getPreparedGradleRunner()
-                .withArguments("pullAS", "--altImage=busybox:latest", "--forcePull", "-s")
+                .withArguments("pullAS", "--altImage=intershophub/icm-webadapter:2.2.0", "--forcePull", "-s", "-Picm.docker.config=/home/sven/intershop/config")
                 .withGradleVersion(gradleVersion)
+        .withDebug(true)
                 .build()
 
         then:

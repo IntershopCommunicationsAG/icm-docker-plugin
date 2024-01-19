@@ -39,6 +39,7 @@ class SolrPreparer(
 
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.solr
+    override fun getUseHostUserConfigProperty(): String = Configuration.SOLR_USE_HOST_USER
 
     init {
         initBaseTasks()

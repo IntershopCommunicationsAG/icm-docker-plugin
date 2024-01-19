@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.Configuration.WA_USE_HOST_USER
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_INTERVAL
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_INTERVAL_VALUE
 import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_TIMEOUT
@@ -43,6 +44,7 @@ class WATaskPreparer(
 
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.webadapter
+    override fun getUseHostUserConfigProperty(): String = WA_USE_HOST_USER
 
     val httpContainerPort: Int
 
