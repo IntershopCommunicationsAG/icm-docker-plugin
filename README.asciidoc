@@ -1,5 +1,5 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 4.0.1
+:latestRevision: 4.1.0
 :toc:
 :icons: font
 
