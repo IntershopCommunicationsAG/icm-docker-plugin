@@ -95,7 +95,7 @@ abstract class AbstractTaskPreparer(
         task.group = "icm container ${getContainerExt()}"
         task.attachStderr.set(true)
         task.attachStdout.set(true)
-        //task.hostConfig.autoRemove.set(true)
+        task.hostConfig.autoRemove.set(true)
 
         task.containerName.set(getContainerName())
 
