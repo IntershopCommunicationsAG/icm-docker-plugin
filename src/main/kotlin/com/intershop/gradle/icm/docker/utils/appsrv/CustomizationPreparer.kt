@@ -33,6 +33,9 @@ class CustomizationPreparer(project: Project,
 
     override fun getExtensionName(): String = "${customizationName}$extPrefix"
     override fun getImage(): Provider<String> = imagePath
+    override fun getUseHostUserConfigProperty(): String = getExtensionName()+".useHostUser"
+
+    override fun useHostUserDefaultValue(): Boolean = false
 
     init {
         initBaseTasks()

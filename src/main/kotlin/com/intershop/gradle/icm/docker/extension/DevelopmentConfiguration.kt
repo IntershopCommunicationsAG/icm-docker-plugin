@@ -227,6 +227,11 @@ open class DevelopmentConfiguration
         }
     }
 
+    fun getBooleanProperty(property: String, defaultValue: Boolean): Boolean {
+        val strValue = configProperties.getProperty(property, defaultValue.toString())
+        return strValue.toBoolean()
+    }
+
     fun getDurationProperty(property: String, defaultSeconds: Int): Duration {
         return Duration.ofSeconds(getIntProperty (property, defaultSeconds).toLong())
     }

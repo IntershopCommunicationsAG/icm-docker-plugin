@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.utils.redis
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -36,6 +37,7 @@ class TaskPreparer(
     override fun getExtensionName(): String = extName
 
     override fun getImage(): Provider<String> = dockerExtension.images.redis
+    override fun getUseHostUserConfigProperty(): String = Configuration.REDIS_USE_HOST_USER
 
     init {
         initBaseTasks()

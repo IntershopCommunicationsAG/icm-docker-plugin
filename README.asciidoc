@@ -1,5 +1,5 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 4.0.0
+:latestRevision: 4.1.0
 :toc:
 :icons: font
 
@@ -347,6 +347,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.db.mssql.dbname` | the name of the actual DB to be created | String | Optional | `icmtestdb` +
 | `intershop.db.mssql.recreatedb` | controls if the actual DB is recreated on container start | Boolean | Optional | `false` +
 | `intershop.db.mssql.recreateuser` | controls if the DB-user is recreated on container start | Boolean | Optional | `false` +
+| `intershop.db.mssql.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 | `intershop.jdbc.user` | the name of the actual DB user to be created | String | Optional | `intershop` +
 | `intershop.jdbc.password` | the password of the actual DB user to be created | String | Optional | `intershop` +
 |===
@@ -359,6 +360,7 @@ The following properties are part of the <<PropertiesFile>>.
 
 | `intershop.db.oracle.listenerport` | Exposed listener port of the database. | Integer | Optional | `1521` +
 | `intershop.db.oracle.port` | Exposed enterprise manager port of the oracle db. | Integer | Optional | `1521` +
+| `intershop.db.oracle.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 |===
 
 ===== WA [[WAConfiguration]]
@@ -377,6 +379,16 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.ws.readinessProbe.interval` | interval in seconds to be used to check if the WebAdapter is ready | Integer | Optional | `2` +
 | `intershop.ws.readinessProbe.timeout` | max. number of seconds to wait for the WebAdapter to become ready | Integer | Optional | `30` +
 | `webserver.use.http2` | enables/disables usage of HTTP2 | Boolean | Optional | `false` +
+| `wa.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+|===
+
+===== WAA [[WAAConfiguration]]
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `waa.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 |===
 
 ===== NGINX [[NGINXConfiguration]]
@@ -389,6 +401,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `nginx.cert.path` | the host path to look for TLS certificate and private key (if not defined the certificates will be mounted from the Webserver certificate path) | Path | Optional | <none> +
 | `nginx.cert.filename` | name of the certificate file | String | Optional | `fullchain.pem` +
 | `nginx.privatekey.filename` | name of the certificate private key file | String | Optional | `privkey.pem` +
+| `nginx.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 |===
 
 ===== Solr [[SolrConfiguration]]
@@ -399,6 +412,7 @@ The following properties are part of the <<PropertiesFile>>.
 
 | `solr.clusterIndexPrefix` | prefix to be used for indexed inside Solr | String | Optional | <empty> +
 | `solr.port` | the host port to be used for the Solr server primary port | Integer | Optional | `8983` +
+| `solr.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 |===
 
 ===== ZooKeeper [[ZKConfiguration]]
@@ -409,12 +423,32 @@ The following properties are part of the <<PropertiesFile>>.
 
 | `zookeeper.port` | the host port to be used for the Zookeeper's primary port | Integer | Optional | `2181` +
 | `zookeeper.metrics.port` | the host port to be used for the Zookeeper's metrics port | Integer | Optional | `7000` +
+| `zookeper.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 |===
 
 ===== Mail [[MailConfiguration]]
 
-There are no special configuration properties for the mail server.
-The SMTP port is `25` and the web interface listened on 8025. Mails are stored in the build directory `mailoutput`.
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `mail.smtp.host.port` | the host port to be used for the SMTP port | Integer | Optional | `25` +
+| `mail.admin.host.port` | the host port to be used for the MailHog administration/backoffice port | Integer | Optional | `8025` +
+| `mail.readinessProbe.interval` | interval in seconds to be used to check if the mail server is ready | Integer | Optional | `2` +
+| `mail.readinessProbe.timeout` | max. number of seconds to wait for the mail server to become ready | Integer | Optional | `30` +
+| `mail.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `true` +
+|===
+
+Mails are stored in the build directory `mailoutput`.
+
+===== Redis [[RedisConfiguration]]
+
+[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
+|===
+| Key | Description | Co-domain | Mandatory/Optional | Default value
+
+| `redis.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `true` +
+|===
 
 == Intershop Commerce Management Customization Docker Plugin
 This plugin configures additional tasks of an Intershop Commerce Management customization project. It uses the same Gradle

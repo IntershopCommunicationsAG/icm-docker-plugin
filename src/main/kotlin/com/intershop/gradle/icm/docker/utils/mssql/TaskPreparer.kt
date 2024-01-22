@@ -34,6 +34,7 @@ class TaskPreparer(project: Project,
 
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.mssqldb
+    override fun getUseHostUserConfigProperty(): String = Configuration.DB_MSSQL_USE_HOST_USER
 
     init {
         initBaseTasks()

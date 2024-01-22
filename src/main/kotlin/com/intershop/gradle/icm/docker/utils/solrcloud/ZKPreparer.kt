@@ -39,6 +39,7 @@ class ZKPreparer(
 
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.zookeeper
+    override fun getUseHostUserConfigProperty(): String = Configuration.ZOOKEEPER_USE_HOST_USER
 
     init {
         initBaseTasks()

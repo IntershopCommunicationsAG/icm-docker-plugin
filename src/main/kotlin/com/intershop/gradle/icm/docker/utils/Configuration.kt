@@ -39,6 +39,8 @@ object Configuration {
     const val DB_MSSQL_DBNAME = "intershop.db.mssql.dbname"
     const val DB_MSSQL_DBNAME_VALUE = "icmtestdb"
 
+    const val DB_MSSQL_USE_HOST_USER = "intershop.db.mssql.useHostUser"
+
     const val DB_ORACLE_LISTENERPORT = "intershop.db.oracle.listenerport"
     const val DB_ORACLE_CONTAINER_LISTENERPORT = "intershop.db.container.oracle.listenerport"
 
@@ -50,6 +52,8 @@ object Configuration {
 
     const val DB_ORACLE_PORT_VALUE = "5500"
     const val DB_ORACLE_CONTAINER_PORT_VALUE = "5500"
+
+    const val DB_ORACLE_USE_HOST_USER = "intershop.db.oracle.useHostUser"
 
     const val DB_TYPE = "intershop.databaseType"
     const val DB_JDBC_URL = "intershop.jdbc.url"
@@ -111,6 +115,9 @@ object Configuration {
     const val WS_READINESS_PROBE_TIMEOUT = "intershop.db.readinessProbe.timeout"
     const val WS_READINESS_PROBE_TIMEOUT_VALUE = 30 // 30 secs
 
+    const val WA_USE_HOST_USER = "wa.useHostUser"
+    const val WAA_USE_HOST_USER = "waa.useHostUser"
+
     const val AS_ADMIN_USER_NAME = "intershop.smc.admin.user.name"
     const val AS_ADMIN_USER_NAME_VALUE = "admin"
     const val AS_ADMIN_USER_PASSWORD = "intershop.smc.admin.user.password"
@@ -118,17 +125,20 @@ object Configuration {
     const val AS_READINESS_PROBE_INTERVAL_VALUE = 15 // 15 secs
     const val AS_READINESS_PROBE_TIMEOUT = "intershop.as.readinessProbe.timeout"
     const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins (full dbinit may be necessary)
+    const val AS_USE_HOST_USER = "intershop.as.useHostUser"
 
     const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
     const val SOLR_CLOUD_HOST_PORT = "solr.port"
     const val SOLR_CLOUD_HOST_PORT_VALUE = 8983
     const val SOLR_DATA_FOLDER_PATH = "solr.data.folder.path"
+    const val SOLR_USE_HOST_USER = "solr.useHostUser"
 
     const val ZOOKEEPER_HOST_PORT = "zookeeper.port"
     const val ZOOKEEPER_HOST_PORT_VALUE = 2181
     const val ZOOKEEPER_METRICS_HOST_PORT = "zookeeper.metrics.port"
     const val ZOOKEEPER_METRICS_HOST_PORT_VALUE = 7000
+    const val ZOOKEEPER_USE_HOST_USER = "zookeeper.useHostUser"
 
     const val SSL_VERIFICATION = "ssl.verification"
 
@@ -160,6 +170,7 @@ object Configuration {
     const val MAIL_READINESS_PROBE_INTERVAL_VALUE = 1 // 1 secs
     const val MAIL_READINESS_PROBE_TIMEOUT = "mail.readinessProbe.timeout"
     const val MAIL_READINESS_PROBE_TIMEOUT_VALUE = 15 // 15 secs
+    const val MAIL_USE_HOST_USER = "mail.useHostUser"
 
     const val NGINX_HTTP_PORT = "nginx.http.port"
     const val NGINX_HTTPS_PORT = "nginx.https.port"
@@ -172,6 +183,9 @@ object Configuration {
     const val NGINX_CERT_FILENAME_VALUE = "fullchain.pem"
     const val NGINX_PRIVATEKEY_FILENAME = "nginx.privatekey.filename"
     const val NGINX_PRIVATEKEY_FILENAME_VALUE = "privkey.pem"
+    const val NGINX_USE_HOST_USER = "nginx.useHostUser"
+
+    const val REDIS_USE_HOST_USER = "redis.useHostUser"
 
     const val INTERSHOP_ENVIRONMENT_PREFIX = "intershop.environment."
 }

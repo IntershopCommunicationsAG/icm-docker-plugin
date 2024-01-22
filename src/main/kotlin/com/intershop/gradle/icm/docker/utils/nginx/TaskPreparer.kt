@@ -46,6 +46,7 @@ class TaskPreparer(
     override fun getExtensionName(): String = extName
 
     override fun getImage(): Provider<String> = dockerExtension.images.nginx
+    override fun getUseHostUserConfigProperty(): String = Configuration.NGINX_USE_HOST_USER
 
     init {
         initBaseTasks()
