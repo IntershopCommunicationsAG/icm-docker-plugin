@@ -1130,6 +1130,10 @@ disable.ssl.verification = true
 #intershop.as.readinessProbe.timeout = 30
 ----
 
+== Contribute
+
+See link:https://github.com/IntershopCommunicationsAG/.github/blob/main/CONTRIBUTE.asciidoc[here] for details.
+
 == License
 
 Copyright 2014-2020 Intershop Communications.
