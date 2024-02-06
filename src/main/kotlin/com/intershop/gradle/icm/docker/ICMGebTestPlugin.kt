@@ -27,8 +27,8 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_DRIVER
 import com.intershop.gradle.icm.docker.utils.Configuration.GEB_LOCAL_ENVIRONMENT
 import com.intershop.gradle.icm.docker.utils.OS
-import com.intershop.gradle.icm.docker.utils.appsrv.ICMServerTaskPreparer
-import com.intershop.gradle.icm.docker.utils.appsrv.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appsrv.ASTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appsrv.ASTestContainerTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.Plugin
@@ -156,7 +156,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                 val startTaskName = if (hasProperty(SRVSTARTTASK)) {
                     property(SRVSTARTTASK).toString()
                 } else {
-                    "start${ServerTaskPreparer.extName}"
+                    "start${ASTaskPreparer.extName}"
                 }
 
                 if (useLocalServer == true && !useBuildContainer) {
@@ -167,7 +167,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                     }
                 } else {
                     val serverTaskName = if (useBuildContainer) {
-                        "start${ICMServerTaskPreparer.extName}"
+                        "start${ASTestContainerTaskPreparer.EXT_NAME}"
                     } else {
                         startTaskName
                     }

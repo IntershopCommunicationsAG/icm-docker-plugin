@@ -202,7 +202,7 @@ open class BuildImage
         onlyIf {
             val returnValue = enabled.getOrElse(false)
             if(! returnValue) {
-                project.logger.quiet("Task {} skipped, because it is not enabled.")
+                project.logger.quiet("Task {} skipped, because it is not enabled.", it.name)
             }
             returnValue
         }

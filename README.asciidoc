@@ -1,5 +1,6 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 4.1.0
+:latestRevision: 5.0.0
+:gradlePluginVersion: 6.0.0
 :toc:
 :icons: font
 
@@ -27,7 +28,7 @@ The plugins must be applied to the root project.
 [subs=+attributes]
 ----
 plugins {
-    id 'com.intershop.gradle.icm.base' version '3.4.14'
+    id 'com.intershop.gradle.icm.base' version '{gradlePluginVersion}'
     id 'com.intershop.gradle.icm.docker' version '{latestRevision}'
 }
 
@@ -39,11 +40,10 @@ intershop {
 
 intershop_docker {
     images {
-        webadapter = 'intershophub/icm-webadapter:2.1.0'
-        webadapteragent = 'intershophub/icm-webadapteragent:3.1.0'
+        webadapter = 'intershophub/icm-webadapter:2.4.9'
+        webadapteragent = 'intershophub/icm-webadapteragent:4.0.0'
 
         mssql = 'intershophub/mssql-intershop:2019-latest'
-        oracle = 'intershophub/oracle-intershop:latest'
 
         mailsrv = 'mailhog/mailhog:latest'
     }
@@ -86,7 +86,7 @@ intershop_docker {
 [subs=+attributes]
 ----
 plugins {
-    id("com.intershop.gradle.icm.base") version "3.4.14"
+    id("com.intershop.gradle.icm.base") version "{gradlePluginVersion}"
     id("com.intershop.gradle.icm.docker") version "{latestRevision}"
 }
 
@@ -98,11 +98,10 @@ intershop {
 
 intershop_docker {
     images {
-        webadapter.set("'intershophub/icm-webadapter:2.1.0")
-        webadapteragent.set("intershophub/icm-webadapteragent:3.1.0")
+        webadapter.set("'intershophub/icm-webadapter:2.4.9")
+        webadapteragent.set("intershophub/icm-webadapteragent:4.0.0")
 
         mssql.set("intershophub/mssql-intershop:2019-latest")
-        oracle.set("intershophub/oracle-intershop:latest")
 
         mailsrv.set("mailhog/mailhog:latest")
     }
@@ -210,7 +209,6 @@ imageBuild {
 |`webadapter` | `Property<String>` | `docker.intershop.de/intershop/icm-webadapter:latest`       | The image contains the web server of the Intershop Commerce Management application with a special Intershop Apache module.
 |`webadapteragent`  | `Property<String>` | `docker.intershop.de/intershop/icm-webadapteragent:latest`       | The web adapter agent image of the Intershop Commerce Management application.
 |`mssqldb`  | `Property<String>` | `mcr.microsoft.com/mssql/server:2019-latest`       | The Microsoft SQL  server image. There will be also a build file available.
-|`oracledb` | `Property<String>` | `docker.intershop.de/intershop/oracle-xe-server:18.4.0`       | This image is only available internally. The build files will be provided.
 |`mailsrv`  | `Property<String>` | `mailhog/mailhog:latest`       | A mail server for testing the mail feature of the application.
 |`solr`   | `Property<String>`      | `solr/latest`       | This image is used for the Solr Cloud configuration with a single node.
 |`zookeeper`   | `Property<String>` | `zookeeper:latest`  | This image is used for the Solr Cloud configuration with a single node.
@@ -278,7 +276,6 @@ For all properties configurations methods with a closure or an action are availa
 | *prepareNetwork*   | Creates a network with the specified name <extension name>-network. All start tasks are dependend on this task.
 | *removeNetwork*    | Removes the network from the Docker configuration.
 | **MSSQL*        | These tasks pull, start, stop and remove the MSSQL image.
-| **Oracle*       | These tasks pull, start, stop and remove the Oracle DB image.
 | **MailSrv*      | These tasks pull, start, stop and remove the Mail server image.
 | **SolrCloud*      | These tasks orchestrate all Solr Cloud related tasks.
 | **ZK*             | These tasks pull, start, stop and remove the Zookeeper image.
@@ -306,8 +303,6 @@ The task can be called with the following parameters:
 | Parameter          |Description
 
 | --db     | Option for the used database. The following values are possible: +
-            _oracle-container_ - Oracle configuration for database provided by a container +
-            _oracle_ - Oracle configuration for an external database +
             _mssql-container_ - MSSQL configuration for database provided by a container +
             _mssql_ - MSSQL configuration for an external database
 | --icmas  | If this parameter specified, the properties file will be generated for app server development.
@@ -350,17 +345,6 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.db.mssql.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 | `intershop.jdbc.user` | the name of the actual DB user to be created | String | Optional | `intershop` +
 | `intershop.jdbc.password` | the password of the actual DB user to be created | String | Optional | `intershop` +
-|===
-
-===== Oracle [[OracleConfiguration]]
-
-[cols="10%,60%,10%,10%,10%", width="99%, options="header"]
-|===
-| Key | Description | Co-domain | Mandatory/Optional | Default value
-
-| `intershop.db.oracle.listenerport` | Exposed listener port of the database. | Integer | Optional | `1521` +
-| `intershop.db.oracle.port` | Exposed enterprise manager port of the oracle db. | Integer | Optional | `1521` +
-| `intershop.db.oracle.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 |===
 
 ===== WA [[WAConfiguration]]
@@ -503,7 +487,7 @@ The plugins must be applied to the root project.
 |===
 | Task name           |Description
 
-| **Container*      | These tasks pull, start, stop and remove the ICM application server image with a special command. There is no running process inside, but it uses the same configuration like the appserver container.
+| **Container*      | These tasks pull, start, stop and remove the ICM application server image with a special command. There is no running process inside, but it uses the same configuration as the appserver container.
 | **AS*             | These tasks pull, start, stop and remove the ICM application server image.
 | **Server*         | These tasks orchestrate all ICM server related tasks (web server and app server)
 | *dbPrepare*       | This task starts dbPrepare inside the running "Container" docker container.
@@ -531,7 +515,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.servletEngine.managementConnector.port` | the host port to be used for the appserver management connector http port | Integer | Optional | `7743` +
 | `intershop.as.jmx.connector.port` | the host port to be used for the appserver JMX port | Integer | Optional | `7747` +
 | `intershop.as.debug.port` | the host port to be used for the appserver debug port | Integer | Optional | `7746` +
-| `intershop.databaseType` | database type to be used | { `mssql`, `oracle` } | Mandatory | <none> +
+| `intershop.databaseType` | database type to be used | { `mssql` } | Mandatory | <none> +
 | `intershop.jdbc.url` | JDBC URL pointing to the database to be used | URL | Mandatory | <none> +
 | `intershop.jdbc.user` | JDBC database user | String | Mandatory | <none> +
 | `intershop.jdbc.password` | JDBC database password | String | Mandatory | <none> +
@@ -540,7 +524,8 @@ The following properties are part of the <<PropertiesFile>>.
 |===
 
 --
-The referenced database can either be an externally running database or an instance started using the gradle <<DockerPluginTasks>> `startMSSQL` respectively `startOracle`. In either case the properties `intershop.databaseType` and `intershop.jdbc.*` have to be defined properly (when using the gradle tasks the hostname equals the container name).
+The referenced database can either be an externally running database or an instance started using the gradle <<DockerPluginTasks>> `startMSSQL`.
+In either case the properties `intershop.databaseType` and `intershop.jdbc.*` have to be defined properly (when using the gradle tasks the hostname equals the container name).
 --
 
 ===== Application Server [[StartASConfiguration]]
@@ -600,6 +585,9 @@ NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localV
 ++++
 
 ===== Application Server [[StartASParameters]]
+
+IMPORTANT: The following parameters actually belong to the task `createAS` (not `startAS`).
+But if you just call for example `./gradlew startAS --debug-icm=suspend` the parameter(s) are also applied to the `createAS`-task (task `startAS` depends on `createAS`).
 
 [cols="10%,70%,10%,10%", width="99%, options="header"]
 |===
@@ -975,8 +963,6 @@ The plugin set the following system properties for the test:
 | `geb.build.baseUrl` | The url will be calculated from the base configuration of the web server image. If the container framework is used, the internal network name is used.
 |===
 
-Furthermore the host
-
 ==== Extension 'gebConfiguration'
 
 *Properties*
@@ -1086,8 +1072,8 @@ icm.properties
 [subs=+attributes]
 ----
 # database connection configuration
-intershop.databaseType = oracle|mssql
-intershop.jdbc.url = jdbc:oracle:thin:@host:1521:XE | jdbc:sqlserver://host:1433;databaseName=dbname
+intershop.databaseType = mssql
+intershop.jdbc.url = jdbc:sqlserver://host:1433;databaseName=dbname
 intershop.jdbc.user = user
 intershop.jdbc.password = password
 

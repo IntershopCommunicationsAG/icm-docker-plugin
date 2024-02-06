@@ -17,7 +17,7 @@
 package com.intershop.gradle.icm.docker.utils.solrcloud
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.IPFinder
@@ -32,77 +32,61 @@ class SolrPreparer(
 ) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
-        const val extName: String = "Solr"
+        const val EXT_NAME: String = "Solr"
         const val CONTAINER_PORT = 8983
         const val GROUP_NAME = "icm container solrcloud"
     }
 
-    override fun getExtensionName(): String = extName
+    override fun getExtensionName(): String = EXT_NAME
     override fun getImage(): Provider<String> = dockerExtension.images.solr
     override fun getUseHostUserConfigProperty(): String = Configuration.SOLR_USE_HOST_USER
+    override fun getTaskGroupExt(): String = "solrcloud"
 
     init {
         initBaseTasks()
-
-        pullTask.configure {
-            it.group = GROUP_NAME
+        val portMapping = dockerExtension.developmentConfig.getPortMapping(
+                "SOLR",
+                Configuration.SOLR_CLOUD_HOST_PORT,
+                Configuration.SOLR_CLOUD_HOST_PORT_VALUE,
+                CONTAINER_PORT,
+                true)
+        val env = ContainerEnvironment().addAll(
+                "SOLR_PORT" to portMapping.containerPort.toString(),
+                "ZK_HOST" to zkPreparer.getRenderedHostPort(),
+                "SOLR_HOST" to "${IPFinder.getSystemIP().first}",
+                "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
+        )
+        val dataDir: File? = getLocalDataDir()
+        val volumes = if (dataDir != null) {
+            mapOf(dataDir.absolutePath to "/var/solr")
+        } else {
+            mapOf()
         }
-        stopTask.configure {
-            it.group = GROUP_NAME
-            it.dependsOn(zkPreparer.stopTask)
-        }
-        removeTask.configure {
-            it.group = "icm container solrcloud"
-            it.dependsOn(zkPreparer.removeTask)
-        }
 
-        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
-            task.group = GROUP_NAME
-            task.description = "Start Solr component of SolrCloud"
-
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            val portMapping = dockerExtension.developmentConfig.getPortMapping(
-                    "SOLR",
-                    Configuration.SOLR_CLOUD_HOST_PORT,
-                    Configuration.SOLR_CLOUD_HOST_PORT_VALUE,
-                    CONTAINER_PORT,
-                    true)
+        val createTask = registerCreateContainerTask(findTask, volumes, env)
+        createTask.configure { task ->
             task.withPortMappings(portMapping)
-
-            task.envVars.set(
-                    mutableMapOf(
-                            "SOLR_PORT" to portMapping.containerPort.toString(),
-                            "ZK_HOST" to zkPreparer.renderedHostPort,
-                            "SOLR_HOST" to "${IPFinder.getSystemIP().first}",
-                            "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
-                    )
-            )
-
-            val volumeMap = mutableMapOf<String, String>()
-
-            // add data path if configured
-            val dataPath = dockerExtension.developmentConfig.getConfigProperty(Configuration.SOLR_DATA_FOLDER_PATH,"")
-            val dataPahtFP = if (dataPath.isNotEmpty()) File(dataPath) else null
-
-            if(dataPahtFP != null) {
-                volumeMap[dataPahtFP.absolutePath] = "/var/solr"
-                volumeMap.forEach { path, _ -> File(path).mkdirs() }
-                task.hostConfig.binds.set(volumeMap)
-            }
-
-            task.hostConfig.network.set(networkId)
-            task.logger.quiet(
-                    "The Solr server can be connected with {}:{}",
-                    task.containerName.get(),
-                    portMapping.containerPort
-            )
-
-            task.dependsOn(pullTask, networkTask, zkPreparer.startTask)
         }
 
+        registerStartContainerTask(createTask).configure { task ->
+            task.doLast {
+                task.logger.quiet(
+                        "The Solr server can be connected with {}:{}",
+                        getContainerName(),
+                        portMapping.containerPort
+                )
+            }
+            task.dependsOn(zkPreparer.startTask)
+        }
+
+    }
+
+    private fun getLocalDataDir(): File? {
+        val dataPath = devConfig.getConfigProperty(Configuration.SOLR_DATA_FOLDER_PATH, "")
+        if (dataPath.isBlank()) {
+            return null
+        }
+        return File(dataPath)
     }
 
 }

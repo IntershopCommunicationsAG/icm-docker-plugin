@@ -17,10 +17,10 @@
 package com.intershop.gradle.icm.docker.utils.webserver
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.appsrv.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appsrv.ASTaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -30,62 +30,42 @@ class WAATaskPreparer(project: Project,
 
     companion object {
         const val extName: String = "WAA"
-        const val GROUP_NAME: String = "icm container webserver"
     }
 
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.webadapteragent
     override fun getUseHostUserConfigProperty(): String = Configuration.WAA_USE_HOST_USER
+    override fun getTaskGroupExt(): String = "webserver"
 
     init{
         initBaseTasks()
 
-        pullTask.configure {
-            it.group = GROUP_NAME
-        }
-        stopTask.configure {
-            it.group = GROUP_NAME
-        }
-        removeTask.configure {
-            it.group = GROUP_NAME
-        }
+        val env = with(dockerExtension.developmentConfig) {
+            val portMapping = asPortConfiguration.managementConnector.get()
 
-        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
-            task.group = "icm container webserver"
-            task.description = "Start ICM WebAdapterAgent"
+            val host: String
+            val port: Int
+            if (appserverAsContainer) {
+                // started as container
+                host = "${dockerExtension.containerPrefix}-${ASTaskPreparer.extName.lowercase()}"
+                port = portMapping.containerPort
+            } else {
 
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
+                // started externally
+                host = getConfigProperty(
+                        Configuration.LOCAL_CONNECTOR_HOST,
+                        Configuration.LOCAL_CONNECTOR_HOST_VALUE
+                )
+                port = portMapping.hostPort
+            }
 
-            with(dockerExtension.developmentConfig) {
-                val portMapping = asPortConfiguration.managementConnector.get()
-
-                val host: String
-                val port: Int
-                if (appserverAsContainer) {
-                    // started as container
-                    host = "${dockerExtension.containerPrefix}-${ServerTaskPreparer.extName.lowercase()}"
-                    port = portMapping.containerPort
-                } else {
-
-                    // started externally
-                    host = getConfigProperty(
-                            Configuration.LOCAL_CONNECTOR_HOST,
-                            Configuration.LOCAL_CONNECTOR_HOST_VALUE
-                    )
-                    port = portMapping.hostPort
-                }
-
-                task.envVars.put(
+            ContainerEnvironment().add(
                     "ICM_ICMSERVLETURLS",
                     "cs.url.0=http://${host}:${port}/servlet/ConfigurationServlet"
-                )
-            }
-            task.hostConfig.binds.set( volumes )
-            task.hostConfig.network.set(networkId)
-
-            task.dependsOn(pullTask, networkTask)
+            )
         }
+        val createTask = registerCreateContainerTask(findTask, volumes, env)
+        registerStartContainerTask(createTask)
+
     }
 }

@@ -40,7 +40,8 @@ abstract class AbstractContainerTask : AbstractDockerRemoteApiTask() {
 
     fun executeUsing(startContainerTaskProvider: TaskProvider<StartExtraContainer>) {
         containerId.set(project.provider { startContainerTaskProvider.get().containerId.get() })
-        containerNameProperty.set(project.provider { startContainerTaskProvider.get().containerName.get() })
+        containerNameProperty.set(
+                project.provider { startContainerTaskProvider.get().container.get().getContainerName() })
         dependsOn(startContainerTaskProvider)
     }
 
@@ -51,7 +52,7 @@ abstract class AbstractContainerTask : AbstractDockerRemoteApiTask() {
     protected fun waitForExit(localExecId: String): Long {
 
         // create progressLogger for pretty printing of terminal log progression.
-        val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
+        val progressLogger = IOUtils.getProgressLogger(services, this.javaClass)
         progressLogger.started()
 
         // if no livenessProbe defined then create a default

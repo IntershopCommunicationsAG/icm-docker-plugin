@@ -17,14 +17,16 @@
 
 package com.intershop.gradle.icm.docker.utils
 
-import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.AbstractPullImage
+import com.intershop.gradle.icm.docker.tasks.CreateExtraContainer
+import com.intershop.gradle.icm.docker.tasks.FindContainer
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.PullExtraImage
+import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
@@ -33,10 +35,11 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.nativeplatform.platform.OperatingSystem
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+import java.io.File
 
 abstract class AbstractTaskPreparer(
         protected val project: Project,
-        networkTask: Provider<PrepareNetwork>,
+        private val networkTask: Provider<PrepareNetwork>,
 ) {
 
     protected abstract fun getExtensionName(): String
@@ -50,63 +53,157 @@ abstract class AbstractTaskPreparer(
 
     protected val dockerExtension = project.extensions.getByType<IntershopDockerExtension>()
     protected val icmExtension = project.extensions.getByType<IntershopExtension>()
+    protected val devConfig = dockerExtension.developmentConfig
 
     fun getContainerName(): String = "${dockerExtension.containerPrefix}-${getContainerExt()}"
 
+    protected fun taskNameOf(operation: String): String = operation + getExtensionName()
+
+    protected val taskGroup: String by lazy { "icm container ${getTaskGroupExt()}" }
+    protected open fun getTaskGroupExt(): String = getContainerExt()
+
     protected fun initBaseTasks() {
-        project.tasks.register("pull${getExtensionName()}", PullExtraImage::class.java) { task ->
-            task.group = "icm container ${getContainerExt()}"
+        project.tasks.register(taskNameOf("pull"), PullImage::class.java) { task ->
+            task.group = taskGroup
             task.description = "Pull image from registry"
             task.image.set(getImage())
         }
 
-        project.tasks.register("stop${getExtensionName()}", StopExtraContainer::class.java) { task ->
-            task.group = "icm container ${getContainerExt()}"
+        project.tasks.register(taskNameOf("stop"), StopExtraContainer::class.java) { task ->
+            task.group = taskGroup
             task.description = "Stop running container"
             task.containerName.set(getContainerName())
         }
 
-        project.tasks.register("remove${getExtensionName()}", RemoveContainerByName::class.java) { task ->
-            task.group = "icm container ${getContainerExt()}"
+        project.tasks.register(taskNameOf("remove"), RemoveContainerByName::class.java) { task ->
+            task.group = taskGroup
             task.description = "Remove container from Docker"
             task.containerName.set(getContainerName())
+        }
+
+        project.tasks.register(taskNameOf("find"), FindContainer::class.java) { task ->
+            task.group = taskGroup
+            task.description = "Finds the ${getContainerExt()}-container to check if it exists and is running"
+            task.dependsOn(pullTask)
+            task.containerName.set(getContainerName())
+            task.expectedImage.set(project.provider { pullTask.get().image.get() })
         }
     }
 
     val pullTask: TaskProvider<AbstractPullImage> by lazy {
-        project.tasks.named("pull${getExtensionName()}", AbstractPullImage::class.java)
+        project.tasks.named(taskNameOf("pull"), AbstractPullImage::class.java)
     }
 
     val stopTask: TaskProvider<StopExtraContainer> by lazy {
-        project.tasks.named("stop${getExtensionName()}", StopExtraContainer::class.java)
+        project.tasks.named(taskNameOf("stop"), StopExtraContainer::class.java)
     }
 
     val removeTask: TaskProvider<RemoveContainerByName> by lazy {
-        project.tasks.named("remove${getExtensionName()}", RemoveContainerByName::class.java)
+        project.tasks.named(taskNameOf("remove"), RemoveContainerByName::class.java)
+    }
+
+    val findTask: TaskProvider<FindContainer> by lazy {
+        project.tasks.named(taskNameOf("find"), FindContainer::class.java)
+    }
+
+    val createTask: TaskProvider<CreateExtraContainer> by lazy {
+        project.tasks.named(taskNameOf("create"), CreateExtraContainer::class.java)
     }
 
     val startTask: TaskProvider<StartExtraContainer> by lazy {
-        project.tasks.named("start${getExtensionName()}", StartExtraContainer::class.java)
+        project.tasks.named(taskNameOf("start"), StartExtraContainer::class.java)
     }
 
     protected val networkId: Property<String> = networkTask.get().networkId
 
-    protected fun configureContainerTask(task: DockerCreateContainer) {
-        task.group = "icm container ${getContainerExt()}"
-        task.attachStderr.set(true)
-        task.attachStdout.set(true)
-        task.hostConfig.autoRemove.set(true)
+    /**
+     * Same as [registerCreateContainerTask] using `taskType == CreateExtraContainer`. `volumes` and `env` are wrapped into [Provider]s.
+     */
+    protected fun registerCreateContainerTask(
+            findTask: TaskProvider<FindContainer>, volumes: Map<String, String>,
+            env: ContainerEnvironment,
+    ): TaskProvider<CreateExtraContainer> {
+        return registerCreateContainerTask(findTask, CreateExtraContainer::class.java, project.provider { volumes },
+                project.provider { env })
+    }
 
-        task.containerName.set(getContainerName())
+    /**
+     * Registers the task that creates the container
+     * @param findTask a [TaskProvider] pointing to the [FindContainer]-task
+     * @param taskType the actual task type to be created
+     * @param volumes a [Provider] for the volumes to be bound. Local directories are created on demand.
+     * @param env a [Provider] for the container environment to be used
+     * @return a [TaskProvider] pointing to the registered task
+     */
+    protected fun <T> registerCreateContainerTask(
+            findTask: TaskProvider<FindContainer>, taskType: Class<T>,
+            volumes: Provider<Map<String, String>>,
+            env: Provider<ContainerEnvironment>,
+    ): TaskProvider<T> where T : CreateExtraContainer {
+        return project.tasks.register(taskNameOf("create"), taskType) { task ->
+            task.group = taskGroup
+            task.description = "Creates the ${getContainerExt()}-container is not already existing"
+            task.attachStderr.set(true)
+            task.attachStdout.set(true)
+            task.hostConfig.autoRemove.set(true)
 
-        val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
-        if(useHostUser() && !os.isWindows) {
-            val system = com.sun.security.auth.module.UnixSystem()
-            val uid = system.uid
-            val userName = system.username
-            val gid = system.gid
-            project.logger.info("Using user {}({}:{}) to start container {}", userName, uid, gid, getContainerName())
-            task.user.set(uid.toString())
+            task.targetImageId(project.provider { pullTask.get().image.get() })
+            task.image.set(project.provider { pullTask.get().image.get() })
+
+            task.hostConfig.network.set(networkId)
+            task.withEnvironment(env)
+
+            task.dependsOn(findTask, networkTask)
+            task.existingContainer.set(project.provider { findTask.get().foundContainer.orNull })
+            task.containerName.set(getContainerName())
+
+            val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
+            if (useHostUser() && !os.isWindows) {
+                val system = com.sun.security.auth.module.UnixSystem()
+                val uid = system.uid
+                val userName = system.username
+                val gid = system.gid
+                project.logger.info("Using user {}({}:{}) to start container {}", userName, uid, gid,
+                        getContainerName())
+                task.user.set(uid.toString())
+            }
+
+            task.withVolumes(volumes)
+
+            task.doFirst {
+                volumes.get().forEach { (path, _) -> File(path).mkdirs() }
+            }
+        }
+    }
+
+    /**
+     * Same as [registerStartContainerTask] using `taskType == StartExtraContainer`.
+     */
+    protected fun registerStartContainerTask(
+            createTask: TaskProvider<CreateExtraContainer>,
+    ): TaskProvider<StartExtraContainer> {
+        return registerStartContainerTask(createTask, StartExtraContainer::class.java)
+    }
+
+    /**
+     * Registers the task that starts the container
+     * @param createTask a [TaskProvider] pointing to the [CreateExtraContainer]-task
+     * @param taskType the actual task type to be created
+     * @return a [TaskProvider] pointing to the registered task
+     */
+    protected fun <T> registerStartContainerTask(
+            createTask: TaskProvider<out CreateExtraContainer>,
+            taskType: Class<T>,
+    ): TaskProvider<T> where T : StartExtraContainer {
+        return project.tasks.register<T>(taskNameOf("start"), taskType) { task ->
+            task.group = taskGroup
+            task.description = "Starts the ${getContainerExt()}-container if not already running"
+
+
+            task.dependsOn(createTask, networkTask)
+            task.container.set(project.provider {
+                createTask.get().createdContainer.orNull
+            })
         }
     }
 }

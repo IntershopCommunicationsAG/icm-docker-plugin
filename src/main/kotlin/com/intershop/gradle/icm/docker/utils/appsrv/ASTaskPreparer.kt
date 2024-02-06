@@ -16,42 +16,60 @@
  */
 package com.intershop.gradle.icm.docker.utils.appsrv
 
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.tasks.CreateASContainer
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.HostAndPort
-import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.getByType
 import java.net.URI
 
-class ServerTaskPreparer(
-    project: Project,
-    val networkTask: Provider<PrepareNetwork>) : AbstractASTaskPreparer(project, networkTask) {
+class ASTaskPreparer(
+        project: Project,
+        val networkTask: Provider<PrepareNetwork>,
+) : AbstractASTaskPreparer(project, networkTask) {
 
     companion object {
         const val extName: String = "AS"
     }
 
-    override fun getImage(): Provider<String> {
-        if(dockerExtension.developmentConfig.getConfigProperty(
-                Configuration.AS_USE_TESTIMAGE,
-                Configuration.AS_USE_TESTIMAGE_VALUE
-            ).toBoolean()) {
-            return icmExtension.projectConfig.base.testImage
-        }
-        return icmExtension.projectConfig.base.image
-    }
-
     override fun getExtensionName(): String = extName
 
     init {
-        project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
+        val volumes = project.provider { getServerVolumes() }
+
+        val createTask = registerCreateASContainerTask(findTask, volumes)
+        createTask.configure { task ->
+            task.withPortMappings(*getPortMappings().toTypedArray())
+            task.forCustomization(dockerExtension.containerPrefix)
+        }
+
+        registerStartContainerTask(createTask, StartServerContainer::class.java).configure { task ->
+            task.description = """
+                Starts Production Application Server in a container.
+                ATTENTION: task ${
+                taskNameOf("create")
+            } is executed in preparation of this task and supports parameters that you may expect to get supported by this task.
+            """.trimIndent()
+            task.withHttpProbe(
+                    URI.create(
+                            CreateASContainer.PATTERN_READINESS_PROBE_URL.format(
+                                    devConfig.asPortConfiguration.managementConnector.get().hostPort
+                            )
+                    ),
+                    devConfig.getDurationProperty(
+                            Configuration.AS_READINESS_PROBE_INTERVAL,
+                            Configuration.AS_READINESS_PROBE_INTERVAL_VALUE
+                    ),
+                    devConfig.getDurationProperty(
+                            Configuration.AS_READINESS_PROBE_TIMEOUT,
+                            Configuration.AS_READINESS_PROBE_TIMEOUT_VALUE
+                    )
+            )
+        }
+
+        /* FIXME SKR project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
+
             configureContainerTask(task)
 
             task.description = "Starts Production Application Server in a container"
@@ -130,19 +148,9 @@ class ServerTaskPreparer(
                     HostAndPort(mailHost, mailPort.toInt())
                 }
             }
-        }
-    }
 
-    private val  zkTaskProvider: Provider<StartExtraContainer>? by lazy {
-        try {
-            project.tasks.named(
-                "start${ZKPreparer.extName}",
-                StartExtraContainer::class.java
-            )
-        } catch (ex: UnknownTaskException) {
-            project.logger.info("ZooKeeper tasks not found")
-            null
-        }
+
+        }*/
     }
 }
 

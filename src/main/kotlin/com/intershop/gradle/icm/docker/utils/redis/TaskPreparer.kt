@@ -17,7 +17,7 @@
 package com.intershop.gradle.icm.docker.utils.redis
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.PortMapping
@@ -30,31 +30,24 @@ class TaskPreparer(
 ) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
-        const val extName: String = "Redis"
-        const val containerPort = 6379
+        const val EXT_NAME: String = "Redis"
+        const val CONTAINER_PORT = 6379
     }
 
-    override fun getExtensionName(): String = extName
+    override fun getExtensionName(): String = EXT_NAME
 
     override fun getImage(): Provider<String> = dockerExtension.images.redis
     override fun getUseHostUserConfigProperty(): String = Configuration.REDIS_USE_HOST_USER
 
     init {
         initBaseTasks()
+        val portMapping = PortMapping(EXT_NAME, CONTAINER_PORT, CONTAINER_PORT, true)
 
-        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
-            task.description = "Starts a Redis instance for p.e PageCache"
-
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            val portMapping = PortMapping(extName, containerPort, containerPort, true)
+        val createTask = registerCreateContainerTask(findTask, mapOf(), ContainerEnvironment())
+        createTask.configure { task ->
             task.withPortMappings(portMapping)
-            task.hostConfig.network.set(networkId)
-
-            task.dependsOn(pullTask, networkTask)
         }
+        registerStartContainerTask(createTask)
     }
 
 }

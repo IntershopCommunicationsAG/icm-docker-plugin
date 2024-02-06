@@ -19,7 +19,7 @@ package com.intershop.gradle.icm.docker
 import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.readme.push.ImageConfiguration
-import com.intershop.gradle.icm.docker.tasks.PullExtraImage
+import com.intershop.gradle.icm.docker.tasks.PullImage
 import com.intershop.gradle.icm.docker.tasks.readmepush.CreateToolContainer
 import com.intershop.gradle.icm.docker.tasks.readmepush.LogToolContainer
 import org.gradle.api.Plugin
@@ -46,7 +46,7 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
                     IntershopDockerExtension::class.java
                 ) ?: extensions.create("intershop_docker", IntershopDockerExtension::class.java, project)
 
-                val pullImg = project.tasks.register("pullReadmePush", PullExtraImage::class.java) { task ->
+                val pullImg = project.tasks.register("pullReadmePush", PullImage::class.java) { task ->
                     task.group = "icm container readme push"
                     task.description = "Pull image from registry for pushing readme"
                     task.image.set(extension.readmePush.toolImage)
@@ -80,11 +80,13 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
         }
     }
 
-    private fun createContainerTask(project: Project,
-                              ext: String,
-                              baseImg: Property<String>,
-                              conf: ImageConfiguration,
-                              pullTask: Provider<PullExtraImage>): Provider<CreateToolContainer> =
+    private fun createContainerTask(
+            project: Project,
+            ext: String,
+            baseImg: Property<String>,
+            conf: ImageConfiguration,
+            pullTask: Provider<PullImage>,
+    ): Provider<CreateToolContainer> =
         project.tasks.register("createReadmePush${ext}",
             CreateToolContainer::class.java) { task ->
             task.description = "Create image for pushing readme for $ext container"
@@ -115,12 +117,12 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
             task.onlyIf {
                 val returnValue = conf.enabled.getOrElse(false)
                 if (!returnValue) {
-                    project.logger.quiet("Task {} skipped, because it is not enabled.")
+                    project.logger.quiet("Task {} skipped, because it is not enabled.", it.name)
                 }
                 val runOnCICheck = project.hasProperty("runOnCI") &&
                         project.property("runOnCI") == "true"
                 if (!runOnCICheck) {
-                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
+                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.", it.name)
                 }
                 runOnCICheck && returnValue
             }
@@ -141,12 +143,12 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
             task.onlyIf {
                 val returnValue = conf.enabled.getOrElse(false)
                 if(! returnValue) {
-                    project.logger.quiet("Task {} skipped, because it is not enabled.")
+                    project.logger.quiet("Task {} skipped, because it is not enabled.", it.name)
                 }
                 val runOnCICheck = project.hasProperty("runOnCI") &&
                         project.property("runOnCI") == "true"
                 if (!runOnCICheck) {
-                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
+                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.", it.name)
                 }
                 runOnCICheck && returnValue
             }
@@ -165,12 +167,12 @@ open class ICMDockerReadmePushPlugin : Plugin<Project> {
             task.onlyIf {
                 val returnValue = conf.enabled.getOrElse(false)
                 if (!returnValue) {
-                    project.logger.quiet("Task {} skipped, because it is not enabled.")
+                    project.logger.quiet("Task {} skipped, because it is not enabled.", it.name)
                 }
                 val runOnCICheck = project.hasProperty("runOnCI") &&
                         project.property("runOnCI") == "true"
                 if (!runOnCICheck) {
-                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.")
+                    project.logger.quiet("Task {} skipped, because runOnCI is false or not configured.", it.name)
                 }
                 runOnCICheck && returnValue
             }

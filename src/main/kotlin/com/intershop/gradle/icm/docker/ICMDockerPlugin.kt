@@ -38,8 +38,6 @@ import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLPreparer
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
 import com.intershop.gradle.icm.docker.utils.nginx.TaskPreparer as NginxTaskPreparer
-import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OraclePreparer
-import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
 import com.intershop.gradle.icm.docker.utils.redis.TaskPreparer as RedisTaskPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrCloudPreparer
 import com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer as SolrTaskPreparer
@@ -80,7 +78,6 @@ open class ICMDockerPlugin : Plugin<Project> {
             val networkTasks = NetworkPreparer(project, extension)
 
             val mssqlTasks = MSSQLPreparer(project, networkTasks.createNetworkTask)
-            val oracleTasks = OraclePreparer(project, networkTasks.createNetworkTask)
             val mailSrvTask = MailSrvPreparer(project, networkTasks.createNetworkTask)
             val solrcloudPreparer = SolrCloudPreparer(project, networkTasks)
 
@@ -91,7 +88,6 @@ open class ICMDockerPlugin : Plugin<Project> {
             try {
                 tasks.named("dbPrepare").configure {
                     it.mustRunAfter(mssqlTasks.startTask)
-                    it.mustRunAfter(oracleTasks.startTask)
                 }
             } catch (ex: UnknownTaskException) {
                 project.logger.info("No dbPrepare task available!")
@@ -106,7 +102,6 @@ open class ICMDockerPlugin : Plugin<Project> {
                         mailSrvTask.removeTask,
                         webServerTasks.removeTask,
                         nginxTasks.removeTask,
-                        oracleTasks.removeTask,
                         solrcloudPreparer.removeTask,
                         redisTasks.removeTask)
             }
@@ -143,7 +138,7 @@ open class ICMDockerPlugin : Plugin<Project> {
             task.group = GROUP_CONTAINER
             task.description = "Start all container from Docker for the selected environment"
             if (list.contains("mail")) {
-                task.dependsOn("start${MailTaskPreparer.extName}")
+                task.dependsOn("start${MailTaskPreparer.EXT_NAME}")
             }
             if (list.contains("webserver")) {
                 task.dependsOn("start${WebTaskPreparer.TASK_EXT_SERVER}")
@@ -152,16 +147,13 @@ open class ICMDockerPlugin : Plugin<Project> {
                 task.dependsOn("start${SolrTaskPreparer.TASK_EXT_SERVER}")
             }
             if (list.contains("mssql")) {
-                task.dependsOn("start${MSSQLTaskPreparer.extName}")
-            }
-            if (list.contains("oracle")) {
-                task.dependsOn("start${OracleTaskPreparer.extName}")
+                task.dependsOn("start${MSSQLTaskPreparer.EXT_NAME}")
             }
             if (list.contains("nginx")) {
-                task.dependsOn("start${NginxTaskPreparer.extName}")
+                task.dependsOn("start${NginxTaskPreparer.EXT_NAME}")
             }
             if (list.contains("redis")) {
-                task.dependsOn("start${RedisTaskPreparer.extName}")
+                task.dependsOn("start${RedisTaskPreparer.EXT_NAME}")
             }
         }
 
@@ -169,7 +161,7 @@ open class ICMDockerPlugin : Plugin<Project> {
             task.group = GROUP_CONTAINER
             task.description = "Stops all container from Docker for the selected environment"
             if (list.contains("mail")) {
-                task.dependsOn("stop${MailTaskPreparer.extName}")
+                task.dependsOn("stop${MailTaskPreparer.EXT_NAME}")
             }
             if (list.contains("webserver")) {
                 task.dependsOn("stop${WebTaskPreparer.TASK_EXT_SERVER}")
@@ -178,16 +170,13 @@ open class ICMDockerPlugin : Plugin<Project> {
                 task.dependsOn("stop${SolrTaskPreparer.TASK_EXT_SERVER}")
             }
             if (list.contains("mssql")) {
-                task.dependsOn("stop${MSSQLTaskPreparer.extName}")
-            }
-            if (list.contains("oracle")) {
-                task.dependsOn("stop${OracleTaskPreparer.extName}")
+                task.dependsOn("stop${MSSQLTaskPreparer.EXT_NAME}")
             }
             if (list.contains("nginx")) {
-                task.dependsOn("stop${NginxTaskPreparer.extName}")
+                task.dependsOn("stop${NginxTaskPreparer.EXT_NAME}")
             }
             if (list.contains("redis")) {
-                task.dependsOn("stop${RedisTaskPreparer.extName}")
+                task.dependsOn("stop${RedisTaskPreparer.EXT_NAME}")
             }
         }
     }

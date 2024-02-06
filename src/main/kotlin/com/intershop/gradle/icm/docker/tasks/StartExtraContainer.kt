@@ -19,20 +19,16 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
-import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
+import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerLogWatcher
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
-import com.intershop.gradle.icm.docker.utils.PortMapping
 import com.intershop.gradle.icm.utils.HttpProbe
 import com.intershop.gradle.icm.utils.Probe
 import com.intershop.gradle.icm.utils.SocketProbe
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
@@ -43,69 +39,22 @@ import javax.inject.Inject
 import kotlin.concurrent.thread
 
 open class StartExtraContainer
-@Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
-
-    private val finishedCheckProperty: Property<String> = objectFactory.property(String::class.java)
-    private val timeoutProperty: Property<Long> = objectFactory.property(Long::class.java)
-    private val portMappings: MapProperty<String, PortMapping> =
-            objectFactory.mapProperty(String::class.java, PortMapping::class.java)
+@Inject constructor(objectFactory: ObjectFactory) : DockerStartContainer() {
 
     /**
-     * Set an string for log file check. Log is displayed as long
+     * Set a string for log file check. Log is displayed as long
      * the string was not part of the output.
      */
     @get:Optional
     @get:Input
-    var finishedCheck: String
-        get() = finishedCheckProperty.get()
-        set(value) = finishedCheckProperty.set(value)
+    val finishedCheck: Property<String> = objectFactory.property(String::class.java)
 
     /**
-     * Milliseconds for waiting on the finish string.
-     * Default is 600000.
+     * Max duration for the container to start up (only evaluated if [finishedCheck] is set)
      */
     @get:Input
-    var timeout: Long
-        get() = timeoutProperty.get()
-        set(value) = timeoutProperty.set(value)
-
-    /**
-     * Returns a [Provider] that provides the primary port mapping if there is such a port mapping otherwise
-     * [Provider.get] will fail
-     */
-    @Internal
-    fun getPrimaryPortMapping(): Provider<PortMapping> = project.provider {
-        this.portMappings.get().values.firstOrNull { mapping -> mapping.primary }
-    }
-
-    /**
-     * Returns all port mappings
-     */
-    @Internal
-    fun getPortMappings(): Set<PortMapping> =
-            this.portMappings.get().values.toSet()
-
-    /**
-     * Adds port mappings to be used with the container
-     */
-    fun withPortMappings(vararg portMappings: PortMapping) {
-        portMappings.forEach { currPortMapping ->
-            // check if there's already a primary port mapping
-            if (currPortMapping.primary && getPrimaryPortMapping().isPresent) {
-                throw GradleException("Duplicate primary port mapping detected for task $name")
-            }
-
-            this.portMappings.put(currPortMapping.name, currPortMapping)
-            hostConfig.portBindings.add(project.provider { currPortMapping.render() })
-        }
-    }
-
-    /**
-     * Applies the given `environment` to this task's [DockerCreateContainer.envVars] (using [MapProperty.putAll])
-     */
-    fun withEnvironment(environment: ContainerEnvironment) {
-        envVars.putAll(environment.toMap())
-    }
+    val startupTimeout: Property<Duration> =
+            objectFactory.property(Duration::class.java).convention(Duration.ofSeconds(900))
 
     @get:Input
     val probes: ListProperty<Probe> = project.objects.listProperty(Probe::class.java)
@@ -136,95 +85,83 @@ open class StartExtraContainer
     @get:Input
     val enableLogWatcher: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(false)
 
+    @get:Input
+    val container: Property<ContainerHandle> = project.objects.property(ContainerHandle::class.java)
+
     init {
-        finishedCheckProperty.convention("")
-        timeoutProperty.convention(900000)
-    }
-
-    override fun runRemoteCommand() {
-        var containerCreated = false
-        var containerRunning = false
-
-        val iterator =
-                dockerClient.listContainersCmd().withShowAll(true).withNameFilter(listOf("/${containerName.get()}"))
-                        .exec().iterator()
-
-        while (iterator.hasNext()) {
-            val container = iterator.next()
-            if (container.names.contains("/${containerName.get()}")) {
-                if (container.image != image.get()) {
-                    throw GradleException(
-                            "The running container was started with image '" + container.image +
-                            "', but the configured image is '" + image.get() +
-                            "'. Please remove running containers!"
-                    )
-                }
-
-                containerId.set(container.id)
-                containerCreated = true
-                containerRunning = (container.state == "running")
-            }
-        }
-
-        if (!containerRunning) {
-            if (!containerCreated) {
-                super.runRemoteCommand()
-            } else {
-                logger.quiet("Container '{}' still exists.", containerName.get())
-            }
-
-            logger.info("Starting container '{}' with ID '{}' using the following port mappings: {}.",
-                    containerName.get(), containerId.get(), getPortMappings())
-            logger.info("Starting container '{}' with ID '{}' using volumes: {}",
-                    containerName.get(), containerId.get(), volumes.get())
-
-            val startCommand = dockerClient.startContainerCmd(containerId.get())
-            startCommand.exec()
-
-            val logWatcherHandle: AutoCloseable? = if (enableLogWatcher.get()) {
-                ContainerLogWatcher(project, dockerClient).start(containerId.get())
+        containerId.convention(project.provider {
+            if (container.isPresent) {
+                container.get().getContainerId()
             } else {
                 null
             }
-
-            try {
-                with(probes.get()) {
-                    forEach { probe ->
-                        val success = probe.execute()
-                        if (!success) {
-                            throw GradleException(
-                                    "Container '${containerName.get()}' failed to start properly probe $probe failed")
-                        }
-                        project.logger.debug("Probe '{}' was executed successfully on container '{}'.",
-                                probe, containerName.get())
-                    }
-                    project.logger.quiet("Container '{}' started properly.", containerName.get())
-                }
-
-
-                // TODO remove when all containers use probes
-                if (finishedCheckProperty.get().isNotBlank()) {
-                    try {
-                        Thread.sleep(5000)
-                    } catch (e: Exception) {
-                        throw e
-                    }
-
-                    waitForLogout()
-                }
-            } catch (e: Exception) {
-                onFailure(e)
-            } finally {
-                logWatcherHandle?.close()
+        })
+        @Suppress("LeakingThis")
+        onlyIf("Container not running") {
+            val containerRuns = isAlreadyRunning()
+            if (containerRuns) {
+                project.logger.quiet("{} still is running, skipping to start it", container.get())
             }
-
-        } else {
-            logger.quiet("Container '{}' is still running.", containerName.get())
+            !containerRuns
         }
     }
 
+    override fun runRemoteCommand() {
+        if (isAlreadyRunning()) {
+            throw GradleException("Expecting ${container.get()} to not currently run but it does.")
+        }
+
+        logger.quiet("Starting {}.", container.get())
+
+        val startCommand = dockerClient.startContainerCmd(containerId.get())
+        startCommand.exec()
+
+        val logWatcherHandle: AutoCloseable? = if (enableLogWatcher.get()) {
+            ContainerLogWatcher(project, dockerClient).start(containerId.get())
+        } else {
+            null
+        }
+
+        try {
+            with(probes.get()) {
+                forEach { probe ->
+                    val success = probe.execute()
+                    if (!success) {
+                        throw GradleException(
+                                "Container ${container.get()} failed to start properly: probe $probe failed")
+                    }
+                    project.logger.debug("Probe '{}' was executed successfully on {}.",
+                            probe, container.get())
+                }
+                project.logger.quiet("{} started properly.", container.get())
+            }
+
+
+            // TODO remove when all containers use probes
+            if (finishedCheck.isPresent) {
+                try {
+                    Thread.sleep(5000)
+                } catch (e: Exception) {
+                    throw e
+                }
+
+                waitForLogout()
+            }
+        } catch (e: Exception) {
+            onFailure(e)
+        } finally {
+            logWatcherHandle?.close()
+        }
+    }
+
+    @Internal
+    protected fun getContainerName(): String? = container.map { c -> c.getContainerName() }.orNull
+
+    @Internal
+    protected fun isAlreadyRunning(): Boolean = container.map { c -> c.isRunning() }.getOrElse(false)
+
     protected fun waitForLogout() {
-        if (finishedCheckProperty.isPresent && finishedCheckProperty.get().isNotEmpty()) {
+        if (finishedCheck.isPresent && finishedCheck.get().isNotEmpty()) {
             logger.quiet("Starting logging for container with ID '${containerId.get()}'.")
             val logCommand = dockerClient.logContainerCmd(containerId.get())
             logCommand.withStdErr(true)
@@ -232,16 +169,16 @@ open class StartExtraContainer
             logCommand.withTailAll()
             logCommand.withFollowStream(true)
 
-            val localProbe = ExecProbe(timeoutProperty.get(), 5000)
+            val localProbe = ExecProbe(startupTimeout.get().toMillis(), 5000)
 
             // create progressLogger for pretty printing of terminal log progression.
-            val progressLogger = IOUtils.getProgressLogger(project, this.javaClass)
+            val progressLogger = IOUtils.getProgressLogger(services, this.javaClass)
             try {
                 var localPollTime = localProbe.pollTime
                 var pollTimes = 0
 
                 progressLogger.started()
-                val containerCallback = LogContainerCallback(project.logger, finishedCheckProperty.get())
+                val containerCallback = LogContainerCallback(project.logger, finishedCheck.get())
 
                 thread(start = true) {
                     try {
@@ -283,8 +220,8 @@ open class StartExtraContainer
     }
 
     protected fun onFailure(cause: Exception) {
-        project.logger.quiet("Stopping failed container '{}'", containerName.get())
-        dockerClient.stopContainerCmd(containerId.get()).exec()
+        project.logger.quiet("Stopping failed {}", container.get())
+        dockerClient.stopContainerCmd(container.get().getContainerId()).exec()
         throw cause
     }
 }

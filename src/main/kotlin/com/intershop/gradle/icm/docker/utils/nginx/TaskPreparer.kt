@@ -16,8 +16,9 @@
  */
 package com.intershop.gradle.icm.docker.utils.nginx
 
+import com.intershop.gradle.icm.docker.tasks.CreateExtraContainer
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
 import org.gradle.api.GradleException
@@ -31,7 +32,7 @@ class TaskPreparer(
 ) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
-        const val extName: String = "NGINX"
+        const val EXT_NAME: String = "NGINX"
         const val HTTP_CONTAINER_PORT: Int = 80
         const val HTTPS_CONTAINER_PORT: Int = 443
 
@@ -43,7 +44,7 @@ class TaskPreparer(
         const val VOLUME_SSL = "/etc/nginx/ssl"
     }
 
-    override fun getExtensionName(): String = extName
+    override fun getExtensionName(): String = EXT_NAME
 
     override fun getImage(): Provider<String> = dockerExtension.images.nginx
     override fun getUseHostUserConfigProperty(): String = Configuration.NGINX_USE_HOST_USER
@@ -51,89 +52,82 @@ class TaskPreparer(
     init {
         initBaseTasks()
 
-        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
-            configureContainerTask(task)
-            task.description = "Starts an NGINX server configured as a reverse proxy"
-
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            with(dockerExtension.developmentConfig) {
-                val httpPortMapping = getPortMapping(
-                    "HTTP",
-                    Configuration.NGINX_HTTP_PORT,
-                    Configuration.NGINX_HTTP_PORT_VALUE,
-                    HTTP_CONTAINER_PORT,
-                    false
-                )
-                val httpsPortMapping = getPortMapping(
-                    "HTTPS",
-                    Configuration.NGINX_HTTPS_PORT,
-                    Configuration.NGINX_HTTPS_PORT_VALUE,
-                    HTTPS_CONTAINER_PORT,
-                    true
-                )
-                task.withPortMappings(httpPortMapping, httpsPortMapping)
-                task.hostConfig.network.set(networkId)
-
-                task.envVars.set(
-                    mutableMapOf(
-                        ENV_UPSTREAM_HOST to getConfigProperty(
+        val httpPortMapping = devConfig.getPortMapping(
+                "HTTP",
+                Configuration.NGINX_HTTP_PORT,
+                Configuration.NGINX_HTTP_PORT_VALUE,
+                HTTP_CONTAINER_PORT,
+                false
+        )
+        val httpsPortMapping = devConfig.getPortMapping(
+                "HTTPS",
+                Configuration.NGINX_HTTPS_PORT,
+                Configuration.NGINX_HTTPS_PORT_VALUE,
+                HTTPS_CONTAINER_PORT,
+                true
+        )
+        val env = project.provider {
+            ContainerEnvironment().addAll(
+                    ENV_UPSTREAM_HOST to devConfig.getConfigProperty(
                             Configuration.LOCAL_CONNECTOR_HOST,
                             Configuration.LOCAL_CONNECTOR_HOST_VALUE
-                        ),
-                        ENV_UPSTREAM_PORT to getConfigProperty(
+                    ),
+                    ENV_UPSTREAM_PORT to devConfig.getConfigProperty(
                             Configuration.AS_SERVICE_CONNECTOR_PORT,
                             Configuration.AS_SERVICE_CONNECTOR_PORT_VALUE.toString()
-                        ),
-                        ENV_SSL_CERTIFICATEFILENAME to
-                                getConfigProperty(
+                    ),
+                    ENV_SSL_CERTIFICATEFILENAME to
+                            devConfig.getConfigProperty(
                                     Configuration.NGINX_CERT_FILENAME,
                                     Configuration.NGINX_CERT_FILENAME_VALUE
-                                ),
-                        ENV_SSL_PRIVATEKEYFILENAME to
-                                getConfigProperty(
+                            ),
+                    ENV_SSL_PRIVATEKEYFILENAME to
+                            devConfig.getConfigProperty(
                                     Configuration.NGINX_PRIVATEKEY_FILENAME,
                                     Configuration.NGINX_PRIVATEKEY_FILENAME_VALUE
-                                )
-                    )
-                )
-
-                val nginxCertPath = dockerExtension.developmentConfig.getConfigProperty(Configuration.NGINX_CERT_PATH)
-                val wsCertPath = dockerExtension.developmentConfig.getConfigProperty(Configuration.WS_CERT_PATH)
-
-                // if NginxCertPath is not set, we take the webserver certificate path instead
-                val certPath: String
-                val configOption: String
-                if (nginxCertPath.isBlank() && wsCertPath.isBlank()) {
-                    throw GradleException(
-                        "Missing or empty property '${Configuration.NGINX_CERT_PATH}' in your " +
-                                "icm.properties!"
-                    )
-                } else {
-                    certPath = if (nginxCertPath.isNotBlank()) {
-                        configOption = Configuration.NGINX_CERT_PATH
-                        nginxCertPath
-                    } else {
-                        configOption = Configuration.WS_CERT_PATH
-                        wsCertPath
-                    }
-                }
-
-                val certDir = File(certPath)
-                if (!certDir.exists()) {
-                    throw GradleException(
-                        "Property '${configOption}' in your icm.properties " +
-                                "points to a non-existing or non-accessible path: '${certPath}'"
-                    )
-                }
-
-                task.hostConfig.binds.set(
-                    mutableMapOf(certDir.absolutePath to VOLUME_SSL)
-                )
-            }
-            task.dependsOn(pullTask, networkTask)
+                            )
+            )
         }
+        val volumes = project.provider { mapOf(getCertDir().absolutePath to VOLUME_SSL) }
+
+        val createTask = registerCreateContainerTask(findTask, CreateExtraContainer::class.java, volumes, env)
+        createTask.configure { task ->
+            task.withPortMappings(httpPortMapping, httpsPortMapping)
+        }
+
+        registerStartContainerTask(createTask)
     }
 
+    private fun getCertDir(): File {
+        val nginxCertPath = devConfig.getConfigProperty(Configuration.NGINX_CERT_PATH)
+        val wsCertPath = devConfig.getConfigProperty(Configuration.WS_CERT_PATH)
+
+        // if NginxCertPath is not set, we take the webserver certificate path instead
+        val certPath: String
+        val configOption: String
+        if (nginxCertPath.isBlank() && wsCertPath.isBlank()) {
+            throw GradleException(
+                    "Missing or empty property '${Configuration.NGINX_CERT_PATH}' in your " +
+                    "icm.properties!"
+            )
+        } else {
+            certPath = if (nginxCertPath.isNotBlank()) {
+                configOption = Configuration.NGINX_CERT_PATH
+                nginxCertPath
+            } else {
+                configOption = Configuration.WS_CERT_PATH
+                wsCertPath
+            }
+        }
+
+        val certDir = File(certPath)
+        if (!certDir.exists()) {
+            throw GradleException(
+                    "Property '${configOption}' in your icm.properties " +
+                    "points to a non-existing or non-accessible path: '${certPath}'"
+            )
+        }
+
+        return certDir
+    }
 }

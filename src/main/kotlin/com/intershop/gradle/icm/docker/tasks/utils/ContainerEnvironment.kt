@@ -18,7 +18,6 @@ package com.intershop.gradle.icm.docker.tasks.utils
 
 import org.gradle.api.provider.Provider
 import java.io.Serializable
-import java.lang.IllegalStateException
 
 /**
  * Encapsulates environment variables to be used when starting a container. If [Provider]s are added they are stored
@@ -44,6 +43,24 @@ open class ContainerEnvironment : Serializable {
     fun add(key: String, value: Any?): ContainerEnvironment {
         if (value != null) {
             this.entries[key] = value
+        }
+        return this
+    }
+
+
+    /**
+     * Just calls [ContainerEnvironment.add] with `key=Pair.first` and `value=Pair.second`
+     */
+    fun add(entry: Pair<String, Any?>): ContainerEnvironment {
+        return add(entry.first, entry.second)
+    }
+
+    /**
+     * Adds multiply environment variables calling [ContainerEnvironment.add] for each
+     */
+    fun addAll(vararg entries: Pair<String, Any?>): ContainerEnvironment {
+        entries.forEach {
+            add(it)
         }
         return this
     }

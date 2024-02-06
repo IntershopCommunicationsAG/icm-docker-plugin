@@ -210,15 +210,26 @@ open class DevelopmentConfiguration
         get() = File(configDirectory, CONFIG_FILE_NAME).absolutePath
 
     fun getConfigProperty(property: String): String {
-        return configProperties.getProperty(property, "")
+        return getConfigProperty(property, "")
     }
 
     fun getConfigProperty(property: String, defaultValue: String): String {
-        return configProperties.getProperty(property, defaultValue)
+        return getConfigProperty(property, defaultValue) {
+            it.isNullOrBlank()
+        }
+    }
+
+    fun getConfigProperty(property: String, defaultValue: String, isEmpty: (String?) -> Boolean): String {
+        val value = configProperties.getProperty(property)
+        return if (isEmpty.invoke(value)) {
+            defaultValue
+        } else {
+            value
+        }
     }
 
     fun getIntProperty(property: String, defaultValue: Int): Int {
-        val strValue = configProperties.getProperty(property, defaultValue.toString())
+        val strValue = getConfigProperty(property, defaultValue.toString())
         try {
             return strValue.toInt()
         } catch (e: NumberFormatException) {
@@ -228,12 +239,17 @@ open class DevelopmentConfiguration
     }
 
     fun getBooleanProperty(property: String, defaultValue: Boolean): Boolean {
-        val strValue = configProperties.getProperty(property, defaultValue.toString())
+        val strValue = getConfigProperty(property, defaultValue.toString())
         return strValue.toBoolean()
     }
 
     fun getDurationProperty(property: String, defaultSeconds: Int): Duration {
         return Duration.ofSeconds(getIntProperty (property, defaultSeconds).toLong())
+    }
+
+    fun getFileProperty(property: String, defaultValue: File): File {
+        val strValue = getConfigProperty(property, defaultValue.absolutePath)
+        return File(strValue)
     }
 
     /**

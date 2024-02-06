@@ -41,20 +41,6 @@ object Configuration {
 
     const val DB_MSSQL_USE_HOST_USER = "intershop.db.mssql.useHostUser"
 
-    const val DB_ORACLE_LISTENERPORT = "intershop.db.oracle.listenerport"
-    const val DB_ORACLE_CONTAINER_LISTENERPORT = "intershop.db.container.oracle.listenerport"
-
-    const val DB_ORACLE_PORT = "intershop.db.oracle.port"
-    const val DB_ORACLE_CONTAINER_PORT = "intershop.db.container.oracle.port"
-
-    const val DB_ORACLE_LISTENERPORT_VALUE = "1521"
-    const val DB_ORACLE_CONTAINER_LISTENERPORT_VALUE = "1521"
-
-    const val DB_ORACLE_PORT_VALUE = "5500"
-    const val DB_ORACLE_CONTAINER_PORT_VALUE = "5500"
-
-    const val DB_ORACLE_USE_HOST_USER = "intershop.db.oracle.useHostUser"
-
     const val DB_TYPE = "intershop.databaseType"
     const val DB_JDBC_URL = "intershop.jdbc.url"
 
