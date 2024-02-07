@@ -37,6 +37,10 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
 
     val mssqldb: Property<String> = objectFactory.property(String::class.java)
 
+    @Deprecated(
+            message = "DB vendor Oracle unsupported since 5.0.0 and no longer used",
+            level = DeprecationLevel.WARNING
+    )
     val oracledb: Property<String> = objectFactory.property(String::class.java)
 
     val mailsrv: Property<String> = objectFactory.property(String::class.java)
@@ -56,7 +60,6 @@ open class Images @Inject constructor(objectFactory: ObjectFactory) {
         solr.convention("solr:latest")
         zookeeper.convention("zookeeper:latest")
         mssqldb.convention("intershophub/mssql-intershop:2019-latest")
-        oracledb.convention("intershophub/oracle-intershop:latest")
 
         mailsrv.convention("mailhog/mailhog:latest")
 

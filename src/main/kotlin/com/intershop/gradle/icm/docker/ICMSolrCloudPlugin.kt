@@ -30,7 +30,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration.AS_ADMIN_USER_PASSWOR
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_HOSTLIST
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_INDEXPREFIX
 import com.intershop.gradle.icm.docker.utils.Configuration.SSL_VERIFICATION
-import com.intershop.gradle.icm.docker.utils.appsrv.ServerTaskPreparer
+import com.intershop.gradle.icm.docker.utils.appsrv.ASTaskPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -63,7 +63,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                         StartExtraContainer::class.java
                 )
                 val startASProvider = tasks.named(
-                        "start${ServerTaskPreparer.extName}",
+                        "start${ASTaskPreparer.extName}",
                         StartServerContainer::class.java
                 )
 

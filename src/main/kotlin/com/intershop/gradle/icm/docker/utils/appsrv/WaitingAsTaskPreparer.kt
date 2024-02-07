@@ -16,26 +16,19 @@
  */
 package com.intershop.gradle.icm.docker.utils.appsrv
 
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.tasks.StartServerContainer
-import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.HostAndPort
-import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.getByType
 
-class ContainerTaskPreparer(
-    project: Project,
-    networkTask: Provider<PrepareNetwork>
+class WaitingAsTaskPreparer(
+        project: Project,
+        networkTask: Provider<PrepareNetwork>,
 ) : AbstractASTaskPreparer(project, networkTask) {
 
     companion object {
-        const val extName: String = "Container"
+        const val EXT_NAME: String = "WaitingAs"
     }
 
     override fun getImage(): Provider<String> {
@@ -48,11 +41,30 @@ class ContainerTaskPreparer(
         return icmExtension.projectConfig.base.image
     }
 
-    override fun getExtensionName(): String = extName
+    override fun getExtensionName(): String = EXT_NAME
 
     init {
-        project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
-            configureContainerTask(task)
+        val volumes = project.provider { getServerVolumes() }
+
+        val createTask = registerCreateASContainerTask(findTask, volumes)
+        createTask.configure { task ->
+            task.withPortMappings(*getPortMappings().toTypedArray())
+            task.forCustomization(dockerExtension.containerPrefix)
+            task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
+        }
+
+        registerStartContainerTask(createTask, StartServerContainer::class.java).configure { task ->
+            task.description = """
+                Starts a container without any special command (wait/sleep)
+                ATTENTION: task ${
+                taskNameOf("create")
+            } is executed in preparation of this task and supports parameters that you may expect to get supported by this task.
+            """.trimIndent()
+        }
+
+
+        /* FIXME SKR  project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
+          configureContainerTask(task)
 
             task.description = "Start container without any special command (sleep)"
 
@@ -110,18 +122,7 @@ class ContainerTaskPreparer(
                 }
             }
 
-        }
+        }*/
     }
 
-    private val zkTaskProvider: Provider<StartExtraContainer>? by lazy {
-        try {
-            project.tasks.named(
-                "start${ZKPreparer.extName}",
-                StartExtraContainer::class.java
-            )
-        } catch (ex: UnknownTaskException) {
-            project.logger.info("ZooKeeper tasks not found")
-            null
-        }
-    }
 }

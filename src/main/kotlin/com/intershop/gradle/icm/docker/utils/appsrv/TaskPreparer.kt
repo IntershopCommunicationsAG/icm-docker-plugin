@@ -79,14 +79,14 @@ class TaskPreparer (val project: Project, private val networkTask: Provider<Prep
             val imagePath = if (useTest || ! it.testImage.isPresent) { it.image } else { it.testImage }
             val cp = CustomizationPreparer(project, networkTask, it.name, imagePath)
 
-            cp.startTask.configure {
-                it.dependsOn(createVolumes)
+            cp.startTask.configure { startCustomization ->
+                startCustomization.dependsOn(createVolumes)
             }
             customizationStartTasks.add(cp.startTask)
             customizationRemoveTasks.add(cp.removeTask)
         }
 
-        containerTaskPreparer = ContainerTaskPreparer(project, networkTask)
+        containerTaskPreparer = WaitingAsTaskPreparer(project, networkTask)
         containerTaskPreparer.startTask.configure {
             it.dependsOn(
                 project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME), // ensure all jars are built
@@ -107,7 +107,7 @@ class TaskPreparer (val project: Project, private val networkTask: Provider<Prep
             it.finalizedBy(removeVolumes)
         }
 
-        serverTaskPreparer = ServerTaskPreparer(project, networkTask)
+        serverTaskPreparer = ASTaskPreparer(project, networkTask)
         serverTaskPreparer.startTask.configure {
             it.dependsOn(
                 project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME), // ensure all jars are built

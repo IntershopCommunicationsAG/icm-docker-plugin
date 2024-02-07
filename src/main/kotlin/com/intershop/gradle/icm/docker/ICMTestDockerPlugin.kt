@@ -44,7 +44,7 @@ class ICMTestDockerPlugin: Plugin<Project> {
             val createNetworkTask = project.tasks.named(TaskPreparer.PREPARE_NETWORK, PrepareNetwork::class.java)
 
             val mailSrvTask = tasks.named(
-                "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.extName}",
+                    "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.EXT_NAME}",
                 StartExtraContainer::class.java)
 
 

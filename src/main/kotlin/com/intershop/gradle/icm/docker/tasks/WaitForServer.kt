@@ -21,13 +21,13 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import javax.inject.Inject
 
 open class WaitForServer @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
 
-    @get:Input
+    @get:Internal
     val probes: ListProperty<Probe> = objectFactory.listProperty(Probe::class.java)
 
     @TaskAction

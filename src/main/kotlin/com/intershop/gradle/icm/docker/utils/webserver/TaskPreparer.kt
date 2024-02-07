@@ -20,12 +20,12 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.CreateVolumes
 import com.intershop.gradle.icm.docker.tasks.RemoveVolumes
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
+import com.intershop.gradle.icm.docker.utils.network.TaskPreparer as NetworkPreparer
 
 class TaskPreparer(val project: Project, private val networkTasks: NetworkPreparer) {
 
@@ -72,7 +72,7 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         }
 
         waaTasks.startTask.configure {
-            it.dependsOn(createVolumes, waTasks.startTask)
+            it.dependsOn(createVolumes)
         }
 
         project.tasks.register("start${TASK_EXT_SERVER}") { task ->

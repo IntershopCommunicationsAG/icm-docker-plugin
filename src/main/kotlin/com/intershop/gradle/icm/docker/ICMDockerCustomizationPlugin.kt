@@ -27,7 +27,6 @@ import com.intershop.gradle.icm.docker.utils.CustomizationImageBuildPreparer
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.appsrv.AbstractASTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
-import com.intershop.gradle.icm.docker.utils.appsrv.TaskPreparer as AppSrvPreparer
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import com.intershop.gradle.icm.extension.IntershopExtension
 import org.gradle.api.GradleException
@@ -38,6 +37,7 @@ import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
+import com.intershop.gradle.icm.docker.utils.appsrv.TaskPreparer as AppSrvPreparer
 
 /**
  * Main plugin class of the customization plugin.
@@ -91,11 +91,9 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 val icmExtension = project.extensions.getByType<IntershopExtension>()
 
                 val mssqlDatabase = tasks.named(
-                        "start${com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer.extName}")
-                val oracleDatabase = tasks.named(
-                        "start${com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer.extName}")
+                        "start${com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer.EXT_NAME}")
                 val mailSrvTask = tasks.named(
-                        "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.extName}",
+                        "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.EXT_NAME}",
                         StartExtraContainer::class.java)
                 val startSolrCloud = tasks.named(
                         "start${com.intershop.gradle.icm.docker.utils.solrcloud.TaskPreparer.TASK_EXT_SERVER}")
@@ -158,10 +156,10 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 }
 
                 val dbPrepare: TaskProvider<DBPrepareTask> = getDBPrepare(this,
-                    containerPreparer, mssqlDatabase, oracleDatabase)
+                        containerPreparer, mssqlDatabase)
 
                 configureISHUnitTest(this,
-                    dockerExtension, containerPreparer, dbPrepare, mssqlDatabase, oracleDatabase)
+                        dockerExtension, containerPreparer, dbPrepare, mssqlDatabase)
 
                 addTestReportConfiguration(this)
 
@@ -181,7 +179,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
     }
 
     /**
-     * Determines the name of the customization that is associated the project this plugin is applied to.
+     * Determines the name of the customization that is associated to the project this plugin is applied to.
      *
      * __Attention__: extends the class [Project] by this function
      */
@@ -191,7 +189,6 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
         project: Project,
         containerPreparer: AbstractASTaskPreparer,
         mssqlDatabase: TaskProvider<Task>,
-        oracleDatabase: TaskProvider<Task>,
     ): TaskProvider<DBPrepareTask> {
         return project.tasks.register(DBPrepareTask.TASK_NAME, DBPrepareTask::class.java) { task ->
             task.group = ICMDockerPlugin.GROUP_SERVERBUILD
@@ -199,7 +196,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
             task.executeUsing(containerPreparer.startTask)
 
             task.finalizedBy(containerPreparer.removeTask)
-            task.mustRunAfter(mssqlDatabase, oracleDatabase)
+            task.mustRunAfter(mssqlDatabase)
         }
     }
 
@@ -209,7 +206,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
             containerPreparer: AbstractASTaskPreparer,
             dbPrepare: TaskProvider<DBPrepareTask>,
             mssqlDatabase: TaskProvider<Task>,
-            oracleDatabase: TaskProvider<Task>) {
+    ) {
         project.gradle.sharedServices.registerIfAbsent(ISHUNIT_REGISTRY,
                 ISHUnitTestRegistry::class.java) {
             it.maxParallelUsages.set(1)
@@ -232,7 +229,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 task.testSuite.set(suite.testSuite)
 
                 task.finalizedBy(containerPreparer.removeTask)
-                task.mustRunAfter(dbPrepare, mssqlDatabase, oracleDatabase)
+                task.mustRunAfter(dbPrepare, mssqlDatabase)
             }
 
             ishUnitTest.configure { task ->

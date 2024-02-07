@@ -17,7 +17,7 @@
 package com.intershop.gradle.icm.docker.utils.appsrv
 
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -28,10 +28,10 @@ class CustomizationPreparer(project: Project,
                             private val imagePath: Provider<String>) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
-        const val extPrefix: String = "Customization"
+        const val EXT_PREFIX: String = "Customization"
     }
 
-    override fun getExtensionName(): String = "${customizationName}$extPrefix"
+    override fun getExtensionName(): String = "${customizationName}$EXT_PREFIX"
     override fun getImage(): Provider<String> = imagePath
     override fun getUseHostUserConfigProperty(): String = getExtensionName()+".useHostUser"
 
@@ -39,7 +39,17 @@ class CustomizationPreparer(project: Project,
 
     init {
         initBaseTasks()
-        project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
+        val volumes = mapOf("${dockerExtension.containerPrefix}-customizations" to "/customizations")
+        val env = ContainerEnvironment() // empty
+
+        val createTask = registerCreateContainerTask(findTask, volumes, env)
+        registerStartContainerTask(createTask).configure { task ->
+            task.description = "Starts customization '${customizationName}'"
+        }
+
+
+        /* FIXME SKR project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
+
             configureContainerTask(task)
             task.description = "Starts customization '${customizationName}'"
 
@@ -53,6 +63,8 @@ class CustomizationPreparer(project: Project,
             )
 
             task.dependsOn(pullTask, networkTask)
-        }
+
+
+        }*/
     }
 }

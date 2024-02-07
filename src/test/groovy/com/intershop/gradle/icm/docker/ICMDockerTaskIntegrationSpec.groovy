@@ -23,7 +23,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class ICMDockerTaskIntegrationSpec extends AbstractIntegrationGroovySpec {
 
-    final ICMGRADLEVERSION = "5.6.0"
+    final ICMGRADLEVERSION = "6.0.1"
 
     def 'test create volumes task'() {
         settingsFile << """

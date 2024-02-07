@@ -54,6 +54,7 @@ class ICMContainerEnvironmentBuilder {
         const val ENV_ENABLE_HEAPDUMP = "ENABLE_HEAPDUMP"
         const val ENV_ENABLE_GCLOG = "ENABLE_GCLOG"
         const val ENV_MAIL = "ISH_ENV_MAIL"
+        const val ENV_SOLR_CLUSTERINDEXPREFIX = "SOLR_CLUSTERINDEXPREFIX"
         const val PROP_MAIL_HOST = "mail.smtp.host"
         const val PROP_MAIL_PORT = "mail.smtp.port"
     }
@@ -72,6 +73,7 @@ class ICMContainerEnvironmentBuilder {
     private var enableHeapDump: Boolean? = null
     private var enableGCLog: Boolean? = null
     private var solrCloudTZookeeperHostList : Provider<String>? = null
+    private var solrClusterIndexPrefix: Provider<String>? = null
     private var mailServer : Provider<HostAndPort>? = null
     private var developmentProperties: DevelopmentProperties? = null
     private var intershopEnvironmentProperties: EnvironmentProperties? = null
@@ -144,6 +146,11 @@ class ICMContainerEnvironmentBuilder {
 
     fun withSolrCloudZookeeperHostList(hostList : Provider<String>) : ICMContainerEnvironmentBuilder {
         this.solrCloudTZookeeperHostList = hostList
+        return this
+    }
+
+    fun withSolrClusterIndexPrefix(solrClusterIndexPrefix: Provider<String>): ICMContainerEnvironmentBuilder {
+        this.solrClusterIndexPrefix = solrClusterIndexPrefix
         return this
     }
 
@@ -233,6 +240,11 @@ class ICMContainerEnvironmentBuilder {
         solrCloudTZookeeperHostList?.run {
             if (isPresent) {
                 env.add(ContainerEnvironment.propertyNameToEnvName(Configuration.SOLR_CLOUD_HOSTLIST), this)
+            }
+        }
+        solrClusterIndexPrefix?.run {
+            if (isPresent) {
+                env.add(ENV_SOLR_CLUSTERINDEXPREFIX, this)
             }
         }
         mailServer?.run {

@@ -16,16 +16,18 @@
  */
 package com.intershop.gradle.icm.docker.utils.appsrv
 
+import com.intershop.gradle.icm.docker.tasks.CreateASContainer
+import com.intershop.gradle.icm.docker.tasks.CreateExtraContainer
+import com.intershop.gradle.icm.docker.tasks.FindContainer
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
-import com.intershop.gradle.icm.docker.tasks.PullImage
-import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
-import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
-import com.intershop.gradle.icm.docker.tasks.StopExtraContainer
+import com.intershop.gradle.icm.docker.tasks.StartMailServerContainer
+import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.docker.utils.OS
 import com.intershop.gradle.icm.docker.utils.PortMapping
-import com.intershop.gradle.icm.tasks.CopyLibraries
+import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -37,37 +39,31 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 abstract class AbstractASTaskPreparer(
-    project: Project,
-    networkTask: Provider<PrepareNetwork>) : AbstractTaskPreparer(project, networkTask) {
+        project: Project,
+        networkTask: Provider<PrepareNetwork>,
+) : AbstractTaskPreparer(project, networkTask) {
 
     init {
-        initAppTasks()
+        initBaseTasks()
+    }
+
+    /**
+     * Calculates the image from [com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration], property [Configuration.AS_USE_TESTIMAGE]
+     */
+    override fun getImage(): Provider<String> {
+        if (dockerExtension.developmentConfig.getConfigProperty(
+                        Configuration.AS_USE_TESTIMAGE,
+                        Configuration.AS_USE_TESTIMAGE_VALUE
+                ).toBoolean()) {
+            return icmExtension.projectConfig.base.testImage
+        }
+        return icmExtension.projectConfig.base.image
     }
 
     override fun getUseHostUserConfigProperty(): String = Configuration.AS_USE_HOST_USER
 
     val prepareServer: TaskProvider<Task> by lazy {
         project.tasks.named(TaskPreparer.TASK_PREPARESERVER)
-    }
-    private fun initAppTasks() {
-        project.tasks.register("pull${getExtensionName()}", PullImage::class.java) { task ->
-            task.group = "icm container ${getContainerExt()}"
-            task.description = "Pull image from registry"
-            task.image.set(getImage())
-        }
-
-        project.tasks.register("stop${getExtensionName()}", StopExtraContainer::class.java) { task ->
-            task.group = "icm container ${getContainerExt()}"
-            task.description = "Stop running container"
-            task.containerName.set(getContainerName())
-        }
-
-        project.tasks.register("remove${getExtensionName()}", RemoveContainerByName::class.java) { task ->
-            task.group = "icm container ${getContainerExt()}"
-            task.description = "Remove container from Docker"
-
-            task.containerName.set(getContainerName())
-        }
     }
 
     /**
@@ -79,13 +75,71 @@ abstract class AbstractASTaskPreparer(
             setOf( serviceConnector.get(), managementConnector.get(), debug.get(), jmx.get() )
         }
 
-    protected fun getServerVolumes(task: Task, customization: Boolean): Map<String,String> {
-        addDirectories.forEach { (_, path) ->
-            path.get().asFile.mkdirs()
+    /**
+     * Registers the task that creates application server the container
+     * @param findTask a [TaskProvider] pointing to the [FindContainer]-task
+     * @param volumes a [Provider] for the volumes to be bound. Local directories are created on demand.
+     * @param forCustomization if `true` the created container will take customizations into account
+     * @return a [TaskProvider] pointing to the registered task
+     * @see registerCreateContainerTask
+     */
+    protected fun registerCreateASContainerTask(
+            findTask: TaskProvider<FindContainer>,
+            volumes: Provider<Map<String, String>>,
+    ): TaskProvider<CreateASContainer> {
+        val env = project.provider { ICMContainerEnvironmentBuilder().withContainerName(getContainerName()).build() }
+        val createTask = super.registerCreateContainerTask(findTask, CreateASContainer::class.java, volumes, env)
+        createTask.configure { task ->
+            task.doFirst {
+                addDirectories.forEach { (_, path) ->
+                    path.get().asFile.mkdirs()
+                }
+
+                prepareSitesFolder()
+            }
+
+            // ensure AS knows connection to mail server
+            val mailPort = devConfig.getConfigProperty(Configuration.MAIL_SMTP_PORT)
+            val mailHost = devConfig.getConfigProperty(Configuration.MAIL_SMTP_HOST)
+
+            if (mailServerTaskProvider != null && mailPort.isEmpty() && mailHost.isEmpty()) {
+                // either: take host+port form MailSrv-container
+                task.withMailServer(project.provider {
+                    mailServerTaskProvider!!.get().getPrimaryHostAndPort()
+                })
+            } else if (mailPort.isNotEmpty() && mailHost.isNotEmpty()) {
+                // or: use configuration values
+                task.withMailServer(project.provider {
+                    HostAndPort(mailHost, mailPort.toInt())
+                })
+            }
+
+            // ensure AS knows connection to Solr/ZK
+            val solrCloudHostList = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_HOSTLIST)
+            val solrCloudIndexPrefix = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_INDEXPREFIX)
+
+            if (zkTaskProvider != null && solrCloudHostList.isEmpty()) {
+                task.withSolrCloudZookeeperHostList(project.provider {
+                    val containerPort = zkTaskProvider!!.get().getPortMappings().stream()
+                            .filter { it.name == ZKPreparer.CONTAINER_PORTMAPPING }
+                            .findFirst().get().containerPort
+                    "${zkTaskProvider!!.get().containerName.get()}:${containerPort}"
+                })
+            } else if (solrCloudHostList.isNotEmpty()) {
+                task.withSolrCloudZookeeperHostList(project.provider {
+                    solrCloudHostList
+                })
+
+                if (solrCloudIndexPrefix.isNotEmpty()) {
+                    task.withEnvironment(ICMContainerEnvironmentBuilder().withSolrClusterIndexPrefix(
+                            project.provider { solrCloudIndexPrefix }).build())
+                }
+            }
         }
+        return createTask
+    }
 
-        prepareSitesFolder()
-
+    protected fun getServerVolumes(): Map<String, String> {
         val default = project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath
         val sitesFolderPath = dockerExtension.developmentConfig.getConfigProperty(
             Configuration.SITES_FOLDER_PATH,
@@ -111,34 +165,7 @@ abstract class AbstractASTaskPreparer(
             "${dockerExtension.containerPrefix}-customizations"
                     to "/intershop/customizations"
         )
-
-        if(customization) {
-            project.tasks.withType(CopyLibraries::class.java) {
-                task.dependsOn(it)
-
-                val dir = it.librariesDirectory.get().asFile
-                volumes[dir.absolutePath] =
-                    "/intershop/customizations/${dockerExtension.containerPrefix}-${dir.name}-libs/lib"
-            }
-        }
         return volumes
-    }
-
-    private fun getOutputPathFor(taskName: String, path: String): String {
-        return if(path.isNotEmpty()) {
-            File(getOutputDirFor(taskName), path).absolutePath
-        } else {
-            getOutputDirFor(taskName).absolutePath
-        }
-    }
-
-    private fun getOutputDirFor(taskName: String): File {
-        try {
-            val task = project.tasks.named(taskName)
-            return task.get().outputs.files.first()
-        } catch (ex: UnknownTaskException) {
-            throw GradleException("Task name '${taskName}' not found in project.")
-        }
     }
 
     private val addDirectories: Map<String, Provider<Directory>> by lazy {
@@ -217,14 +244,26 @@ abstract class AbstractASTaskPreparer(
         }
     }
 
-    val mailServerTaskProvider: Provider<StartExtraContainer>? by lazy {
+    private val mailServerTaskProvider: Provider<StartMailServerContainer>? by lazy {
         try {
             project.tasks.named(
-                "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.extName}",
-                StartExtraContainer::class.java
+                    "start${com.intershop.gradle.icm.docker.utils.mail.TaskPreparer.EXT_NAME}",
+                    StartMailServerContainer::class.java
             )
         } catch (ex: UnknownTaskException) {
-            project.logger.info("MailSrv tasks not found")
+            project.logger.warn("MailSrv task not found")
+            null
+        }
+    }
+
+    private val zkTaskProvider: Provider<CreateExtraContainer>? by lazy {
+        try {
+            project.tasks.named(
+                    "create${ZKPreparer.EXT_NAME}",
+                    CreateExtraContainer::class.java
+            )
+        } catch (ex: UnknownTaskException) {
+            project.logger.info("ZooKeeper tasks not found")
             null
         }
     }

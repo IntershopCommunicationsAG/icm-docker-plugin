@@ -68,11 +68,7 @@ abstract class AbstractPullImage
 
     @get:Option(option = "forcePull", description = "Call pull always also if the image is available.")
     @get:Input
-    val force: Property<Boolean> = objectFactory.property(Boolean::class.java)
-
-    init {
-        force.set(false)
-    }
+    val force: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(false)
 
     /**
      * Executes the remote Docker command.
@@ -91,7 +87,7 @@ abstract class AbstractPullImage
 
             if(! force.get()) {
                 val listImagesCmd = dockerClient.listImagesCmd()
-                listImagesCmd.filters["reference"] = listOf(image.get())
+                listImagesCmd.filters?.set("reference", listOf(image.get()))
                 val images = listImagesCmd.exec()
                 pull = images.size < 1
             }

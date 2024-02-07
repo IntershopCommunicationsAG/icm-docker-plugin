@@ -28,7 +28,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
 
-    final ICMGRADLEVERSION = "5.6.0"
+    final ICMGRADLEVERSION = "6.0.1"
 
     String buildfileContent =
             """
@@ -66,90 +66,6 @@ class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
         result1.task(":generateICMProps").outcome == SUCCESS
         file.exists()
         file.text.contains("development properties")
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    def 'oracle file creation (container)'() {
-        settingsFile << settingsfileContent
-        buildFile << buildfileContent
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("generateICMProps", "--db=oracle-cont", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
-
-        then:
-        result1.task(":generateICMProps").outcome == SUCCESS
-        file.exists()
-        file.text.contains("oracle base configuration")
-        file.text.contains("jdbc:oracle:thin:@rootproject-oracle:1521:XE")
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    def 'oracle file creation (external)'() {
-        settingsFile << settingsfileContent
-        buildFile << buildfileContent
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("generateICMProps", "--db=oracle", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
-
-        then:
-        result1.task(":generateICMProps").outcome == SUCCESS
-        file.exists()
-        file.text.contains("oracle base configuration")
-        file.text.contains("<database user of ext db>")
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    def 'oracle file creation (container + icmas)'() {
-        settingsFile << settingsfileContent
-        buildFile << buildfileContent
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("generateICMProps", "--db=oracle-cont", "--icmas", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
-
-        then:
-        result1.task(":generateICMProps").outcome == SUCCESS
-        file.exists()
-        file.text.contains("oracle base configuration")
-        file.text.contains("intershop.jdbc.url = jdbc:oracle:thin:@localhost:1521:XE")
-
-        where:
-        gradleVersion << supportedGradleVersions
-    }
-
-    def 'oracle file creation (external + icmas)'() {
-        settingsFile << settingsfileContent
-        buildFile << buildfileContent
-
-        when:
-        def result1 = getPreparedGradleRunner()
-                .withArguments("generateICMProps", "--db=oracle", "--icmas", "-s")
-                .withGradleVersion(gradleVersion)
-                .build()
-        File file = new File(testProjectDir, "build/icmproperties/icm.properties")
-
-        then:
-        result1.task(":generateICMProps").outcome == SUCCESS
-        file.exists()
-        file.text.contains("oracle base configuration")
-        file.text.contains("<database user of ext db>")
 
         where:
         gradleVersion << supportedGradleVersions

@@ -18,10 +18,13 @@ package com.intershop.gradle.icm.docker
 
 import com.intershop.gradle.icm.docker.util.TestRepo
 import com.intershop.gradle.test.AbstractIntegrationGroovySpec
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+
 import static org.gradle.testkit.runner.TaskOutcome.SKIPPED
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
+
+    final ICMGRADLEVERSION = "6.0.1"
 
     private def prepareBuildConfig(File testProjectDir, File settingsFile, File buildFile) {
         TestRepo repo = new TestRepo(new File(testProjectDir, "/repo"))
@@ -40,7 +43,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.base' version '4.3.0'
+                id 'com.intershop.gradle.icm.base' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker'
             }
             
@@ -201,7 +204,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '4.3.0'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker.customization'
                 id 'com.intershop.gradle.icm.docker.solrcloud'
             }
@@ -396,7 +399,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '4.3.0'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker.customization'
             }
             
@@ -544,7 +547,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         buildFile << """
             plugins {
                 id 'java'
-                id 'com.intershop.gradle.icm.project' version '4.3.0'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
                 id 'com.intershop.gradle.icm.docker.customization'
                 id 'com.intershop.gradle.icm.docker.solrcloud'
             }
@@ -723,21 +726,21 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         when:
         def result2 = getPreparedGradleRunner()
-                .withArguments("startContainer", "-s")
+                .withArguments("startWaitingAs", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
         then:
-        result2.task(":startContainer").outcome == SUCCESS
+        result2.task(":startWaitingAs").outcome == SUCCESS
 
         when:
         def result3 = getPreparedGradleRunner()
-                .withArguments("removeContainer", "-s")
+                .withArguments("removeWaitingAs", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
         then:
-        result3.task(":removeContainer").outcome == SUCCESS
+        result3.task(":removeWaitingAs").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions

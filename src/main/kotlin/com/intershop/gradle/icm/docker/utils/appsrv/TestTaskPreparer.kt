@@ -68,14 +68,14 @@ class TestTaskPreparer (val project: Project, private val networkTask: Provider<
             val imagePath = if (useTest || ! it.testImage.isPresent) { it.image } else { it.testImage }
             val cp = CustomizationPreparer(project, networkTask, it.name, imagePath)
 
-            cp.startTask.configure {
-                it.dependsOn(createVolumes)
+            cp.startTask.configure { startCustomization ->
+                startCustomization.dependsOn(createVolumes)
             }
             customizationStartTasks.add(cp.startTask)
             customizationRemoveTasks.add(cp.removeTask)
         }
 
-        icmServerTaskPreparer = ICMServerTaskPreparer(project, networkTask)
+        icmServerTaskPreparer = ASTestContainerTaskPreparer(project, networkTask)
         icmServerTaskPreparer.startTask.configure {
             it.dependsOn(
                 project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME), // ensure all jars are built
@@ -99,7 +99,7 @@ class TestTaskPreparer (val project: Project, private val networkTask: Provider<
     fun getICMServerTaskPreparer() = icmServerTaskPreparer
 
     private fun configureASTasks(task: Task, description: String) {
-        task.group = "icm container appserver "
+        task.group = "icm container appserver"
         task.description = description
     }
 }

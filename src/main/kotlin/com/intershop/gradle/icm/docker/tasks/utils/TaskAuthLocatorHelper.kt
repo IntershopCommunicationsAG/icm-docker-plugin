@@ -18,19 +18,18 @@ package com.intershop.gradle.icm.docker.tasks.utils
 
 import com.bmuschko.gradle.docker.internal.RegistryAuthLocator
 import org.gradle.api.Project
-import java.io.File
 
 object TaskAuthLocatorHelper {
 
     fun getLocator(project: Project, registryAuthLocator: RegistryAuthLocator) : RegistryAuthLocator {
         var regAuthLocator = registryAuthLocator
 
-        if (project.findProperty("icm.docker.config") != null) {
-            val configFilePath = project.property("icm.docker.config").toString()
-            val configFile = File(File(configFilePath), "config.json")
-            regAuthLocator = RegistryAuthLocator(configFile)
-            project.logger.info("This docker configuration is used: '{}'", configFile.absolutePath)
-        }
+//        if (project.findProperty("icm.docker.config") != null) {
+//            val configFilePath = project.property("icm.docker.config").toString()
+//            val configFile = File(File(configFilePath), "config.json")
+//            regAuthLocator = RegistryAuthLocator(configFile)
+//            project.logger.info("This docker configuration is used: '{}'", configFile.absolutePath)
+//        }
 
         return regAuthLocator
     }

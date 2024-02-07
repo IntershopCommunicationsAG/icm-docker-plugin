@@ -35,7 +35,6 @@ import java.net.UnknownHostException
 import javax.inject.Inject
 import com.intershop.gradle.icm.docker.utils.mail.TaskPreparer as MailTaskPreparer
 import com.intershop.gradle.icm.docker.utils.mssql.TaskPreparer as MSSQLTaskPreparer
-import com.intershop.gradle.icm.docker.utils.oracle.TaskPreparer as OracleTaskPreparer
 
 open class GenICMProperties @Inject constructor(
         objectFactory: ObjectFactory,
@@ -125,8 +124,6 @@ open class GenICMProperties @Inject constructor(
 
     @get:Option(option = "db", description =
     """Option for the used database. The following values are possible:
-            oracle-container - Oracle configuration for database provided by a container 
-            oracle - Oracle configuration for an external database
             mssql-container - MSSQL configuration for database provided by a container
             mssql - MSSQL configuration for an external database
         """)
@@ -161,8 +158,6 @@ open class GenICMProperties @Inject constructor(
 
         val db = dbOption.get()
         when {
-            db.startsWith("oracle-c") -> writeOracleProps(outputFile, true)
-            db == "oracle" -> writeOracleProps(outputFile, false)
             db.startsWith("mssql-c") -> writeMSSQLProps(outputFile, true)
             db == "mssql" -> writeMSSQLProps(outputFile, false)
             else -> project.logger.quiet("No database option is specified!")
@@ -179,7 +174,6 @@ open class GenICMProperties @Inject constructor(
 
         addTo(envListTasks, "mail", optList.contains("mail"))
         addTo(envListTasks, "solr", optList.contains("solr"))
-        addTo(envListTasks, "oracle", db.startsWith("oracle-c"))
         addTo(envListTasks, "mssql", db.startsWith("mssql-c"))
         addTo(envListTasks, "webserver", true)
 
@@ -227,67 +221,6 @@ open class GenICMProperties @Inject constructor(
         file.appendText("\n\n", Charsets.UTF_8)
     }
 
-    private fun writeOracleProps(file: File, container: Boolean) {
-        val icmas = icmasOption.get()
-
-        val host = if (icmas) {
-            if (container) {
-                "localhost"
-            } else {
-                "<host name of the external db>"
-            }
-        } else {
-            if (container) {
-                "${extension.containerPrefix}-${OracleTaskPreparer.extName.lowercase()}"
-            } else {
-                "<host name of the external db>"
-            }
-        }
-        val port = if (icmas) {
-            if (container) {
-                Configuration.DB_ORACLE_LISTENERPORT_VALUE
-            } else {
-                "<listener port of the external db>"
-            }
-        } else {
-            if (container) {
-                Configuration.DB_ORACLE_CONTAINER_LISTENERPORT_VALUE
-            } else {
-                "<listener port of the external db>"
-            }
-        }
-
-        val sid = if (container) {
-            "XE"
-        } else {
-            "<db name of the external db>"
-        }
-
-        val text =
-                """
-            # oracle base configuration
-            $databaseTypeProp = oracle
-            $databaseJDBCUrlProp = jdbc:oracle:thin:@$host:$port:$sid
-            """.trimIndent()
-
-        file.appendText(text, Charsets.UTF_8)
-        file.appendText("\n", Charsets.UTF_8)
-        writeDBUserConfig(file, container)
-
-        if (container) {
-            val ctext =
-                    """
-            # mssql container configuration - do not change this value if the default images is used 
-            ${Configuration.DB_ORACLE_LISTENERPORT} = ${Configuration.DB_ORACLE_LISTENERPORT_VALUE}
-            ${Configuration.DB_ORACLE_CONTAINER_LISTENERPORT} = ${Configuration.DB_ORACLE_CONTAINER_LISTENERPORT_VALUE}
-            ${Configuration.DB_ORACLE_PORT} = ${Configuration.DB_ORACLE_PORT_VALUE}
-            ${Configuration.DB_ORACLE_CONTAINER_PORT} = ${Configuration.DB_ORACLE_CONTAINER_PORT_VALUE}
-            """.trimIndent()
-            file.appendText(ctext, Charsets.UTF_8)
-            file.appendText("\n\n", Charsets.UTF_8)
-        }
-    }
-
     private fun writeMSSQLProps(file: File, container: Boolean) {
         val icmas = icmasOption.get()
 
@@ -299,7 +232,7 @@ open class GenICMProperties @Inject constructor(
             }
         } else {
             if (container) {
-                "${extension.containerPrefix}-${MSSQLTaskPreparer.extName.lowercase()}"
+                "${extension.containerPrefix}-${MSSQLTaskPreparer.EXT_NAME.lowercase()}"
             } else {
                 "<host name of the external db>"
             }
@@ -455,7 +388,7 @@ open class GenICMProperties @Inject constructor(
             }
         } else {
             if (container) {
-                "${extension.containerPrefix}-${MailTaskPreparer.extName.lowercase()}"
+                "${extension.containerPrefix}-${MailTaskPreparer.EXT_NAME.lowercase()}"
             } else {
                 "<hostname of the mail server>"
             }
