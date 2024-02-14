@@ -61,68 +61,6 @@ class WaitingAsTaskPreparer(
             } is executed in preparation of this task and supports parameters that you may expect to get supported by this task.
             """.trimIndent()
         }
-
-
-        /* FIXME SKR  project.tasks.register("start${this.getExtensionName()}", StartServerContainer::class.java) { task ->
-          configureContainerTask(task)
-
-            task.description = "Start container without any special command (sleep)"
-
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            task.entrypoint.set(listOf("/intershop/bin/startAndWait.sh"))
-
-            task.hostConfig.binds.set(project.provider {
-                getServerVolumes(task, true).apply {
-                    project.logger.info("Using the following volume binds for container startup in task {}: {}",
-                        task.name, this)
-                }
-            })
-            task.withPortMappings(*getPortMappings().toTypedArray())
-            task.hostConfig.network.set(networkId)
-
-            val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
-
-            val solrCloudHostList = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_HOSTLIST)
-            val solrCloudIndexPrefix = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_INDEXPREFIX)
-
-            val mailPort = devConfig.getConfigProperty(Configuration.MAIL_SMTP_PORT)
-            val mailHost = devConfig.getConfigProperty(Configuration.MAIL_SMTP_HOST)
-
-            if(zkTaskProvider != null && solrCloudHostList.isEmpty()) {
-                task.solrCloudZookeeperHostList = project.provider {
-                    val containerPort = zkTaskProvider!!.get().getPortMappings().stream()
-                        .filter { it.name == ZKPreparer.CONTAINER_PORTMAPPING }
-                        .findFirst().get().containerPort
-                    "${zkTaskProvider!!.get().containerName.get()}:${containerPort}"
-                }
-            } else if (solrCloudHostList.isNotEmpty()){
-                task.solrCloudZookeeperHostList = project.provider {
-                    solrCloudHostList
-                }
-
-                if(solrCloudIndexPrefix.isNotEmpty()) {
-                    task.withEnvironment(
-                        ICMContainerEnvironmentBuilder().
-                    withAdditionalEnvironment("SOLR_CLUSTERINDEXPREFIX", solrCloudIndexPrefix).build())
-                }
-            }
-
-            if(mailServerTaskProvider != null && mailPort.isEmpty() && mailHost.isEmpty()) {
-                task.mailServer = project.provider {
-                    HostAndPort(
-                        mailServerTaskProvider!!.get().containerName.get(),
-                        mailServerTaskProvider!!.get().getPrimaryPortMapping().get().containerPort
-                    )
-                }
-            } else if (mailPort.isNotEmpty() && mailHost.isNotEmpty()){
-                task.mailServer = project.provider {
-                    HostAndPort(mailHost, mailPort.toInt())
-                }
-            }
-
-        }*/
     }
 
 }
