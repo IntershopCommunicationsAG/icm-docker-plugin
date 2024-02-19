@@ -46,25 +46,5 @@ class CustomizationPreparer(project: Project,
         registerStartContainerTask(createTask).configure { task ->
             task.description = "Starts customization '${customizationName}'"
         }
-
-
-        /* FIXME SKR project.tasks.register("start${getExtensionName()}", StartExtraContainer::class.java) { task ->
-
-            configureContainerTask(task)
-            task.description = "Starts customization '${customizationName}'"
-
-            task.targetImageId(project.provider { pullTask.get().image.get() })
-            task.image.set(pullTask.get().image)
-
-            task.hostConfig.binds.set(
-                mutableMapOf(
-                    "${dockerExtension.containerPrefix}-customizations" to "/customizations"
-                )
-            )
-
-            task.dependsOn(pullTask, networkTask)
-
-
-        }*/
     }
 }
