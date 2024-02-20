@@ -70,15 +70,16 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
             Protocol.HTTP
         }
         val user = User(userName.get(), userPassword.get())
-        val server = Server(protocolObj, wsUri.host, wsUri.port.toString())
+        val server = Server(protocolObj, wsUri.host, wsUri.port)
 
         val runner = JobRunner(
                 server = server,
                 domain = domain.get(),
-                srvgroup = servergroup.get(),
+                srvGroup = servergroup.get(),
                 user = user,
                 timeout = maxWait.get(),
-                logger = project.logger)
+                logger = project.logger
+        )
 
         if (sslVerification.get()) {
             runner.enableSSLVerification()
@@ -91,7 +92,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
         try {
             jobRunner.triggerJob(jobName)
         } catch (ex: JobRunnerException) {
-            throw GradleException(ex.message ?: "There was a technical problem to run '$jobName'")
+            throw GradleException(ex.message ?: "There was a technical problem to run '$jobName'", ex)
         }
     }
 }
