@@ -142,7 +142,7 @@ abstract class AbstractTaskPreparer(
     ): TaskProvider<T> where T : CreateExtraContainer {
         return project.tasks.register(taskNameOf("create"), taskType) { task ->
             task.group = taskGroup
-            task.description = "Creates the ${getContainerExt()}-container is not already existing"
+            task.description = "Creates the ${getContainerExt()}-container if not already existing"
             task.attachStderr.set(true)
             task.attachStdout.set(true)
             task.hostConfig.autoRemove.set(true)
