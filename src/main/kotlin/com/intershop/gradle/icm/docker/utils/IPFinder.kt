@@ -23,7 +23,7 @@ import java.net.NetworkInterface
 
 object IPFinder {
 
-    //Function to Find out IP Address
+    // Function to Find out IP Address
     fun getSystemIP(): Pair<String?,String?> {
         return try {
             val sysIPHostName:  Pair<String?,String?>
@@ -34,54 +34,39 @@ object IPFinder {
                     Pair(ip.hostAddress, ip.canonicalHostName)
                 }
                 else -> {
-                    val nets = NetworkInterface.getNetworkInterfaces()
-                    var pair: Pair<String?,String?> = Pair(null, null)
-                    nets.toList().map { it.name }.sorted().forEach {
-                        val ip = getSystemIP4Linux(it)
-                        if(ip != null) {
-                            pair = Pair(ip.hostAddress, ip.canonicalHostName)
-                            return@forEach
-                        }
+                    val ip: InetAddress? = getSystemIP4Linux()
+                    when(ip) {
+                        is InetAddress -> Pair(ip.hostAddress, ip.canonicalHostName)
+                        else -> Pair(null, null)
                     }
-                    pair
                 }
             }
             sysIPHostName
-        } catch (E: Exception) {
-            System.err.println("System IP Exp : " + E.message)
-            Pair(null,null)
+        } catch (e: Exception) {
+            System.err.println("System IP Detection Exception: " + e.message)
+            Pair(null, null)
         }
     }
 
-    //For Linux OS
-    private fun getSystemIP4Linux(name: String): InetAddress? {
+    // For Linux OS
+    private fun getSystemIP4Linux(): InetAddress? {
         return try {
-            var ip: InetAddress? = null
-            if(name.substring(0, 2) in  listOf("en", "wl") || name.substring(0, 3) in  listOf("eth", "usb")) {
-                val networkInterface = NetworkInterface.getByName(name)
-                val inetAddress = networkInterface.inetAddresses
-                var currentAddress = inetAddress.nextElement()
-
-                if (!inetAddress.hasMoreElements()) {
-                    if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
-                        ip = currentAddress
-                    }
-                } else {
-                    while (inetAddress.hasMoreElements()) {
-                        currentAddress = inetAddress.nextElement()
-                        if (currentAddress is Inet4Address && !currentAddress.isLoopbackAddress()) {
-                            ip = currentAddress
-                            break
-                        }
-                    }
+            NetworkInterface.getNetworkInterfaces().asSequence()
+                .filter { networkInterface ->
+                    networkInterface.isUp && !networkInterface.isLoopback && !networkInterface.isVirtual
+                }.filter { networkInterface ->
+                    networkInterface.name.substring(0, 2) in listOf("en", "wl") ||
+                        networkInterface.name.substring(0, 3) in listOf("eth", "usb")
+                }.flatMap { networkInterface ->
+                    networkInterface.inetAddresses.asSequence()
+                }.filter { inetAddress ->
+                    !inetAddress.isLoopbackAddress && inetAddress is Inet4Address
+                }.elementAtOrElse(0) {
+                    // Fallback to local host if sequence is empty
+                    InetAddress.getLocalHost()
                 }
-                if (ip == null) {
-                    ip = InetAddress.getLocalHost()
-                }
-            }
-            ip
-        } catch (E: Exception) {
-            System.err.println("System Linux IP Exp : " + E.message)
+        } catch (e: Exception) {
+            System.err.println("Linux System IP Detection Exception: " + e.message)
             null
         }
     }
