@@ -134,8 +134,8 @@ open class IntershopDockerExtension @Inject constructor(val project: Project,
         with(developmentConfig) {
             val addPrefix = getConfigProperty(Configuration.ADDITIONAL_CONTAINER_PREFIX, "")
             val addPrefixTrim = trimString(addPrefix)
-            if(addPrefixTrim!= "") {
-                if(addPrefix != addPrefixTrim) {
+            if (addPrefixTrim.isNotEmpty()) {
+                if (addPrefix != addPrefixTrim) {
                     project.logger.info("Additional container prefix {} is used.", addPrefixTrim)
                 }
                 containerPrefix.append(addPrefixTrim)
@@ -143,9 +143,9 @@ open class IntershopDockerExtension @Inject constructor(val project: Project,
             }
         }
         val prefixConfig = containerProjectPrefix.getOrElse("")
-        if(prefixConfig != "") {
+        if (prefixConfig.isNotEmpty()) {
             val prefixConfigTrim = trimString(prefixConfig)
-            if(prefixConfig != prefixConfigTrim) {
+            if (prefixConfig != prefixConfigTrim) {
                 project.logger.info("Configured prefix {} is used for all containers.", prefixConfigTrim)
             }
             containerPrefix.append(prefixConfigTrim)
