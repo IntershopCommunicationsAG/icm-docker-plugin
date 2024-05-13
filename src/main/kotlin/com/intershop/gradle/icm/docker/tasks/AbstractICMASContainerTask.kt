@@ -28,6 +28,7 @@ import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.tasks.utils.ClasspathLayout
+import com.intershop.gradle.icm.docker.tasks.utils.ICMEncryptionStrictMode
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.utils.JavaDebugSupport
 import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VALUE_FALSE
@@ -242,6 +243,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
                 .withAdditionalParameters(createAdditionalParameters())
                 .withDebugOptions(debugProperty.get())
                 .withClasspathLayout(classpathLayoutProperty.get())
+                .withICMEncryptionStrictMode(project.provider { ICMEncryptionStrictMode.fromDevelopmentConfiguration(devConfig) })
                 .build()
     }
 

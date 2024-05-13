@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.tasks
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.ClasspathLayout
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
+import com.intershop.gradle.icm.docker.tasks.utils.ICMEncryptionStrictMode
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.tasks.CopyLibraries
@@ -188,6 +189,9 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
                             .withPortConfig(devConfig.asPortConfiguration)
                             .withCartridgeList(devConfig.cartridgeList.get())
                             .withClasspathLayout(classpathLayoutProperty.get())
+                            .withICMEncryptionStrictMode(project.provider {
+                                ICMEncryptionStrictMode.fromDevelopmentConfiguration(devConfig)
+                            })
                             .build()
                 }
         )

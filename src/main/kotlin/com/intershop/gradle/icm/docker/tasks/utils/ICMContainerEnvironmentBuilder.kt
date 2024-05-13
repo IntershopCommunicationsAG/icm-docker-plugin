@@ -24,6 +24,7 @@ import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.Enviro
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
+import com.intershop.gradle.icm.utils.ICMEncryptionStrictMode
 import com.intershop.gradle.icm.utils.JavaDebugSupport
 import org.gradle.api.provider.Provider
 import java.util.Properties
@@ -78,6 +79,7 @@ class ICMContainerEnvironmentBuilder {
     private var developmentProperties: DevelopmentProperties? = null
     private var intershopEnvironmentProperties: EnvironmentProperties? = null
     private var addEnvironmentProperties = Properties()
+    private var icmEncryptionStrictMode : Provider<ICMEncryptionStrictMode>? = null
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
@@ -174,6 +176,11 @@ class ICMContainerEnvironmentBuilder {
         return this
     }
 
+    fun withICMEncryptionStrictMode(icmEncryptionStrictMode: Provider<ICMEncryptionStrictMode>) : ICMContainerEnvironmentBuilder {
+        this.icmEncryptionStrictMode = icmEncryptionStrictMode
+        return this
+    }
+
     fun build() : ContainerEnvironment {
         val env = ContainerEnvironment()
         additionalParameters?.run {
@@ -267,6 +274,14 @@ class ICMContainerEnvironmentBuilder {
 
         addEnvironmentProperties.forEach { key, value ->
             env.add(key.toString(), value.toString())
+        }
+
+        icmEncryptionStrictMode?.run {
+            if (isPresent) {
+                icmEncryptionStrictMode!!.get().applyICMParameterIfNecessary { key, value ->
+                    env.add(ContainerEnvironment.propertyNameToEnvName(key), value)
+                }
+            }
         }
 
         return env

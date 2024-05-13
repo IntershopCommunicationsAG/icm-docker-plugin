@@ -79,7 +79,6 @@ abstract class AbstractASTaskPreparer(
      * Registers the task that creates application server the container
      * @param findTask a [TaskProvider] pointing to the [FindContainer]-task
      * @param volumes a [Provider] for the volumes to be bound. Local directories are created on demand.
-     * @param forCustomization if `true` the created container will take customizations into account
      * @return a [TaskProvider] pointing to the registered task
      * @see registerCreateContainerTask
      */

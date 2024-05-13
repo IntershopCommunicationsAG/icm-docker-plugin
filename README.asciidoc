@@ -521,6 +521,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.jdbc.password` | JDBC database password | String | Mandatory | <none> +
 | `intershop.environment.intershop.dbinit.breakOnError` | if `true` dbPrepare/startAS fails if any init-preparation step fails | Boolean | Optional | `false` +
 | `intershop.environment.intershop.dbmigrate.breakOnError` | if `true` dbPrepare/startAS fails if any migrate-preparation step fails | Boolean | Optional | `false` +
+| `intershop.encryption.strictMode.enabled` | If not specified or set to `false` the ICM configuration property `intershop.encryption.strictMode.enabled` is set to `false` allowing the icm-as to work without any encryption configuration. To enforce the icm-as to work with `intershop.encryption.strictMode.enabled=true` explicitly set `intershop.encryption.strictMode.enabled=true` in `icm.properties`. | Boolean | Optional | `false` +
 |===
 
 --
