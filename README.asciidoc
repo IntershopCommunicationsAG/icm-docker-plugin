@@ -259,7 +259,7 @@ For all properties configurations methods with a closure or an action are availa
 
 |`nameExtension` | `Property<String>` | | Image name extension of the special image. The base is used from the <<ProjectConfiguration>>.
 |`description` | `Property<String>` | | Extended description of the image.
-|`srcFiles` | `ConfigurableFileCollection` | | Source files for the build (start scripts etc.). This files are referenced by the Dockerfile.
+|`srcFiles` | `ConfigurableFileCollection` | | Source files for the build (start scripts etc.). These files are referenced by the Dockerfile.
 |`pkgTaskName` | `Property<String>` | | Files will be packaged by the build for an installation in a docker image. This is the name of the package task.
 |`dockerfile` | `RegularFileProperty` | | The docker file for the image build.
 |`dockerBuildDir` | `Property<String>` | | The working director for the image build.
@@ -273,7 +273,7 @@ For all properties configurations methods with a closure or an action are availa
 |===
 | Task name           |Description
 
-| *prepareNetwork*   | Creates a network with the specified name <extension name>-network. All start tasks are dependend on this task.
+| *prepareNetwork*   | Creates a network with the specified name <extension name>-network. All start tasks are dependent on this task.
 | *removeNetwork*    | Removes the network from the Docker configuration.
 | **MSSQL*        | These tasks pull, start, stop and remove the MSSQL image.
 | **MailSrv*      | These tasks pull, start, stop and remove the Mail server image.
@@ -283,7 +283,7 @@ For all properties configurations methods with a closure or an action are availa
 | *createWebVolumes* | Creates necessary volumes for the ICM web server with WebAdapter Agent.
 | *removeWebVolumes* | Removes web server volumes from the Docker configuration.
 | **WAA* | These tasks pull, start, stop and remove the ICM Web Adapter Agent image.
-| **WA* | These tasks pull, start, stop and remove the ICM Web Adapter image. This image contains a Apache webserver with the ICM WA module.
+| **WA* | These tasks pull, start, stop and remove the ICM Web Adapter image. This image contains an Apache webserver with the ICM WA module.
 | **WebServer* | These tasks orchestrate all web server related tasks.
 | *containerClean* | This task starts the remove tasks for all available objects.
 | *generateICMProps* | Generates an icm.properties file for local development.
@@ -309,7 +309,7 @@ The task can be called with the following parameters:
 | --icmenvops  | A comma-separated list of options for the icm.properties files. +
             _dev_ - General development properties for the application server +
             _mail_ - MailHog container is used as test mail server +
-            _solr_ - Singel node solr cluster with containers is used
+            _solr_ - Single node solr cluster with containers is used
 |===
 
 [[TaskClasses]]
@@ -357,7 +357,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `webserver.https.port` | the host port to be used for the WebAdapter https port | Integer | Optional | `8443` +
 | `webserver.container.http.port` | the container port to be used for the WebAdapter http port (normally no need to change) | Integer | Optional | `8080` +
 | `webserver.container.https.port` | the container port to be used for the WebAdapter https port (normally no need to change) | Integer | Optional | `8443` +
-| `webServer.cert.path` | the host path to look for TLS certificate and private key (if not defined no certificates will be mounted for the WA) | Path | Optional | <none> +
+| `webServer.cert.path` | the host path to look for TLS certificate and private key (if not defined, no certificates will be mounted for the WA) | Path | Optional | <none> +
 | `webserver.cert.server` | short name of the certificate file inside of `webServer.cert.path` + | String | mandatory if `webServer.cert.path` is set + | <none> +
 | `webserver.cert.privatekey` | short name of the private key file inside of `webServer.cert.path` + | String | mandatory if `webServer.cert.path` is set + | <none> +
 | `intershop.ws.readinessProbe.interval` | interval in seconds to be used to check if the WebAdapter is ready | Integer | Optional | `2` +
@@ -554,7 +554,7 @@ Configuration of <<DBPrepareConfiguration>> also applies to the container starte
 | Parameter | Description | Co-domain | Default value
 
 | `mode` | controls which mode is used by `dbPrepare` (forced initialization/migration or automatic) + | { `init`, `migrate`, `auto` } + | `auto` +
-| `clean` | controls if `dbPrepare` just cleans the DB and sites (`only`), cleans and inits the DB and sites (`yes`) or migrates the DB and sites (`no`) | {`only`, `yes`, `no`} + | `no` +
+| `clean` | controls if `dbPrepare` just cleans the DB and sites (`only`), cleans and initializes the DB and sites (`yes`) or migrates the DB and sites (`no`) | {`only`, `yes`, `no`} + | `no` +
 | `cartridges` | controls which cartridges are actually prepared | comma-separated list of cartridge names to prepare | <none>
 | `property-keys` | controls which preparers are actually executed | comma-separated list of preparer property keys to execute | <none>
 | `additional-parameter` | additional command line parameters to be passed to `dbPrepare`. Use more than once to passed more than 1 parameter | String | <none>
@@ -619,7 +619,7 @@ NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localV
 </details>
 ++++
 
-IMPORTANT: As long as the application server is starting the container's log output is forwared to the host's standard out. Afterwards it is only accessible by `docker logs`.
+IMPORTANT: As long as the application server is starting the container's log output is forwarded to the host's standard out. Afterwards, it is only accessible by `docker logs`.
 
 NOTE: the application server can be started using a custom image (e.g. different version) using the `--altImage` parameter.
 
@@ -686,7 +686,7 @@ This plugin adds test tasks for link:https://gebish.org[Geb].
 
 === Plugin Configuration
 The plugin must be applied to the project with included Geb tests. It requires an applied ICM Docker plugin.
-Furthermore it depends on the configuration of Geb self (`GebConfig.groovy`).
+Furthermore, it depends on the configuration of Geb self (`GebConfig.groovy`).
 
 ++++
 <details open>
@@ -1031,7 +1031,7 @@ It is possible to switch to a local driver for development purposes.
 
 == Intershop Commerce Management SolrCloud Plugin
 If the project includes SolrCloud as a search engine, this plugin provides some necessary tasks for the
-management of search indexes. It uses the same configuration like the ICM Docker plugin.
+management of search indexes. It uses the same configuration as the ICM Docker plugin.
 
 === Tasks
 [cols="26%,33%,40%", width="99%, options="header"]
@@ -1096,7 +1096,7 @@ intershop.servletEngine.connector.port = 7743
 # this is not always 'localhost'.
 intershop.local.hostname = 192.168.2.205
 
-# solr  configuiration
+# solr configuration
 solr.zooKeeperHostList = jengsolr1.intershop.de:2181;jengsolr2.intershop.de:2181;jengsolr3.intershop.de:2181/solr8
 solr.clusterIndexPrefix = devhost
 
