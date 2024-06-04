@@ -585,10 +585,9 @@ NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localV
 </details>
 ++++
 
-===== Application Server [[StartASParameters]]
+===== Application Server [[CreateASParameters]]
 
 IMPORTANT: The following parameters actually belong to the task `createAS` (not `startAS`).
-But if you just call for example `./gradlew startAS --debug-icm=suspend` the parameter(s) are also applied to the `createAS`-task (task `startAS` depends on `createAS`).
 
 [cols="10%,70%,10%,10%", width="99%, options="header"]
 |===
@@ -605,15 +604,20 @@ NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localV
 <details>
 <summary>Examples</summary>
 ++++
-.start with debugging in suspend mode
+.create application server container with debugging (default port 5005) in suspend mode
 [source,shell]
 ----
-./gradlew startAS --debug-icm=suspend
+./gradlew createAS --debug-icm=suspend
 ----
-.start with GC-logging and heap dump
+.create application server container with GC-logging and heap dump
 [source,shell]
 ----
-./gradlew startAS --gclog --heapdump
+./gradlew createAS --gclog --heapdump
+----
+.start application server container previously created
+[source,shell]
+----
+./gradlew startAS
 ----
 ++++
 </details>
