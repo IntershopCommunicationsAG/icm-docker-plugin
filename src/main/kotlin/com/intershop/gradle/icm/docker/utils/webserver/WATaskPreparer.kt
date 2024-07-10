@@ -67,6 +67,9 @@ class WATaskPreparer(
         val env = with(dockerExtension.developmentConfig) {
             val env = ContainerEnvironment()
 
+            val environment = getConfigProperty(Configuration.WS_ENVIRONMENT, "development")
+            env.add("ENVIRONMENT", environment)
+
             val serverCertName = getConfigProperty(Configuration.WS_SERVER_CERT, "")
             if (serverCertName.isNotBlank()) {
                 env.add("ICM_SERVERCERT", serverCertName)

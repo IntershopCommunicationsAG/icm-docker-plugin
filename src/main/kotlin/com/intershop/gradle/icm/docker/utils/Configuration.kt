@@ -89,6 +89,7 @@ object Configuration {
     const val WS_SERVER_CERT = "webserver.cert.server"
     const val WS_SERVER_PRIVAT = "webserver.cert.privatekey"
 
+    const val WS_ENVIRONMENT = "webserver.environment"
     const val WS_SERVER_HTTP2 = "webserver.use.http2"
 
     const val WS_URL = "intershop.WebServerURL"
