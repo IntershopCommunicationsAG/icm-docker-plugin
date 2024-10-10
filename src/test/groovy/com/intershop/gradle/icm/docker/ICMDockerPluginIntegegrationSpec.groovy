@@ -84,7 +84,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         dockerMainFile.createNewFile()
         dockerMainFile <<
                 """
-        FROM ubuntu:20.10 as BUILD
+        FROM ubuntu:22.04 as BUILD
         RUN mkdir -p /intershop-prj
         """.stripIndent()
 
@@ -279,7 +279,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         dockerMainFile.createNewFile()
         dockerMainFile <<
         """
-        FROM ubuntu:20.10 as BUILD
+        FROM ubuntu:22.04 as BUILD
         RUN mkdir -p /intershop-prj
         """.stripIndent()
 

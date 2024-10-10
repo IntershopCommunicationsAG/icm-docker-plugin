@@ -1,7 +1,7 @@
 ARG USERNAME=intershop
 ARG USERID=150
 
-FROM ubuntu:20.10 AS BUILD
+FROM ubuntu:22.10 AS BUILD
 ARG USERNAME=intershop
 ARG USERID=150
 
@@ -32,7 +32,7 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     chown -R ${USERNAME}:intershop /intershop-init
 
 # FROM busybox:latest
-FROM eclipse-temurin:17.0.9_9-jre
+FROM eclipse-temurin:21.0.4_7-jre-jammy
 ARG USERNAME=intershop
 ARG USERID=150
 
