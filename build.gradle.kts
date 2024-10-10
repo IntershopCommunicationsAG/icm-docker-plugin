@@ -130,7 +130,7 @@ testing {
     suites.withType<JvmTestSuite> {
         useSpock()
         dependencies {
-            implementation("com.intershop.gradle.test:test-gradle-plugin:5.0.1")
+            implementation("com.intershop.gradle.test:test-gradle-plugin:5.1.0")
             implementation(gradleTestKit())
         }
 
@@ -302,9 +302,9 @@ dependencies {
     implementation(gradleApi())
     implementation(gradleKotlinDsl())
 
-    implementation("org.apache.solr:solr-solrj:9.4.0")
-    implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:9.3.6")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:6.2.0")
+    implementation("org.apache.solr:solr-solrj:9.7.0")
+    implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:9.4.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:6.2.1")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:2.0.1")
 }
 
