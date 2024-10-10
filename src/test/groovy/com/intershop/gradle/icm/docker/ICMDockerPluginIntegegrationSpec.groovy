@@ -105,7 +105,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }
         """.stripIndent())
 
@@ -126,7 +126,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -147,7 +147,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -158,7 +158,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         }
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -174,7 +174,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -300,7 +300,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }
         """.stripIndent())
 
@@ -321,7 +321,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -342,7 +342,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -353,7 +353,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         }
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -369,7 +369,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -470,7 +470,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }
         """.stripIndent())
 
@@ -491,7 +491,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -502,7 +502,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         }
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -518,7 +518,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -620,7 +620,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }
         """.stripIndent())
 
@@ -641,7 +641,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -662,7 +662,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -673,7 +673,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         }
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -689,7 +689,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         } 
         
         repositories {
-            jcenter()
+            mavenCentral()
         }        
         """.stripIndent())
 
@@ -709,7 +709,7 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         def result = getPreparedGradleRunner()
                 .withArguments("pullAS", "--altImage=busybox:latest", "--forcePull", "-s")
                 .withGradleVersion(gradleVersion)
-        .withDebug(true)
+                .withDebug(true)
                 .build()
 
         then:

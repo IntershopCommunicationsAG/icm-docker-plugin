@@ -38,7 +38,7 @@ class TestRepo {
 
             String repostr = """
             repositories {
-                jcenter()
+                mavenCentral()
                 maven {
                     url "${repoDir.toURI().toURL()}"
                 }
@@ -55,10 +55,10 @@ class TestRepo {
 
             String repostr = """
             repositories {
+                mavenCentral()
                 maven {
                     url=uri("${repoDir.toURI().toURL()}")
                 }
-                jcenter()
             }""".stripIndent()
 
             return repostr
