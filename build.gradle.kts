@@ -23,7 +23,7 @@ plugins {
     `java-gradle-plugin`
     groovy
 
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version "1.9.25"
 
     // test coverage
     jacoco
@@ -38,13 +38,13 @@ plugins {
     signing
 
     // plugin for documentation
-    id("org.asciidoctor.jvm.convert") version "3.3.2"
+    id("org.asciidoctor.jvm.convert") version "4.0.3"
 
     // documentation
-    id("org.jetbrains.dokka") version "1.9.10"
+    id("org.jetbrains.dokka") version "1.9.20"
 
     // plugin for publishing to Gradle Portal
-    id("com.gradle.plugin-publish") version "1.2.1"
+    id("com.gradle.plugin-publish") version "1.3.0"
 }
 
 group = "com.intershop.gradle.icm.docker"
@@ -130,14 +130,14 @@ testing {
     suites.withType<JvmTestSuite> {
         useSpock()
         dependencies {
-            implementation("com.intershop.gradle.test:test-gradle-plugin:5.0.1")
+            implementation("com.intershop.gradle.test:test-gradle-plugin:5.1.0")
             implementation(gradleTestKit())
         }
 
         targets {
             all {
                 testTask.configure {
-                    systemProperty("intershop.gradle.versions", "8.5")
+                    systemProperty("intershop.gradle.versions", "8.5,8.10.2")
                     testLogging {
                         showStandardStreams = true
                     }
@@ -183,21 +183,21 @@ tasks {
             setBackends(listOf("html5", "docbook"))
         }
 
-        options = mapOf(
-                "doctype" to "article",
-                "ruby"    to "erubis"
-        )
-        attributes = mapOf(
-                "latestRevision"        to  project.version,
-                "toc"                   to "left",
-                "toclevels"             to "2",
-                "source-highlighter"    to "coderay",
-                "icons"                 to "font",
-                "setanchors"            to "true",
-                "idprefix"              to "asciidoc",
-                "idseparator"           to "-",
-                "docinfo1"              to "true"
-        )
+        setOptions(mapOf(
+            "doctype"               to "article",
+            "ruby"                  to "erubis"
+        ))
+        setAttributes(mapOf(
+            "latestRevision"        to project.version,
+            "toc"                   to "left",
+            "toclevels"             to "2",
+            "source-highlighter"    to "coderay",
+            "icons"                 to "font",
+            "setanchors"            to "true",
+            "idprefix"              to "asciidoc",
+            "idseparator"           to "-",
+            "docinfo1"              to "true"
+        ))
     }
 
     withType<JacocoReport> {
@@ -302,9 +302,9 @@ dependencies {
     implementation(gradleApi())
     implementation(gradleKotlinDsl())
 
-    implementation("org.apache.solr:solr-solrj:9.4.0")
-    implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:9.3.6")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:6.2.0")
+    implementation("org.apache.solr:solr-solrj:9.7.0")
+    implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:9.4.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:6.2.1")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:2.0.1")
 }
 

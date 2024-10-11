@@ -20,7 +20,6 @@ import com.intershop.gradle.test.AbstractIntegrationGroovySpec
 import spock.lang.Ignore
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 @Ignore
 class ICMTestDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {

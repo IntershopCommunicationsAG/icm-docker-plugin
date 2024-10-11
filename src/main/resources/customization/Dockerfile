@@ -1,5 +1,5 @@
 ARG BASE_IMAGE
-FROM ubuntu:20.04 as BUILD
+FROM ubuntu:22.04 as BUILD
 ARG PACKAGE_FILE
 
 RUN mkdir -p /intershop-prj
