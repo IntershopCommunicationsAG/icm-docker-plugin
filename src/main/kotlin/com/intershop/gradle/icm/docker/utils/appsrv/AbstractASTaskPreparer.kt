@@ -144,11 +144,6 @@ abstract class AbstractASTaskPreparer(
             project.layout.buildDirectory.dir("sites_folder").get().asFile).absolutePath
         project.logger.quiet("Sites folder: {}", sitesFolderPath)
 
-        dockerExtension.developmentConfig.getConfigProperty(
-            Configuration.SITES_FOLDER_PATH,
-            project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath)
-
-
         val volumes = mutableMapOf(
             sitesFolderPath
                     to "/intershop/sites",
