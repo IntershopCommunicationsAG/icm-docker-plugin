@@ -139,21 +139,13 @@ abstract class AbstractASTaskPreparer(
     }
 
     protected fun getServerVolumes(): Map<String, String> {
-        val default = project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath
-        val sitesFolderPath = dockerExtension.developmentConfig.getConfigProperty(
+        val sitesFolderPath = dockerExtension.developmentConfig.getFileProperty(
             Configuration.SITES_FOLDER_PATH,
-            default)
+            project.layout.buildDirectory.dir("sites_folder").get().asFile).absolutePath
         project.logger.quiet("Sites folder: {}", sitesFolderPath)
 
-        dockerExtension.developmentConfig.getConfigProperty(
-            Configuration.SITES_FOLDER_PATH,
-            project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath)
-
-
         val volumes = mutableMapOf(
-            dockerExtension.developmentConfig.getConfigProperty(
-                Configuration.SITES_FOLDER_PATH,
-                project.layout.buildDirectory.dir("sites_folder").get().asFile.absolutePath)
+            sitesFolderPath
                     to "/intershop/sites",
             addDirectories.getValue(TaskPreparer.SERVERLOGS).get().asFile.absolutePath
                     to "/intershop/logs",

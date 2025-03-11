@@ -16,13 +16,17 @@
  */
 package com.intershop.gradle.icm.docker
 
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration
 import com.intershop.gradle.icm.docker.util.TestRepo
+import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.test.AbstractIntegrationGroovySpec
+
+import java.nio.file.Path
 
 import static org.gradle.testkit.runner.TaskOutcome.SKIPPED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
+class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
 
     final ICMGRADLEVERSION = "6.2.1"
 
@@ -382,6 +386,91 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
         return repoConf
     }
 
+    private def prepareCustomFolderPathBuildConfig(File testProjectDir, File settingsFile, File buildFile) {
+        TestRepo repo = new TestRepo(new File(testProjectDir, "/repo"))
+        String repoConf = repo.getRepoConfig()
+
+        settingsFile << """
+        rootProject.name='rootproject'
+        """.stripIndent()
+
+        buildFile << """
+            plugins {
+                id 'java'
+                id 'com.intershop.gradle.icm.project' version '$ICMGRADLEVERSION'
+                id 'com.intershop.gradle.icm.docker.customization'
+            }
+            
+            group = 'com.intershop.test'
+            version = '10.0.0'
+            
+            subprojects {
+                plugins.withType(JavaPlugin) {
+                    tasks.withType(Javadoc) {
+                        // Do not care about non-existing comments in dummy files
+                        options.addStringOption('Xdoclint:none', '-quiet')
+                    }
+                }
+            }
+
+            intershop {
+                projectConfig {
+                    base {
+                        dependency.set("com.intershop.icm:icm-as:1.0.0")
+                        image.set("intershopmock/icm-as-mock:mock")  
+                        testImage.set("intershopmock/icm-as-mock:mock")  
+                    }
+                }
+            }
+
+            intershop_docker {
+                images {
+                    mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
+                }
+                
+                imageBuild {
+                    images {
+                        mainImage {
+                           dockerfile = file("docker/main/Dockerfile")
+                           addFiles(tasks.createMainPkg.outputs.files)
+                           dockerBuildDir = "main"
+                           enabled = true
+                        }
+                    } 
+                }
+            }
+
+            tasks.buildMainImage.dependsOn(tasks.createMainPkg)
+
+            ${repoConf}
+
+        """.stripIndent()
+
+        def dockerMainFile = new File(testProjectDir, "docker/main/Dockerfile")
+        dockerMainFile.parentFile.mkdirs()
+        dockerMainFile.createNewFile()
+        dockerMainFile <<
+            """
+        FROM ubuntu:22.04 as BUILD
+        RUN mkdir -p /intershop-prj
+        """.stripIndent()
+
+        def prj1dir = createSubProject('prjCartridge_prod', """
+        plugins {
+            id 'java-library'
+            id 'com.intershop.icm.cartridge.product'
+        }
+        
+        repositories {
+            mavenCentral()
+        }
+        """.stripIndent())
+
+        writeJavaTestClass("com.intershop.prod", prj1dir)
+
+        return repoConf
+    }
+
     private def prepareSimpleBuildConfig(File testProjectDir, File settingsFile, File buildFile) {
         TestRepo repo = new TestRepo(new File(testProjectDir, "/repo"))
         String repoConf = repo.getRepoConfig()
@@ -721,7 +810,6 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
     }
 
     def 'run start container'() {
-
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
         when:
@@ -741,6 +829,38 @@ class ICMDockerPluginIntegegrationSpec extends AbstractIntegrationGroovySpec {
 
         then:
         result3.task(":removeWaitingAs").outcome == SUCCESS
+
+        where:
+        gradleVersion << supportedGradleVersions
+    }
+
+    def 'run start container with custom sites_folder volume mount'() {
+        prepareCustomFolderPathBuildConfig(testProjectDir, settingsFile, buildFile)
+
+        String configFilePath = Path.of(DevelopmentConfiguration.DEFAULT_CONFIG_PATH, DevelopmentConfiguration.CONFIG_FILE_NAME).toString()
+        String targetSitesFolderPath = new File(testProjectDir, "test_sites_folder").toString()
+        createLocalFile(configFilePath, "${Configuration.SITES_FOLDER_PATH} = ${targetSitesFolderPath}")
+
+        String configDirectoryPath = new File(testProjectDir, DevelopmentConfiguration.DEFAULT_CONFIG_PATH).toPath()
+
+        when:
+        def result1 = getPreparedGradleRunner()
+            .withArguments("startWaitingAs", "-PconfigDir=${configDirectoryPath}", "-s")
+            .withGradleVersion(gradleVersion)
+            .build()
+
+        then:
+        result1.task(":startWaitingAs").outcome == SUCCESS
+        result1.output.contains("Sites folder: ${targetSitesFolderPath}")
+
+        when:
+        def result2 = getPreparedGradleRunner()
+            .withArguments("removeWaitingAs", "-s")
+            .withGradleVersion(gradleVersion)
+            .build()
+
+        then:
+        result2.task(":removeWaitingAs").outcome == SUCCESS
 
         where:
         gradleVersion << supportedGradleVersions
