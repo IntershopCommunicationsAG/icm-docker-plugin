@@ -16,17 +16,11 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
-import com.github.dockerjava.api.model.Container
-import org.gradle.api.GradleException
-import org.gradle.api.internal.provider.Providers
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
-import java.util.function.Consumer
-import java.util.stream.Collectors
 import javax.inject.Inject
 
 abstract class FindContainer
