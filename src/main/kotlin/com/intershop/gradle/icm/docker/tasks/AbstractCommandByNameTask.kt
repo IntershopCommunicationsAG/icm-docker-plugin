@@ -22,7 +22,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Internal
 import java.time.Duration
 import java.util.Optional
 import javax.inject.Inject
@@ -33,7 +32,9 @@ abstract class AbstractCommandByNameTask
     @get:Input
     val containerName: Property<String> = objectFactory.property(String::class.java)
 
-    @Internal
+    /**
+     * Finds a container by the data provided using parameter `expected`
+     */
     protected fun findContainer(expected : ContainerHandle) : Optional<ContainerHandle> {
         val containers: MutableList<Container> =
             dockerClient.listContainersCmd().withShowAll(true).withNameFilter(listOf("/${expected.getContainerName()}"))
@@ -53,7 +54,13 @@ abstract class AbstractCommandByNameTask
         return Optional.empty()
     }
 
-    @Internal
+    /**
+     * Waits for a container to be in a specific state
+     * @param what the container to wait for
+     * @param callback the callback to check the condition and provide additional information
+     * @return the container handle representing the container's state wrapped into an Optional or an empty Optional
+     * representing the container not being found
+     */
     protected fun waitFor(what : ContainerHandle, callback: WaitForCallback) : Optional<ContainerHandle> {
         var optHandle = findContainer(what)
         var retryCnt = 0
@@ -65,9 +72,24 @@ abstract class AbstractCommandByNameTask
         return optHandle
     }
 
+    /**
+     * Callback interface for the `waitFor` method
+     * @see waitFor
+     */
     interface WaitForCallback {
+        /**
+         * Returns a description of the condition to be checked (used for logging)
+         */
         fun describeCondition() : String
+
+        /**
+         * Checks the condition and returns `true` if the condition is met e.g. the container is running
+         */
         fun checkCondition(optContainerHandle : Optional<ContainerHandle>, retryCnt : Int) : Boolean
+
+        /**
+         * Returns the delay between two retries
+         */
         fun getRetryDelay() : Duration
     }
 }
