@@ -40,6 +40,7 @@ object Configuration {
     const val DB_MSSQL_DBNAME_VALUE = "icmtestdb"
 
     const val DB_MSSQL_USE_HOST_USER = "intershop.db.mssql.useHostUser"
+    const val DB_MSSQL_AUTOREMOVE_CONTAINER = "intershop.db.mssql.autoRemoveContainer"
 
     const val DB_TYPE = "intershop.databaseType"
     const val DB_JDBC_URL = "intershop.jdbc.url"
@@ -103,6 +104,8 @@ object Configuration {
 
     const val WA_USE_HOST_USER = "wa.useHostUser"
     const val WAA_USE_HOST_USER = "waa.useHostUser"
+    const val WA_AUTOREMOVE_CONTAINER = "wa.autoRemoveContainer"
+    const val WAA_AUTOREMOVE_CONTAINER = "waa.autoRemoveContainer"
 
     const val AS_ADMIN_USER_NAME = "intershop.smc.admin.user.name"
     const val AS_ADMIN_USER_NAME_VALUE = "admin"
@@ -112,6 +115,7 @@ object Configuration {
     const val AS_READINESS_PROBE_TIMEOUT = "intershop.as.readinessProbe.timeout"
     const val AS_READINESS_PROBE_TIMEOUT_VALUE = 100 * 60 // 100 mins (full dbinit may be necessary)
     const val AS_USE_HOST_USER = "intershop.as.useHostUser"
+    const val AS_AUTOREMOVE_CONTAINER = "intershop.as.autoRemoveContainer"
 
     const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
@@ -119,12 +123,14 @@ object Configuration {
     const val SOLR_CLOUD_HOST_PORT_VALUE = 8983
     const val SOLR_DATA_FOLDER_PATH = "solr.data.folder.path"
     const val SOLR_USE_HOST_USER = "solr.useHostUser"
+    const val SOLR_AUTOREMOVE_CONTAINER = "solr.autoRemoveContainer"
 
     const val ZOOKEEPER_HOST_PORT = "zookeeper.port"
     const val ZOOKEEPER_HOST_PORT_VALUE = 2181
     const val ZOOKEEPER_METRICS_HOST_PORT = "zookeeper.metrics.port"
     const val ZOOKEEPER_METRICS_HOST_PORT_VALUE = 7000
     const val ZOOKEEPER_USE_HOST_USER = "zookeeper.useHostUser"
+    const val ZOOKEEPER_AUTOREMOVE_CONTAINER = "zookeeper.autoRemoveContainer"
 
     const val SSL_VERIFICATION = "ssl.verification"
 
@@ -157,6 +163,7 @@ object Configuration {
     const val MAIL_READINESS_PROBE_TIMEOUT = "mail.readinessProbe.timeout"
     const val MAIL_READINESS_PROBE_TIMEOUT_VALUE = 15 // 15 secs
     const val MAIL_USE_HOST_USER = "mail.useHostUser"
+    const val MAIL_AUTOREMOVE_CONTAINER = "mail.autoRemoveContainer"
 
     const val NGINX_HTTP_PORT = "nginx.http.port"
     const val NGINX_HTTPS_PORT = "nginx.https.port"
@@ -170,8 +177,10 @@ object Configuration {
     const val NGINX_PRIVATEKEY_FILENAME = "nginx.privatekey.filename"
     const val NGINX_PRIVATEKEY_FILENAME_VALUE = "privkey.pem"
     const val NGINX_USE_HOST_USER = "nginx.useHostUser"
+    const val NGINX_AUTOREMOVE_CONTAINER = "nginx.autoRemoveContainer"
 
     const val REDIS_USE_HOST_USER = "redis.useHostUser"
+    const val REDIS_AUTOREMOVE_CONTAINER = "redis.autoRemoveContainer"
 
     const val INTERSHOP_ENVIRONMENT_PREFIX = "intershop.environment."
 }

@@ -37,6 +37,7 @@ class TaskPreparer(project: Project,
     override fun getExtensionName(): String = EXT_NAME
     override fun getImage(): Provider<String> = dockerExtension.images.mailsrv
     override fun getUseHostUserConfigProperty(): String = Configuration.MAIL_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.MAIL_AUTOREMOVE_CONTAINER
     override fun useHostUserDefaultValue(): Boolean = true
 
     init {

@@ -19,15 +19,18 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import com.github.dockerjava.api.model.Container
 import org.gradle.api.GradleException
+import org.gradle.api.internal.provider.Providers
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
+import java.util.function.Consumer
+import java.util.stream.Collectors
+import javax.inject.Inject
 
-abstract class FindContainer : AbstractDockerRemoteApiTask() {
-
-    @get:Input
-    val containerName: Property<String> = project.objects.property(String::class.java)
+abstract class FindContainer
+    @Inject constructor(objectFactory: ObjectFactory) : AbstractCommandByNameTask(objectFactory) {
 
     @get:Optional
     @get:Input
@@ -46,26 +49,11 @@ abstract class FindContainer : AbstractDockerRemoteApiTask() {
     fun getContainer(): ContainerHandle = foundContainer.get()
 
     override fun runRemoteCommand() {
-        foundContainer.set(null as ContainerHandle?)
+        val optFoundContainer = findContainer(ContainerHandle.desired(containerName, expectedImage))
 
-        val containers: MutableList<Container> =
-                dockerClient.listContainersCmd().withShowAll(true).withNameFilter(listOf("/${containerName.get()}"))
-                        .exec()
-
-        for (c in containers) {
-            if (c.names.contains("/${containerName.get()}")) {
-                if (expectedImage.isPresent && c.image != expectedImage.get()) {
-                    throw GradleException(
-                            "The running container was started with image '${c.image}', but the configured image is " +
-                            "'${expectedImage.get()}'. Please remove running containers!")
-                }
-                foundContainer.set(ContainerHandle.of(c))
-
-                break
-            }
-        }
-
-        if (foundContainer.isPresent) {
+        if (optFoundContainer.isPresent) {
+            val containerHandle = optFoundContainer.get()
+            foundContainer.set(containerHandle)
             project.logger.quiet("Container '{}' exists using id={} ({})", containerName.get(),
                     getContainer().getContainerId(), if (getContainer().isRunning()) {
                 "RUNNING"
@@ -73,6 +61,7 @@ abstract class FindContainer : AbstractDockerRemoteApiTask() {
                 "NOT RUNNING"
             })
         } else {
+            foundContainer.set(null as ContainerHandle?)
             project.logger.quiet("Container '{}' does not exist", containerName.get())
         }
     }

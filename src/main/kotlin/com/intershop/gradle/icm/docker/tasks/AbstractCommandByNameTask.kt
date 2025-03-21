@@ -17,10 +17,14 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
+import com.github.dockerjava.api.model.Container
+import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import java.time.Duration
+import java.util.Optional
 import javax.inject.Inject
 
 abstract class AbstractCommandByNameTask
@@ -30,17 +34,40 @@ abstract class AbstractCommandByNameTask
     val containerName: Property<String> = objectFactory.property(String::class.java)
 
     @Internal
-    protected fun getContainerIDList(): List<String> {
-        val listContainerCmd = dockerClient.listContainersCmd().withNameFilter(listOf(containerName.get()))
-        val listContainers = listContainerCmd.exec()
-        val containerIDList = mutableListOf<String>()
+    protected fun findContainer(expected : ContainerHandle) : Optional<ContainerHandle> {
+        val containers: MutableList<Container> =
+            dockerClient.listContainersCmd().withShowAll(true).withNameFilter(listOf("/${expected.getContainerName()}"))
+                .exec()
 
-        listContainers.forEach { c ->
-            if (c.names.any { it.contains(containerName.get()) }) {
-                containerIDList.add(c.id)
+        for (c in containers) {
+            val expectedImage = expected.getContainerImage()
+            if (c.names.contains("/${expected.getContainerName()}")) {
+                if (c.image != expectedImage) {
+                    throw GradleException(
+                        "The running container was started with image '${c.image}', but the configured image is " +
+                                "'${expectedImage}'. Please remove running containers!")
+                }
+                return Optional.of(ContainerHandle.of(c))
             }
         }
+        return Optional.empty()
+    }
 
-        return containerIDList
+    @Internal
+    protected fun waitFor(what : ContainerHandle, callback: WaitForCallback) : Optional<ContainerHandle> {
+        var optHandle = findContainer(what)
+        var retryCnt = 0
+        while (callback.checkCondition(optHandle, retryCnt++)) {
+            project.logger.warn("Waiting for: {} ({})", callback.describeCondition(), retryCnt)
+            Thread.sleep(callback.getRetryDelay().toMillis())
+            optHandle = findContainer(what)
+        }
+        return optHandle
+    }
+
+    interface WaitForCallback {
+        fun describeCondition() : String
+        fun checkCondition(optContainerHandle : Optional<ContainerHandle>, retryCnt : Int) : Boolean
+        fun getRetryDelay() : Duration
     }
 }

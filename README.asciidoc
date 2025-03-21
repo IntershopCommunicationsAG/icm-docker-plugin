@@ -343,6 +343,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.db.mssql.recreatedb` | controls if the actual DB is recreated on container start | Boolean | Optional | `false` +
 | `intershop.db.mssql.recreateuser` | controls if the DB-user is recreated on container start | Boolean | Optional | `false` +
 | `intershop.db.mssql.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `intershop.db.mssql.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 | `intershop.jdbc.user` | the name of the actual DB user to be created | String | Optional | `intershop` +
 | `intershop.jdbc.password` | the password of the actual DB user to be created | String | Optional | `intershop` +
 |===
@@ -364,6 +365,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.ws.readinessProbe.timeout` | max. number of seconds to wait for the WebAdapter to become ready | Integer | Optional | `30` +
 | `webserver.use.http2` | enables/disables usage of HTTP2 | Boolean | Optional | `false` +
 | `wa.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `wa.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
 
 ===== WAA [[WAAConfiguration]]
@@ -373,6 +375,7 @@ The following properties are part of the <<PropertiesFile>>.
 | Key | Description | Co-domain | Mandatory/Optional | Default value
 
 | `waa.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `waa.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
 
 ===== NGINX [[NGINXConfiguration]]
@@ -386,6 +389,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `nginx.cert.filename` | name of the certificate file | String | Optional | `fullchain.pem` +
 | `nginx.privatekey.filename` | name of the certificate private key file | String | Optional | `privkey.pem` +
 | `nginx.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `nginx.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
 
 ===== Solr [[SolrConfiguration]]
@@ -397,6 +401,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `solr.clusterIndexPrefix` | prefix to be used for indexed inside Solr | String | Optional | <empty> +
 | `solr.port` | the host port to be used for the Solr server primary port | Integer | Optional | `8983` +
 | `solr.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `solr.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
 
 ===== ZooKeeper [[ZKConfiguration]]
@@ -407,7 +412,8 @@ The following properties are part of the <<PropertiesFile>>.
 
 | `zookeeper.port` | the host port to be used for the Zookeeper's primary port | Integer | Optional | `2181` +
 | `zookeeper.metrics.port` | the host port to be used for the Zookeeper's metrics port | Integer | Optional | `7000` +
-| `zookeper.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `zookeeper.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `zookeeper.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
 
 ===== Mail [[MailConfiguration]]
@@ -421,6 +427,7 @@ The following properties are part of the <<PropertiesFile>>.
 | `mail.readinessProbe.interval` | interval in seconds to be used to check if the mail server is ready | Integer | Optional | `2` +
 | `mail.readinessProbe.timeout` | max. number of seconds to wait for the mail server to become ready | Integer | Optional | `30` +
 | `mail.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `true` +
+| `mail.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
 
 Mails are stored in the build directory `mailoutput`.
@@ -432,6 +439,7 @@ Mails are stored in the build directory `mailoutput`.
 | Key | Description | Co-domain | Mandatory/Optional | Default value
 
 | `redis.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `true` +
+| `redis.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
 
 == Intershop Commerce Management Customization Docker Plugin
@@ -1068,11 +1076,15 @@ e.g. zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/solr
 
 
 == Configuration properties file [[PropertiesFile]]
-For the configuration on a special local machine it is necessary to provide an Intershop licence file and a
-`icm.properties` file in file structure. It is possible to configure the location with environment properties.
-This is a minimum set of properties.
+For the configuration on a special local machine it is necessary to provide an `icm.properties`-file in file structure.
+It is possible to configure the location with environment properties. If a certain property is requested but *not found* in the
+`icm.properties`-file the gradle system is asked for the property. That allows to specify such a property
 
-icm.properties
+- on the command line (e.g. `./gradlew startAS -Pwa.autoRemoveContainer=false`)
+- in one of the `gradle.properties`-files
+
+This is a minimum set of properties in `icm.properties`:
+
 [source, properties]
 [subs=+attributes]
 ----

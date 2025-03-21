@@ -20,6 +20,7 @@ package com.intershop.gradle.icm.docker.extension
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
@@ -42,7 +43,7 @@ import javax.inject.Inject
  * @constructor creates a configuration from environment variables.
  */
 open class DevelopmentConfiguration
-@Inject constructor(objectFactory: ObjectFactory, providerFactory: ProviderFactory) {
+@Inject constructor(val project: Project, objectFactory: ObjectFactory, providerFactory: ProviderFactory) {
 
     private val logger: Logger = LoggerFactory.getLogger(DevelopmentConfiguration::class.java)
 
@@ -215,16 +216,25 @@ open class DevelopmentConfiguration
 
     fun getConfigProperty(property: String, defaultValue: String): String {
         return getConfigProperty(property, defaultValue) {
-            it.isNullOrBlank()
+            value -> if (value is String) { value.isBlank() } else { value == null }
         }
     }
 
-    fun getConfigProperty(property: String, defaultValue: String, isEmpty: (String?) -> Boolean): String {
+    fun getConfigProperty(property: String, defaultValue: String, isEmpty: (Any?) -> Boolean): String {
         val value = configProperties.getProperty(property)
+        return if (isEmpty.invoke(value)) {
+            getProjectProperty(property, defaultValue, isEmpty)
+        } else {
+            value
+        }
+    }
+
+    fun getProjectProperty(property: String, defaultValue: String, isEmpty: (Any?) -> Boolean): String {
+        val value = project.findProperty(property)
         return if (isEmpty.invoke(value)) {
             defaultValue
         } else {
-            value
+            value.toString()
         }
     }
 

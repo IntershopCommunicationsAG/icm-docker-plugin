@@ -48,6 +48,7 @@ class TaskPreparer(
 
     override fun getImage(): Provider<String> = dockerExtension.images.nginx
     override fun getUseHostUserConfigProperty(): String = Configuration.NGINX_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.NGINX_AUTOREMOVE_CONTAINER
 
     init {
         initBaseTasks()

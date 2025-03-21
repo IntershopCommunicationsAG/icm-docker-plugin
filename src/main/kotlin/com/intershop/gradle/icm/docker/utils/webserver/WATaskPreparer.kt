@@ -21,11 +21,6 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.Configuration.WA_USE_HOST_USER
-import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_INTERVAL
-import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_INTERVAL_VALUE
-import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_TIMEOUT
-import com.intershop.gradle.icm.docker.utils.Configuration.WS_READINESS_PROBE_TIMEOUT_VALUE
 import com.intershop.gradle.icm.docker.utils.appsrv.ASTaskPreparer
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -42,7 +37,8 @@ class WATaskPreparer(
 
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.webadapter
-    override fun getUseHostUserConfigProperty(): String = WA_USE_HOST_USER
+    override fun getUseHostUserConfigProperty(): String = Configuration.WA_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.WA_AUTOREMOVE_CONTAINER
     override fun getTaskGroupExt(): String = "webserver"
 
     init {
@@ -117,13 +113,17 @@ class WATaskPreparer(
             with(dockerExtension.developmentConfig) {
                 task.withSocketProbe(
                         httpPortMapping.hostPort,
-                        getDurationProperty(WS_READINESS_PROBE_INTERVAL, WS_READINESS_PROBE_INTERVAL_VALUE),
-                        getDurationProperty(WS_READINESS_PROBE_TIMEOUT, WS_READINESS_PROBE_TIMEOUT_VALUE)
+                        getDurationProperty(Configuration.WS_READINESS_PROBE_INTERVAL,
+                            Configuration.WS_READINESS_PROBE_INTERVAL_VALUE),
+                        getDurationProperty(Configuration.WS_READINESS_PROBE_TIMEOUT,
+                            Configuration.WS_READINESS_PROBE_TIMEOUT_VALUE)
                 )
                 task.withSocketProbe(
                         httpsPortMapping.hostPort,
-                        getDurationProperty(WS_READINESS_PROBE_INTERVAL, WS_READINESS_PROBE_INTERVAL_VALUE),
-                        getDurationProperty(WS_READINESS_PROBE_TIMEOUT, WS_READINESS_PROBE_TIMEOUT_VALUE)
+                        getDurationProperty(Configuration.WS_READINESS_PROBE_INTERVAL,
+                            Configuration.WS_READINESS_PROBE_INTERVAL_VALUE),
+                        getDurationProperty(Configuration.WS_READINESS_PROBE_TIMEOUT,
+                            Configuration.WS_READINESS_PROBE_TIMEOUT_VALUE)
                 )
             }
         }

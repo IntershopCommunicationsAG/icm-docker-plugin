@@ -39,6 +39,7 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
     val waTasks : WATaskPreparer
 
     init {
+
         val volumes = mapOf(
             "${extension.containerPrefix}-pagecache" to "/intershop/pagecache",
             "${extension.containerPrefix}-walogs" to "/intershop/logs")
@@ -46,12 +47,6 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
         val createVolumes =
             project.tasks.register("create${TASK_EXT_VOLUMES}", CreateVolumes::class.java) { task ->
                 configureWebServerTasks(task, "Creates volumes in Docker")
-                task.volumeNames.set( volumes.keys )
-            }
-
-        val removeVolumes =
-            project.tasks.register("remove${TASK_EXT_VOLUMES}", RemoveVolumes::class.java) { task ->
-                configureWebServerTasks(task, "Removes volumes from Docker")
                 task.volumeNames.set( volumes.keys )
             }
 
@@ -66,6 +61,13 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
 
         val waaTasks = WAATaskPreparer(project, networkTasks.createNetworkTask, volumes)
         waTasks = WATaskPreparer(project, networkTasks.createNetworkTask, volumes + certVol)
+
+        val removeVolumes =
+            project.tasks.register("remove${TASK_EXT_VOLUMES}", RemoveVolumes::class.java) { task ->
+                configureWebServerTasks(task, "Removes volumes from Docker")
+                task.volumeNames.set( volumes.keys )
+                task.dependsOn(waTasks.removeTask, waaTasks.removeTask)
+            }
 
         waTasks.startTask.configure {
             it.dependsOn(createVolumes)
@@ -82,7 +84,7 @@ class TaskPreparer(val project: Project, private val networkTasks: NetworkPrepar
 
         project.tasks.register("stop${TASK_EXT_SERVER}") { task ->
             configureWebServerTasks(task, "Stop all components for ICM WebServer")
-            task.dependsOn(waTasks.stopTask, waaTasks.stopTask)
+            task.dependsOn(waTasks.removeTask, waaTasks.removeTask)
             task.finalizedBy(removeVolumes)
         }
 

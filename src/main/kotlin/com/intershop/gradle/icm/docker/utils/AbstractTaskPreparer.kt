@@ -49,7 +49,13 @@ abstract class AbstractTaskPreparer(
         return dockerExtension.developmentConfig.getBooleanProperty(getUseHostUserConfigProperty(), useHostUserDefaultValue())
     }
     protected open fun useHostUserDefaultValue() : Boolean = false
-    protected abstract fun getUseHostUserConfigProperty() : String;
+    protected abstract fun getUseHostUserConfigProperty() : String
+
+    protected fun autoRemoveContainer() : Boolean {
+        return dockerExtension.developmentConfig.getBooleanProperty(getAutoRemoveContainerConfigProperty(), autoRemoveContainerDefaultValue())
+    }
+    protected open fun autoRemoveContainerDefaultValue() : Boolean = true
+    protected abstract fun getAutoRemoveContainerConfigProperty() : String
 
     protected val dockerExtension = project.extensions.getByType<IntershopDockerExtension>()
     protected val icmExtension = project.extensions.getByType<IntershopExtension>()
@@ -69,9 +75,19 @@ abstract class AbstractTaskPreparer(
             task.image.set(getImage())
         }
 
-        project.tasks.register(taskNameOf("stop"), StopExtraContainer::class.java) { task ->
+        val findTask = project.tasks.register(taskNameOf("find"), FindContainer::class.java) { task ->
+            task.group = taskGroup
+            task.description = "Finds the ${getContainerExt()}-container to check if it exists and is running"
+            task.dependsOn(pullTask)
+            task.containerName.set(getContainerName())
+            task.expectedImage.set(project.provider { pullTask.get().image.get() })
+        }
+
+        val stopTask = project.tasks.register(taskNameOf("stop"), StopExtraContainer::class.java) { task ->
             task.group = taskGroup
             task.description = "Stop running container"
+            task.dependsOn(findTask)
+            task.existingContainer.set(project.provider { findTask.get().foundContainer.orNull })
             task.containerName.set(getContainerName())
         }
 
@@ -79,14 +95,9 @@ abstract class AbstractTaskPreparer(
             task.group = taskGroup
             task.description = "Remove container from Docker"
             task.containerName.set(getContainerName())
-        }
-
-        project.tasks.register(taskNameOf("find"), FindContainer::class.java) { task ->
-            task.group = taskGroup
-            task.description = "Finds the ${getContainerExt()}-container to check if it exists and is running"
-            task.dependsOn(pullTask)
+            task.dependsOn(findTask, stopTask)
+            task.existingContainer.set(project.provider { findTask.get().foundContainer.orNull })
             task.containerName.set(getContainerName())
-            task.expectedImage.set(project.provider { pullTask.get().image.get() })
         }
     }
 
@@ -145,7 +156,7 @@ abstract class AbstractTaskPreparer(
             task.description = "Creates the ${getContainerExt()}-container if not already existing"
             task.attachStderr.set(true)
             task.attachStdout.set(true)
-            task.hostConfig.autoRemove.set(true)
+            task.hostConfig.autoRemove.set(autoRemoveContainer())
 
             task.targetImageId(project.provider { pullTask.get().image.get() })
             task.image.set(project.provider { pullTask.get().image.get() })

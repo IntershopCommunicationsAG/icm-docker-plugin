@@ -35,6 +35,7 @@ class WAATaskPreparer(project: Project,
     override fun getExtensionName(): String = extName
     override fun getImage(): Provider<String> = dockerExtension.images.webadapteragent
     override fun getUseHostUserConfigProperty(): String = Configuration.WAA_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.WAA_AUTOREMOVE_CONTAINER
     override fun getTaskGroupExt(): String = "webserver"
 
     init{

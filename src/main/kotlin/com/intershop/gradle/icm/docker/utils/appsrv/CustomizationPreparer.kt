@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.utils.appsrv
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
+import com.intershop.gradle.icm.docker.utils.Configuration
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
@@ -34,6 +35,7 @@ class CustomizationPreparer(project: Project,
     override fun getExtensionName(): String = "${customizationName}$EXT_PREFIX"
     override fun getImage(): Provider<String> = imagePath
     override fun getUseHostUserConfigProperty(): String = getExtensionName()+".useHostUser"
+    override fun getAutoRemoveContainerConfigProperty() : String = getExtensionName()+".autoRemoveContainer"
 
     override fun useHostUserDefaultValue(): Boolean = false
 
