@@ -24,7 +24,6 @@ import com.intershop.gradle.icm.docker.tasks.StartMailServerContainer
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.Configuration.WA_AUTOREMOVE_CONTAINER
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.docker.utils.OS
 import com.intershop.gradle.icm.docker.utils.PortMapping

@@ -36,7 +36,7 @@ abstract class AbstractCommandByNameTask
      * Finds a container by the data provided using parameter `expected`
      */
     protected fun findContainer(expected : ContainerHandle) : Optional<ContainerHandle> {
-        val containers: MutableList<Container> =
+        val containers =
             dockerClient.listContainersCmd().withShowAll(true).withNameFilter(listOf("/${expected.getContainerName()}"))
                 .exec()
 

@@ -29,20 +29,9 @@ import javax.inject.Inject
 open class StopExtraContainer
     @Inject constructor(objectFactory: ObjectFactory) :  AbstractCommandByNameTask(objectFactory) {
 
-    /**
-     * Stop timeout in seconds.
-     */
+    @get:Option(option = "remove", description = "Container will be (auto-)removed when stopped.")
     @get:Input
-    @get:Optional
-    val waitTime: Property<Int> = objectFactory.property(Int::class.java)
-
-    @get:Option(option = "remove", description = "Container will be removed with a stop call.")
-    @get:Input
-    val remove: Property<Boolean> = objectFactory.property(Boolean::class.java)
-
-    init {
-        remove.set(false)
-    }
+    val remove: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(true)
 
     @get:Input
     @get:Optional
