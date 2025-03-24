@@ -38,6 +38,7 @@ class TaskPreparer(
 
     override fun getImage(): Provider<String> = dockerExtension.images.redis
     override fun getUseHostUserConfigProperty(): String = Configuration.REDIS_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.REDIS_AUTOREMOVE_CONTAINER
 
     init {
         initBaseTasks()

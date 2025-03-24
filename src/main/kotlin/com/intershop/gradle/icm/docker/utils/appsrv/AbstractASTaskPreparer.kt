@@ -61,6 +61,7 @@ abstract class AbstractASTaskPreparer(
     }
 
     override fun getUseHostUserConfigProperty(): String = Configuration.AS_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.AS_AUTOREMOVE_CONTAINER
 
     val prepareServer: TaskProvider<Task> by lazy {
         project.tasks.named(TaskPreparer.TASK_PREPARESERVER)

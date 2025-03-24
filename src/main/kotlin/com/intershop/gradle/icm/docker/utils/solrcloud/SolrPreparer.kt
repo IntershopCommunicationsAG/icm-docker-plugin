@@ -40,6 +40,7 @@ class SolrPreparer(
     override fun getExtensionName(): String = EXT_NAME
     override fun getImage(): Provider<String> = dockerExtension.images.solr
     override fun getUseHostUserConfigProperty(): String = Configuration.SOLR_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.SOLR_AUTOREMOVE_CONTAINER
     override fun getTaskGroupExt(): String = "solrcloud"
 
     init {

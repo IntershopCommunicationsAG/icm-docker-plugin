@@ -39,6 +39,7 @@ class ZKPreparer(
     override fun getExtensionName(): String = EXT_NAME
     override fun getImage(): Provider<String> = dockerExtension.images.zookeeper
     override fun getUseHostUserConfigProperty(): String = Configuration.ZOOKEEPER_USE_HOST_USER
+    override fun getAutoRemoveContainerConfigProperty() : String = Configuration.ZOOKEEPER_AUTOREMOVE_CONTAINER
     override fun getTaskGroupExt(): String = "solrcloud"
 
     init {

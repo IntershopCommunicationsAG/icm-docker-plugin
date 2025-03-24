@@ -17,6 +17,8 @@
 
 package com.intershop.gradle.icm.docker.tasks
 
+import com.github.dockerjava.api.exception.NotFoundException
+import com.github.dockerjava.api.exception.NotModifiedException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -27,40 +29,41 @@ import javax.inject.Inject
 open class StopExtraContainer
     @Inject constructor(objectFactory: ObjectFactory) :  AbstractCommandByNameTask(objectFactory) {
 
-    /**
-     * Stop timeout in seconds.
-     */
+    @get:Option(option = "remove", description = "Container will be (auto-)removed when stopped.")
+    @get:Input
+    val remove: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(true)
+
     @get:Input
     @get:Optional
-    val waitTime: Property<Int> = objectFactory.property(Int::class.java)
-
-    @get:Option(option = "remove", description = "Container will be removed with a stop call.")
-    @get:Input
-    val remove: Property<Boolean> = objectFactory.property(Boolean::class.java)
+    val existingContainer: Property<ContainerHandle> = objectFactory.property(ContainerHandle::class.java)
 
     init {
-        remove.set(false)
+        this.onlyIf("Container exists and is running") {
+            val containerExists = existingContainer.isPresent
+            if (!containerExists) {
+                project.logger.quiet("Container '{}' does not exist, no need to stop", containerName.get())
+                return@onlyIf false
+            }
+            val isRunning = existingContainer.get().isRunning()
+            if (!isRunning) {
+                project.logger.quiet("Container '{}' is not running, no need to stop", containerName.get())
+                return@onlyIf false
+            }
+            return@onlyIf true
+        }
     }
 
     override fun runRemoteCommand() {
-        val containerIDList = getContainerIDList()
-
-        containerIDList.forEach {
-            val stopContainer = dockerClient.stopContainerCmd(it)
-            stopContainer.withTimeout(waitTime.getOrElse(0))
-
-            logger.quiet("Stop container with ID '${it}'('${containerName.get()}').")
-
-            stopContainer.exec()
-
-            if (remove.get()) {
-                val removeContainerCmd = dockerClient.removeContainerCmd(it)
-                removeContainerCmd.withRemoveVolumes(true)
-                removeContainerCmd.withForce(true)
-
-                logger.quiet("Removing container with ID '${it}'('${containerName.get()}').")
-
-                removeContainerCmd.exec()
+        val stopContainerCmd = dockerClient.stopContainerCmd(existingContainer.get().getContainerId())
+        try {
+            stopContainerCmd.exec()
+            logger.quiet("Stopped {}.", existingContainer.get())
+        } catch (e: Exception) {
+            when(e) {
+                is NotFoundException, is NotModifiedException -> {
+                    logger.error("Unable to stop {}.", existingContainer.get(), e)
+                }
+                else -> throw e
             }
         }
     }

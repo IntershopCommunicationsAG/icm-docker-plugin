@@ -34,6 +34,7 @@ class CustomizationPreparer(project: Project,
     override fun getExtensionName(): String = "${customizationName}$EXT_PREFIX"
     override fun getImage(): Provider<String> = imagePath
     override fun getUseHostUserConfigProperty(): String = getExtensionName()+".useHostUser"
+    override fun getAutoRemoveContainerConfigProperty() : String = getExtensionName()+".autoRemoveContainer"
 
     override fun useHostUserDefaultValue(): Boolean = false
 
