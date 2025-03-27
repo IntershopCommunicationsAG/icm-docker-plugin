@@ -69,18 +69,17 @@ abstract class AbstractTaskPreparer(
     protected open fun getTaskGroupExt(): String = getContainerExt()
 
     protected fun initBaseTasks() {
+        val findTask = project.tasks.register(taskNameOf("find"), FindContainer::class.java) { task ->
+            task.group = taskGroup
+            task.description = "Finds the ${getContainerExt()}-container to check if it exists and is running"
+            task.containerName.set(getContainerName())
+            task.expectedImage.set(getImage())
+        }
+
         project.tasks.register(taskNameOf("pull"), PullImage::class.java) { task ->
             task.group = taskGroup
             task.description = "Pull image from registry"
             task.image.set(getImage())
-        }
-
-        val findTask = project.tasks.register(taskNameOf("find"), FindContainer::class.java) { task ->
-            task.group = taskGroup
-            task.description = "Finds the ${getContainerExt()}-container to check if it exists and is running"
-            task.dependsOn(pullTask)
-            task.containerName.set(getContainerName())
-            task.expectedImage.set(project.provider { pullTask.get().image.get() })
         }
 
         val stopTask = project.tasks.register(taskNameOf("stop"), StopExtraContainer::class.java) { task ->
@@ -164,7 +163,7 @@ abstract class AbstractTaskPreparer(
             task.hostConfig.network.set(networkId)
             task.withEnvironment(env)
 
-            task.dependsOn(findTask, networkTask)
+            task.dependsOn(findTask, networkTask, pullTask)
             task.existingContainer.set(project.provider { findTask.get().foundContainer.orNull })
             task.containerName.set(getContainerName())
 
