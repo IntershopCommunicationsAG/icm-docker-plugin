@@ -25,9 +25,9 @@ import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.Databa
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
+import com.intershop.gradle.icm.docker.tasks.utils.ClasspathLayout
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
-import com.intershop.gradle.icm.docker.tasks.utils.ClasspathLayout
 import com.intershop.gradle.icm.docker.tasks.utils.ICMEncryptionStrictMode
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.utils.JavaDebugSupport
@@ -56,7 +56,7 @@ import javax.inject.Inject
  * @param <ER> execution result type
  */
 abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : ResultCallbackTemplate<RC, Frame>, ER>
-@Inject constructor(project: Project) : AbstractContainerTask() {
+@Inject constructor(project: Project) : AbstractExistingContainerTask() {
 
     companion object {
         const val DEFAULT_COMMAND = "/intershop/bin/intershop.sh"
@@ -180,7 +180,9 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
     override fun runRemoteCommand() {
         val callback = createCallback()
 
-        val execCmd = dockerClient.execCreateCmd(containerId.get())
+        val currentContainerState = currentContainerState().get()
+
+        val execCmd = dockerClient.execCreateCmd(currentContainerState.getContainerId())
         execCmd.withAttachStderr(true)
         execCmd.withAttachStdout(true)
         val command = getCommand()
@@ -189,8 +191,8 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         val env = createContainerEnvironment()
         execCmd.withEnv(env.toList())
 
-        project.logger.quiet("Attempting to execute command '{}' on container {} using {}", command, containerId.get(),
-                env)
+        project.logger.quiet("Attempting to execute command '{}' on container {} using {}", command,
+            currentContainerState.getContainerId(), env)
 
         val execResponse: ExecCreateCmdResponse = execCmd.exec()
 
@@ -233,7 +235,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
 
         return ICMContainerEnvironmentBuilder()
-                .withContainerName(containerName)
+                .withContainerName(getContainer().getContainerName())
                 .withDatabaseConfig(databaseConfiguration.get())
                 .withWebserverConfig(webserverConfiguration.get())
                 .withPortConfig(portConfiguration.get())

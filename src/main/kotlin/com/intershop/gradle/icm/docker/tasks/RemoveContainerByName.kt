@@ -18,44 +18,35 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.exception.ConflictException
 import com.github.dockerjava.api.exception.NotFoundException
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
 import java.time.Duration
-import javax.inject.Inject
 
 /**
  * Task to remove a container by name.
  */
-open class RemoveContainerByName
-    @Inject constructor(objectFactory: ObjectFactory) : AbstractCommandByNameTask(objectFactory) {
+abstract class RemoveContainerByName : AbstractExistingContainerTask() {
 
-    @get:Input
-    @get:Optional
-    val existingContainer: Property<ContainerHandle> = objectFactory.property(ContainerHandle::class.java)
+    /*
+        this.onlyIf("Container exists ")...
 
-    init {
-        this.onlyIf("Container exists ") {
-            val containerExists = existingContainer.isPresent
-            if (!containerExists) {
-                project.logger.quiet("Container '{}' does not exist, no need to remove", containerName.get())
-                return@onlyIf false
-            }
-            return@onlyIf true
-        }
-    }
+        defined by AbstractExistingContainerTask
+    */
 
     override fun runRemoteCommand() {
-        val removeContainerCmd = dockerClient.removeContainerCmd(existingContainer.get().getContainerId())
+        val currentContainerState = currentContainerState().get()
+        if (!currentContainerState.exists()){
+            project.logger.quiet("{} does not exist, no need to remove", getContainer())
+            return
+        }
+
+        val removeContainerCmd = dockerClient.removeContainerCmd(currentContainerState.getContainerId())
         try {
             removeContainerCmd.exec()
-            logger.quiet("Removed {}.", existingContainer.get())
+            logger.quiet("Removed {}.", currentContainerState)
         } catch(ex: ConflictException) {
-            logger.warn("Removal of {} already is in progress. ({})", existingContainer.get(), ex.message)
-            waitFor(existingContainer.get(), object: WaitForCallback {
-                override fun checkCondition(optContainerHandle: java.util.Optional<ContainerHandle>, retryCnt: Int): Boolean {
-                    return !optContainerHandle.isPresent && (retryCnt < 5)
+            logger.warn("Removal of {} already is in progress. ({})", currentContainerState, ex.message)
+            waitFor(currentContainerState, object: WaitForCallback {
+                override fun checkCondition(containerHandle: ContainerHandle, retryCnt: Int): Boolean {
+                    return !containerHandle.exists() && (retryCnt < 5)
                 }
 
                 override fun getRetryDelay(): Duration = Duration.ofSeconds(5)
@@ -64,9 +55,9 @@ open class RemoveContainerByName
                     return "removal of container"
                 }
             })
-            logger.quiet("Removal of {} finished.", existingContainer.get())
+            logger.quiet("Removal of {} finished.", currentContainerState)
         } catch(ex: NotFoundException) {
-            logger.quiet("{} is already removed. ({})", existingContainer.get(), ex.message)
+            logger.quiet("{} is already removed. ({})", currentContainerState, ex.message)
         }
     }
 

@@ -16,47 +16,28 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Optional
-import javax.inject.Inject
 
-abstract class FindContainer
-    @Inject constructor(objectFactory: ObjectFactory) : AbstractCommandByNameTask(objectFactory) {
-
-    @get:Optional
-    @get:Input
-    val expectedImage: Property<String> = project.objects.property(String::class.java)
+abstract class FindContainer : AbstractContainerTask() {
 
     @get:Internal
     val foundContainer: Property<ContainerHandle> = project.objects.property(ContainerHandle::class.java)
 
-    /**
-     * Checks if the container exists
-     * @return `true` if the container exists
-     */
-    fun containerExists(): Boolean = foundContainer.isPresent
-
-    @Internal
-    fun getContainer(): ContainerHandle = foundContainer.get()
-
     override fun runRemoteCommand() {
-        val optFoundContainer = findContainer(ContainerHandle.desired(containerName, expectedImage))
+        val currContainerState = currentContainerState().get()
 
-        if (optFoundContainer.isPresent) {
-            val containerHandle = optFoundContainer.get()
-            foundContainer.set(containerHandle)
-            project.logger.quiet("Container '{}' exists using id={} ({})", containerName.get(),
-                    getContainer().getContainerId(), if (getContainer().isRunning()) {
-                "RUNNING"
-            } else {
-                "NOT RUNNING"
-            })
+        if (currContainerState.exists()) {
+            project.logger.quiet("{} exists ({})", currContainerState,
+                if (currContainerState.isRunning()) {
+                    "RUNNING"
+                } else {
+                    "NOT RUNNING"
+                }
+            )
         } else {
-            foundContainer.set(null as ContainerHandle?)
-            project.logger.quiet("Container '{}' does not exist", containerName.get())
+            project.logger.quiet("{} does not exist", currContainerState)
         }
+        foundContainer.set(currContainerState)
     }
 }
