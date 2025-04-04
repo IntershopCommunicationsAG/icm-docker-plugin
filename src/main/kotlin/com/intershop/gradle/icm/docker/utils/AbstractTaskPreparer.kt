@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.utils
 
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.AbstractPullImage
+import com.intershop.gradle.icm.docker.tasks.ContainerHandle
 import com.intershop.gradle.icm.docker.tasks.CreateExtraContainer
 import com.intershop.gradle.icm.docker.tasks.FindContainer
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
@@ -69,34 +70,31 @@ abstract class AbstractTaskPreparer(
     protected open fun getTaskGroupExt(): String = getContainerExt()
 
     protected fun initBaseTasks() {
-        val findTask = project.tasks.register(taskNameOf("find"), FindContainer::class.java) { task ->
+        val containerHandle = ContainerHandle.desired(project.provider { getContainerName() }, getImage())
+
+        project.tasks.register(taskNameOf("find"), FindContainer::class.java) { task ->
             task.group = taskGroup
             task.description = "Finds the ${getContainerExt()}-container to check if it exists and is running"
-            task.containerName.set(getContainerName())
-            task.expectedImage.set(getImage())
+            task.container.set(containerHandle)
         }
 
         project.tasks.register(taskNameOf("pull"), PullImage::class.java) { task ->
             task.group = taskGroup
             task.description = "Pull image from registry"
-            task.image.set(getImage())
+            task.image.set(containerHandle.getContainerImage())
         }
 
         val stopTask = project.tasks.register(taskNameOf("stop"), StopExtraContainer::class.java) { task ->
             task.group = taskGroup
             task.description = "Stop running container"
-            task.dependsOn(findTask)
-            task.existingContainer.set(project.provider { findTask.get().foundContainer.orNull })
-            task.containerName.set(getContainerName())
+            task.container.set(containerHandle)
         }
 
         project.tasks.register(taskNameOf("remove"), RemoveContainerByName::class.java) { task ->
             task.group = taskGroup
             task.description = "Remove container from Docker"
-            task.containerName.set(getContainerName())
-            task.dependsOn(findTask, stopTask)
-            task.existingContainer.set(project.provider { findTask.get().foundContainer.orNull })
-            task.containerName.set(getContainerName())
+            task.dependsOn(stopTask)
+            task.container.set(containerHandle)
         }
     }
 
@@ -164,7 +162,7 @@ abstract class AbstractTaskPreparer(
             task.withEnvironment(env)
 
             task.dependsOn(findTask, networkTask, pullTask)
-            task.existingContainer.set(project.provider { findTask.get().foundContainer.orNull })
+            task.existingContainer.set(project.provider { findTask.get().container.get() })
             task.containerName.set(getContainerName())
 
             val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
@@ -212,7 +210,7 @@ abstract class AbstractTaskPreparer(
 
             task.dependsOn(createTask, networkTask)
             task.container.set(project.provider {
-                createTask.get().createdContainer.orNull
+                createTask.get().createdContainer.get()
             })
         }
     }

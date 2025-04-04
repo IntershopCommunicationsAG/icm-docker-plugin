@@ -24,9 +24,7 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Optional
 import javax.inject.Inject
 
 abstract class CreateExtraContainer
@@ -35,8 +33,7 @@ abstract class CreateExtraContainer
     private val portMappings: MapProperty<String, PortMapping> =
             objectFactory.mapProperty(String::class.java, PortMapping::class.java)
 
-    @get:Input
-    @get:Optional
+    @get:Internal
     val existingContainer: Property<ContainerHandle> = objectFactory.property(ContainerHandle::class.java)
 
     @get:Internal
@@ -107,19 +104,20 @@ abstract class CreateExtraContainer
     }
 
     init {
-        @Suppress("LeakingThis")
-        onlyIf("Container does not exist") {
-            val containerExists = existingContainer.isPresent
-            if (containerExists) {
+        this.onlyIf("Container does not exist") {
+            val currentContainerState = existingContainer.map { c -> c.currentState(dockerClient) }.get()
+            if (currentContainerState.exists()) {
                 project.logger.quiet("{} still exists, skipping creation", existingContainer.get())
+                return@onlyIf false
             }
-            !containerExists
+            return@onlyIf true
         }
     }
 
     override fun runRemoteCommand() {
-        if (existingContainer.isPresent) {
-            throw GradleException("Expecting ${existingContainer.get()} to not currently exist but it does.")
+        val currentContainerState = existingContainer.map { c -> c.currentState(dockerClient) }.get()
+        if (currentContainerState.exists()) {
+            throw GradleException("Expecting ${currentContainerState} to not currently exist but it does.")
         }
 
         logger.info("Creating container '{}' using the following port mappings: {}",

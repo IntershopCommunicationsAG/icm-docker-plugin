@@ -14,85 +14,64 @@
  * limitations under the License.
  *
  */
-
 package com.intershop.gradle.icm.docker.tasks
 
-import com.bmuschko.gradle.docker.domain.ExecProbe
-import com.bmuschko.gradle.docker.internal.IOUtils
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
-import com.github.dockerjava.api.command.InspectExecResponse
-import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.TaskProvider
-import java.util.concurrent.TimeUnit
+import java.time.Duration
 
-abstract class AbstractContainerTask : AbstractDockerRemoteApiTask() {
-    private val containerNameProperty: Property<String> = project.objects.property(String::class.java)
+abstract class AbstractContainerTask :  AbstractDockerRemoteApiTask() {
+
+    @get:Input
+    val container : Property<ContainerHandle> = project.objects.property(ContainerHandle::class.java)
 
     /**
-     * The ID or name of container used to perform operation.
-     * The container for the provided ID has to be created first.
+     * Returns a [Provider] that requests the current state of the [container].
      */
-    @get:Input
-    val containerId: Property<String> = project.objects.property(String::class.java)
-
-    fun executeUsing(startContainerTaskProvider: TaskProvider<StartExtraContainer>) {
-        containerId.set(project.provider { startContainerTaskProvider.get().containerId.get() })
-        containerNameProperty.set(
-                project.provider { startContainerTaskProvider.get().container.get().getContainerName() })
-        dependsOn(startContainerTaskProvider)
+    fun currentContainerState() : Provider<ContainerHandle> {
+        return project.provider { getContainer().currentState(dockerClient) }
     }
 
-    @get:Internal
-    val containerName: String
-        get() = containerNameProperty.get()
+    fun getContainer() : ContainerHandle = container.get()
 
-    protected fun waitForExit(localExecId: String): Long {
-
-        // create progressLogger for pretty printing of terminal log progression.
-        val progressLogger = IOUtils.getProgressLogger(services, this.javaClass)
-        progressLogger.started()
-
-        // if no livenessProbe defined then create a default
-        val localProbe = ExecProbe(6000000, 50000)
-
-        var localPollTime = localProbe.pollTime
-        var pollTimes = 0
-        var isRunning = true
-
-        // 3.) poll for some amount of time until container is in a non-running state.
-        var lastExecResponse: InspectExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
-
-        while (isRunning && localPollTime > 0) {
-            pollTimes += 1
-
-            lastExecResponse = dockerClient.inspectExecCmd(localExecId).exec()
-            isRunning = lastExecResponse.isRunning
-
-            if (isRunning) {
-                val totalMillis = pollTimes * localProbe.pollInterval
-                val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(totalMillis)
-
-                progressLogger.progress("Executing for ${totalMinutes}m...")
-                try {
-                    localPollTime -= localProbe.pollInterval
-                    Thread.sleep(localProbe.pollInterval)
-                } catch (e: Exception) {
-                    throw e
-                }
-            } else {
-                break
-            }
+    /**
+     * Waits for a container to be in a specific state
+     * @param what the container to wait for
+     * @param callback the callback to check the condition and provide additional information
+     * @return the container handle representing the container's state wrapped into an Optional or an empty Optional
+     * representing the container not being found
+     */
+    protected fun waitFor(what : ContainerHandle, callback: WaitForCallback) : ContainerHandle {
+        var currHandle = what.currentState(dockerClient)
+        var retryCnt = 0
+        while (callback.checkCondition(currHandle, retryCnt++)) {
+            project.logger.warn("Waiting for: {} ({})", callback.describeCondition(), retryCnt)
+            Thread.sleep(callback.getRetryDelay().toMillis())
+            currHandle = what.currentState(dockerClient)
         }
-        progressLogger.completed()
+        return currHandle
+    }
 
-        // if still running then throw an exception otherwise check the exitCode
-        if (isRunning) {
-            throw GradleException("Command did not finish in a timely fashion: $localProbe")
-        }
+    /**
+     * Callback interface for the `waitFor` method
+     * @see waitFor
+     */
+    interface WaitForCallback {
+        /**
+         * Returns a description of the condition to be checked (used for logging)
+         */
+        fun describeCondition() : String
 
-        return lastExecResponse.exitCodeLong
+        /**
+         * Checks the condition and returns `true` if the condition is met e.g. the container is running
+         */
+        fun checkCondition(containerHandle : ContainerHandle, retryCnt : Int) : Boolean
+
+        /**
+         * Returns the delay between two retries
+         */
+        fun getRetryDelay() : Duration
     }
 }

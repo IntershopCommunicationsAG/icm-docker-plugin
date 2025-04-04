@@ -19,7 +19,6 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
-import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerLogWatcher
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
 import com.intershop.gradle.icm.utils.HttpProbe
@@ -39,7 +38,7 @@ import javax.inject.Inject
 import kotlin.concurrent.thread
 
 open class StartExtraContainer
-@Inject constructor(objectFactory: ObjectFactory) : DockerStartContainer() {
+@Inject constructor(objectFactory: ObjectFactory) : AbstractExistingContainerTask() {
 
     /**
      * Set a string for log file check. Log is displayed as long
@@ -85,19 +84,8 @@ open class StartExtraContainer
     @get:Input
     val enableLogWatcher: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(false)
 
-    @get:Input
-    val container: Property<ContainerHandle> = project.objects.property(ContainerHandle::class.java)
-
     init {
-        containerId.convention(project.provider {
-            if (container.isPresent) {
-                container.get().getContainerId()
-            } else {
-                null
-            }
-        })
-        @Suppress("LeakingThis")
-        onlyIf("Container not running") {
+        this.onlyIf("Container not running") {
             val containerRuns = isAlreadyRunning()
             if (containerRuns) {
                 project.logger.quiet("{} still is running, skipping to start it", container.get())
@@ -112,12 +100,12 @@ open class StartExtraContainer
         }
 
         logger.quiet("Starting {}.", container.get())
-
-        val startCommand = dockerClient.startContainerCmd(containerId.get())
+        val currentState = currentContainerState().get()
+        val startCommand = dockerClient.startContainerCmd(currentState.getContainerId())
         startCommand.exec()
 
         val logWatcherHandle: AutoCloseable? = if (enableLogWatcher.get()) {
-            ContainerLogWatcher(project, dockerClient).start(containerId.get())
+            ContainerLogWatcher(project, dockerClient).start(currentState.getContainerId())
         } else {
             null
         }
@@ -145,7 +133,7 @@ open class StartExtraContainer
                     throw e
                 }
 
-                waitForLogout()
+                waitForLogout(currentState)
             }
         } catch (e: Exception) {
             onFailure(e)
@@ -158,12 +146,13 @@ open class StartExtraContainer
     protected fun getContainerName(): String? = container.map { c -> c.getContainerName() }.orNull
 
     @Internal
-    protected fun isAlreadyRunning(): Boolean = container.map { c -> c.isRunning() }.getOrElse(false)
+    protected fun isAlreadyRunning(): Boolean = currentContainerState().map { c -> c.isRunning() }.getOrElse(false)
 
-    protected fun waitForLogout() {
+    protected fun waitForLogout(currentContainerState : ContainerHandle) {
         if (finishedCheck.isPresent && finishedCheck.get().isNotEmpty()) {
-            logger.quiet("Starting logging for container with ID '${containerId.get()}'.")
-            val logCommand = dockerClient.logContainerCmd(containerId.get())
+
+            logger.quiet("Starting logging for container with ID '${currentContainerState.getContainerId()}'.")
+            val logCommand = dockerClient.logContainerCmd(currentContainerState.getContainerId())
             logCommand.withStdErr(true)
             logCommand.withStdOut(true)
             logCommand.withTailAll()
