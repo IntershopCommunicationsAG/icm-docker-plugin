@@ -19,11 +19,13 @@ package com.intershop.gradle.icm.docker
 import com.intershop.gradle.icm.ICMProjectPlugin
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.DBPrepareTask
+import com.intershop.gradle.icm.docker.tasks.GenerateOpenAPIModel
 import com.intershop.gradle.icm.docker.tasks.ISHUnitHTMLTestReport
 import com.intershop.gradle.icm.docker.tasks.ISHUnitTest
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartExtraContainer
 import com.intershop.gradle.icm.docker.utils.CustomizationImageBuildPreparer
+import com.intershop.gradle.icm.docker.utils.GenerateOpenAPIModelService
 import com.intershop.gradle.icm.docker.utils.ISHUnitTestRegistry
 import com.intershop.gradle.icm.docker.utils.appsrv.AbstractASTaskPreparer
 import com.intershop.gradle.icm.docker.utils.network.TaskPreparer
@@ -155,8 +157,10 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                     task.dependsOn(containerPreparer.removeTask, removeWS)
                 }
 
-                val dbPrepare: TaskProvider<DBPrepareTask> = getDBPrepare(this,
-                        containerPreparer, mssqlDatabase)
+                val dbPrepare: TaskProvider<DBPrepareTask> = registerDBPrepareTask(this,
+                    containerPreparer, mssqlDatabase)
+
+                configureGenerateOpenAPIModelTask(this, containerPreparer, mssqlDatabase)
 
                 configureISHUnitTest(this,
                         dockerExtension, containerPreparer, dbPrepare, mssqlDatabase)
@@ -185,7 +189,7 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
      */
     open fun Project.getCustomizationName(): String = name
 
-    private fun getDBPrepare(
+    private fun registerDBPrepareTask(
         project: Project,
         containerPreparer: AbstractASTaskPreparer,
         mssqlDatabase: TaskProvider<Task>,
@@ -193,6 +197,26 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
         return project.tasks.register(DBPrepareTask.TASK_NAME, DBPrepareTask::class.java) { task ->
             task.group = ICMDockerPlugin.GROUP_SERVERBUILD
             task.description = "Starts dbPrepare in an existing ICM base container."
+            task.executeUsing(containerPreparer.startTask)
+
+            task.finalizedBy(containerPreparer.removeTask)
+            task.mustRunAfter(mssqlDatabase)
+        }
+    }
+
+    private fun configureGenerateOpenAPIModelTask(
+        project: Project,
+        containerPreparer: AbstractASTaskPreparer,
+        mssqlDatabase: TaskProvider<Task>,
+    ): TaskProvider<GenerateOpenAPIModel> {
+        // ensure users of [GenerateOpenAPIModelService] can not run in parallel
+        project.gradle.sharedServices.registerIfAbsent(GenerateOpenAPIModelService.NAME, GenerateOpenAPIModelService::class.java) {
+            it.maxParallelUsages.set(1)
+        }
+
+        return project.tasks.register(GenerateOpenAPIModel.TASK_NAME, GenerateOpenAPIModel::class.java) { task ->
+            task.group = "documentation"
+            task.description = "Executes the OpenAPI model generator in an existing ICM-AS container."
             task.executeUsing(containerPreparer.startTask)
 
             task.finalizedBy(containerPreparer.removeTask)

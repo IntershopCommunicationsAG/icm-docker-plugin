@@ -30,7 +30,12 @@ open class AdditionalICMParameters {
     }
 
     fun <V> add(name: String, value: V): AdditionalICMParameters {
-        this.entries.add(Entry(name, value))
+        this.entries.add(Entry(name, value,))
+        return this
+    }
+
+    fun <V> add(name: String, value: V, renderEntry : ((name: String, value: V?) -> String)?): AdditionalICMParameters {
+        this.entries.add(Entry(name, value, renderEntry))
         return this
     }
 
@@ -42,16 +47,20 @@ open class AdditionalICMParameters {
     }
 
     fun render(): String {
-        return entries.map { entry -> entry.render() }.joinToString(separator = " ")
+        return entries.joinToString(separator = " ") { entry -> entry.render() }
     }
 
     override fun toString(): String {
         return "AdditionalICMParameters(entries=$entries)"
     }
 
-    class Entry<V>(val name: String, val value: V?) {
+    class Entry<V>(val name: String, val value: V?, val renderEntry : ((name: String, value: V?) -> String)? = null) {
 
-        fun render(): String =
+        fun render(): String {
+            return renderEntry?.invoke(name, value) ?: renderDefault(name, value)
+        }
+
+        fun renderDefault(name: String, value: V?): String =
                 if (value != null) {
                     "$name=$value"
                 } else {

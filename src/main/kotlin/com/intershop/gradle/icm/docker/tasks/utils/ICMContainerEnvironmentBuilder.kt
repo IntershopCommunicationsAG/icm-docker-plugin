@@ -52,6 +52,7 @@ class ICMContainerEnvironmentBuilder {
         const val ENV_INTERSHOP_SERVLETENGINE_MANAGEMENTCONNECTOR_PORT =
                 "INTERSHOP_SERVLETENGINE_MANAGEMENTCONNECTOR_PORT"
         const val ENV_SERVER_NAME = "SERVER_NAME"
+        const val ENV_MAIN_CLASS = "MAIN_CLASS"
         const val ENV_ENABLE_HEAPDUMP = "ENABLE_HEAPDUMP"
         const val ENV_ENABLE_GCLOG = "ENABLE_GCLOG"
         const val ENV_MAIL = "ISH_ENV_MAIL"
@@ -64,6 +65,7 @@ class ICMContainerEnvironmentBuilder {
     private var triggerDbPrepare: Boolean? = null
     private var asEnvironment: String? = null
     private var serverName: String? = null
+    private var mainClass: String? = null
     private var containerName: String? = null
     private var databaseConfig: DatabaseParameters? = null
     private var webserverConfig: WebserverConfiguration? = null
@@ -98,6 +100,11 @@ class ICMContainerEnvironmentBuilder {
 
     fun withServerName(serverName: String) : ICMContainerEnvironmentBuilder {
         this.serverName = serverName.takeIf { it.isNotEmpty() }
+        return this
+    }
+
+    fun withMainClass(mainClass: String) : ICMContainerEnvironmentBuilder {
+        this.mainClass = mainClass.takeIf { it.isNotEmpty() }
         return this
     }
 
@@ -228,6 +235,10 @@ class ICMContainerEnvironmentBuilder {
 
         serverName?.run {
             env.add(ENV_SERVER_NAME, this)
+        }
+
+        mainClass?.run {
+            env.add(ENV_MAIN_CLASS, this)
         }
 
         triggerDbPrepare?.run {

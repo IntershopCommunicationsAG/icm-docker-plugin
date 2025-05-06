@@ -19,13 +19,18 @@ package com.intershop.gradle.icm.docker.tasks
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import java.time.Duration
 
 abstract class AbstractContainerTask :  AbstractDockerRemoteApiTask() {
 
-    @get:Input
+    @get:Internal
     val container : Property<ContainerHandle> = project.objects.property(ContainerHandle::class.java)
+
+    init {
+        // never cache anything
+        outputs.cacheIf { false }
+    }
 
     /**
      * Returns a [Provider] that requests the current state of the [container].
