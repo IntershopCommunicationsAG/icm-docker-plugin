@@ -40,6 +40,8 @@ class TaskPreparer (val project: Project, private val networkTask: Provider<Prep
         const val ISHUNITOUT = "ishunitout"
         const val ISHUNITOUT_PATH = "ishunitrunner/output"
 
+        const val OPENAPI_GENERATOR_OUT = "openapigeneratorout"
+
         const val TASK_PREPARESERVER = "prepareServer"
         const val TASK_CREATECONFIG = "createConfig"
 

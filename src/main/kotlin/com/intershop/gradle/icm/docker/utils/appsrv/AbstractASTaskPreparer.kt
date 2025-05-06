@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.utils.appsrv
 import com.intershop.gradle.icm.docker.tasks.CreateASContainer
 import com.intershop.gradle.icm.docker.tasks.CreateExtraContainer
 import com.intershop.gradle.icm.docker.tasks.FindContainer
+import com.intershop.gradle.icm.docker.tasks.GenerateOpenAPIModel
 import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.StartMailServerContainer
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
@@ -152,6 +153,8 @@ abstract class AbstractASTaskPreparer(
                     to "/intershop/logs",
             addDirectories.getValue(TaskPreparer.ISHUNITOUT).get().asFile.absolutePath
                     to "/intershop/ishunitrunner/output",
+            addDirectories.getValue(TaskPreparer.OPENAPI_GENERATOR_OUT).get().asFile.absolutePath
+                    to GenerateOpenAPIModel.CONTAINER_VOLUME,
             project.projectDir.absolutePath
                     to "/intershop/customizations/${dockerExtension.containerPrefix}/cartridges",
             "${dockerExtension.containerPrefix}-customizations"
@@ -163,7 +166,8 @@ abstract class AbstractASTaskPreparer(
     private val addDirectories: Map<String, Provider<Directory>> by lazy {
         mapOf(
             TaskPreparer.SERVERLOGS to project.layout.buildDirectory.dir(TaskPreparer.SERVERLOGS_PATH),
-            TaskPreparer.ISHUNITOUT to project.layout.buildDirectory.dir(TaskPreparer.ISHUNITOUT_PATH)
+            TaskPreparer.ISHUNITOUT to project.layout.buildDirectory.dir(TaskPreparer.ISHUNITOUT_PATH),
+            TaskPreparer.OPENAPI_GENERATOR_OUT to GenerateOpenAPIModel.calculateOutputDirectory(project),
         )
     }
 
@@ -243,7 +247,7 @@ abstract class AbstractASTaskPreparer(
                     StartMailServerContainer::class.java
             )
         } catch (ex: UnknownTaskException) {
-            project.logger.warn("MailSrv task not found")
+            project.logger.warn("MailSrv task not found", ex)
             null
         }
     }
@@ -255,7 +259,7 @@ abstract class AbstractASTaskPreparer(
                     CreateExtraContainer::class.java
             )
         } catch (ex: UnknownTaskException) {
-            project.logger.info("ZooKeeper tasks not found")
+            project.logger.info("ZooKeeper task not found", ex)
             null
         }
     }
