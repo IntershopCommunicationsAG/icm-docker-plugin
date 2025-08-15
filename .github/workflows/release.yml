@@ -25,7 +25,7 @@ jobs:
           docker-user: ${{ secrets.DOCKERUSER }}
           docker-password: ${{ secrets.DOCKERPASSWD }}
       - name: Release
-        uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-release@v2
+        uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-release@v3
         with:
           signing-file: ${{ secrets.SIGNINGFILE }}
           signing-key-id: ${{ secrets.SIGNINGKEYID }}
