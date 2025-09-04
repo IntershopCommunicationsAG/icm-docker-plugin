@@ -530,6 +530,8 @@ The following properties are part of the <<PropertiesFile>>.
 | `intershop.environment.intershop.dbinit.breakOnError` | if `true` dbPrepare/startAS fails if any init-preparation step fails | Boolean | Optional | `false` +
 | `intershop.environment.intershop.dbmigrate.breakOnError` | if `true` dbPrepare/startAS fails if any migrate-preparation step fails | Boolean | Optional | `false` +
 | `intershop.encryption.strictMode.enabled` | If not specified or set to `false` the ICM configuration property `intershop.encryption.strictMode.enabled` is set to `false` allowing the icm-as to work without any encryption configuration. To enforce the icm-as to work with `intershop.encryption.strictMode.enabled=true` explicitly set `intershop.encryption.strictMode.enabled=true` in `icm.properties`. | Boolean | Optional | `false` +
+| `intershop.file.monitoring.polling` | If not specified or set to `false` the ICM configuration property `intershop.file.monitoring.polling` is set to `true` allowing the icm-as to work make all the `*.CheckSource` properties to work. To enforce the icm-as to work with `intershop.file.monitoring.polling=false` explicitly set `intershop.file.monitoring.polling=false` in `icm.properties`. | Boolean | Optional | `true` +
+| `intershop.file.monitoring.pollInterval` | The value of this property is transferred to the icm-as independent of the value of the property `intershop.file.monitoring.polling` allowing to set the polling interval (if enabled). It specifies the polling interval in milliseconds. | Integer | Optional | `1000` +
 |===
 
 --
