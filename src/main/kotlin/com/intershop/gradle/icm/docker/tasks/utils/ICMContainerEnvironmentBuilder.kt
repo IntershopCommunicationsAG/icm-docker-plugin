@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.Databa
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DevelopmentProperties
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.EnvironmentProperties
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
+import com.intershop.gradle.icm.docker.tasks.utils.ICMFilePollingConfiguration
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.ICMEncryptionStrictMode
@@ -82,6 +83,7 @@ class ICMContainerEnvironmentBuilder {
     private var intershopEnvironmentProperties: EnvironmentProperties? = null
     private var addEnvironmentProperties = Properties()
     private var icmEncryptionStrictMode : Provider<ICMEncryptionStrictMode>? = null
+    private var icmFilePollingConfiguration : Provider<ICMFilePollingConfiguration>? = null
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
@@ -188,6 +190,11 @@ class ICMContainerEnvironmentBuilder {
         return this
     }
 
+    fun withICMFilePollingConfiguration(icmFilePollingConfiguration: Provider<ICMFilePollingConfiguration>) : ICMContainerEnvironmentBuilder {
+        this.icmFilePollingConfiguration = icmFilePollingConfiguration
+        return this
+    }
+
     fun build() : ContainerEnvironment {
         val env = ContainerEnvironment()
         additionalParameters?.run {
@@ -291,6 +298,15 @@ class ICMContainerEnvironmentBuilder {
             if (isPresent) {
                 icmEncryptionStrictMode!!.get().applyICMParameterIfNecessary { key, value ->
                     env.add(ContainerEnvironment.propertyNameToEnvName(key), value)
+                }
+            }
+        }
+
+        icmFilePollingConfiguration?.run {
+            if (isPresent) {
+                icmFilePollingConfiguration!!.get().applyICMParameters { enabled, interval ->
+                    env.add(ContainerEnvironment.propertyNameToEnvName(enabled.first), enabled.second)
+                    env.add(ContainerEnvironment.propertyNameToEnvName(interval.first), interval.second)
                 }
             }
         }
