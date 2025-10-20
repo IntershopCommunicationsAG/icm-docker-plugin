@@ -1,6 +1,5 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 5.0.0
-:gradlePluginVersion: 6.0.0
+:latestRevision: 7.0.0
 :toc:
 :icons: font
 
@@ -28,7 +27,6 @@ The plugins must be applied to the root project.
 [subs=+attributes]
 ----
 plugins {
-    id 'com.intershop.gradle.icm.base' version '{gradlePluginVersion}'
     id 'com.intershop.gradle.icm.docker' version '{latestRevision}'
 }
 
@@ -86,7 +84,6 @@ intershop_docker {
 [subs=+attributes]
 ----
 plugins {
-    id("com.intershop.gradle.icm.base") version "{gradlePluginVersion}"
     id("com.intershop.gradle.icm.docker") version "{latestRevision}"
 }
 

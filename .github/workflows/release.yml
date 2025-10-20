@@ -18,14 +18,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup
-        uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-setup@v2
+        # IntershopCommunicationsAG/.github/actions/gradle-plugin-setup@v4
+        uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-setup@ff333aeeaab710606d0671e7f79047725c7ee190
       - name: Prepare Docker
         uses: ./.github/actions/prepare-docker
         with:
           docker-user: ${{ secrets.DOCKERUSER }}
           docker-password: ${{ secrets.DOCKERPASSWD }}
       - name: Release
-        uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-release@v3
+        # IntershopCommunicationsAG/.github/actions/gradle-plugin-release@v4
+        uses: IntershopCommunicationsAG/.github/actions/gradle-plugin-release@ff333aeeaab710606d0671e7f79047725c7ee190
         with:
           signing-file: ${{ secrets.SIGNINGFILE }}
           signing-key-id: ${{ secrets.SIGNINGKEYID }}
