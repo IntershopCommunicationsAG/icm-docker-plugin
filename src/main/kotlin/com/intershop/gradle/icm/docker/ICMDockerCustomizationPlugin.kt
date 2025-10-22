@@ -265,7 +265,6 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
     private fun addTestReportConfiguration(project: Project) {
         val configuration = project.configurations.maybeCreate(HTML_ANT_TESTREPORT_CONFIG)
         configuration
-                .setVisible(false)
                 .setTransitive(false)
                 .setDescription("HTML Ant Test Report libraries")
                 .defaultDependencies { dependencies: DependencySet ->

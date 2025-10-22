@@ -2,7 +2,7 @@
 
 echo Building base image intershopmock/icm-as-mock:mock
 
-USER=`whoami`
+#USER=`whoami`
 USERID=`id -u $USER`
 
 echo Build for user $USER and id $USERID

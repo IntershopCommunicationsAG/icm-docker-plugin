@@ -25,7 +25,7 @@ open class AdditionalICMParameters {
         return add(name, null)
     }
 
-    fun <V> add(name: String, valueProvider: Provider<V>): AdditionalICMParameters {
+    fun <V : Any> add(name: String, valueProvider: Provider<V>): AdditionalICMParameters {
         return add(name, valueProvider.get())
     }
 

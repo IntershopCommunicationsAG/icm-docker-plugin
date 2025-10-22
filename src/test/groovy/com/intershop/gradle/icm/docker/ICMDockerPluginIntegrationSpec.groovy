@@ -839,7 +839,7 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
 
         String configFilePath = Path.of(DevelopmentConfiguration.DEFAULT_CONFIG_PATH, DevelopmentConfiguration.CONFIG_FILE_NAME).toString()
         String targetSitesFolderPath = new File(testProjectDir, "test_sites_folder").toString()
-        createLocalFile(configFilePath, "${Configuration.SITES_FOLDER_PATH} = ${targetSitesFolderPath}")
+        createLocalFile(configFilePath, "${Configuration.SITES_FOLDER_PATH} = ${targetSitesFolderPath.replaceAll("\\\\", "/")}")
 
         String configDirectoryPath = new File(testProjectDir, DevelopmentConfiguration.DEFAULT_CONFIG_PATH).toPath()
 

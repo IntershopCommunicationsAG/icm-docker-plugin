@@ -1,11 +1,11 @@
 ARG USERNAME=intershop
 ARG USERID=150
 
-FROM ubuntu:22.10 AS BUILD
+FROM ubuntu:24.04 AS BUILD
 ARG USERNAME=intershop
 ARG USERID=150
 
-RUN addgroup --gid 150 intershop && useradd -m --uid ${USERID} -g intershop --shell /bin/sh ${USERNAME}
+RUN groupadd --gid 150 intershop && useradd -m --uid ${USERID} -g intershop --shell /bin/sh ${USERNAME}
 RUN mkdir -p /intershop-prj
 
 COPY bin /intershop-prj/bin
@@ -32,14 +32,14 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     chown -R ${USERNAME}:intershop /intershop-init
 
 # FROM busybox:latest
-FROM eclipse-temurin:21.0.4_7-jre-jammy
+FROM eclipse-temurin:21.0.8_9-jre-noble
 ARG USERNAME=intershop
 ARG USERID=150
 
 COPY usr /usr/bin/
 RUN chmod a+x -R /usr/bin/dirdiff
 
-RUN addgroup --gid 150 intershop && \
+RUN groupadd --gid 150 intershop && \
     useradd -m --uid ${USERID} -g intershop --shell /bin/sh ${USERNAME} && \
     useradd --uid 151 -g intershop --shell /bin/sh intershop2
 
