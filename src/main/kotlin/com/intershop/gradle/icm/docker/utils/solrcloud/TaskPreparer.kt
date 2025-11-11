@@ -36,17 +36,17 @@ class TaskPreparer(
 
         project.tasks.register(
                 "start${TASK_EXT_SERVER}").configure { task ->
-            configureSolrCloudTasks(task, "Start all components of a one note SolrCloud cluster")
+            configureSolrCloudTasks(task, "Start all components of a one node SolrCloud cluster")
             task.dependsOn(zkTasks.startTask, solrTasks.startTask, networkTasks.createNetworkTask)
         }
 
         project.tasks.register("stop${TASK_EXT_SERVER}") { task ->
-            configureSolrCloudTasks(task, "Stop all components of a one note SolrCloud cluster")
+            configureSolrCloudTasks(task, "Stop all components of a one node SolrCloud cluster")
             task.dependsOn(zkTasks.stopTask, solrTasks.stopTask)
         }
 
         project.tasks.register("remove${TASK_EXT_SERVER}") { task ->
-            configureSolrCloudTasks(task, "Removes all components of a one note SolrCloud cluster")
+            configureSolrCloudTasks(task, "Removes all components of a one node SolrCloud cluster")
             task.dependsOn(zkTasks.removeTask, solrTasks.removeTask)
         }
 
