@@ -23,6 +23,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import java.io.File
 
 class ZKPreparer(
         project: Project,
@@ -58,14 +59,21 @@ class ZKPreparer(
                 "ZOO_PORT" to portMapping.containerPort.toString(),
                 "ZOO_SERVERS" to "server.1=${getZKServers()}",
                 "ZOO_4LW_COMMANDS_WHITELIST" to "mntr, conf, ruok",
+                "ZOO_AUTOPURGE_PURGEINTERVAL" to "1",
                 "ZOO_CFG_EXTRA" to """
                 metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider
                 metricsProvider.httpPort=${metricsPortMapping.containerPort}
                 metricsProvider.exportJvmInfo=true
             """.trimIndent()
         )
+        val dataDir: File? = getLocalDataDir()
+        val volumes = if (dataDir != null) {
+            mapOf("${dataDir.absolutePath}/zk/data" to "/data", "${dataDir.absolutePath}/zk/logs" to "/datalog")
+        } else {
+            mapOf()
+        }
 
-        val createTask = registerCreateContainerTask(findTask, mapOf(), env)
+        val createTask = registerCreateContainerTask(findTask, volumes, env)
         createTask.configure { task ->
             task.withPortMappings(portMapping)
         }
@@ -94,5 +102,12 @@ class ZKPreparer(
 
     fun getRenderedHostPort(): String = "${getContainerName()}:${getPortMapping().containerPort}"
 
+    private fun getLocalDataDir(): File? {
+        val dataPath = devConfig.getConfigProperty(Configuration.SOLR_DATA_FOLDER_PATH, "")
+        if (dataPath.isBlank()) {
+            return null
+        }
+        return File(dataPath)
+    }
 
 }

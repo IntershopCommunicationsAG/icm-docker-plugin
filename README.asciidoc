@@ -394,7 +394,7 @@ The following properties are part of the <<PropertiesFile>>.
 [cols="10%,60%,10%,10%,10%", width="99%, options="header"]
 |===
 | Key | Description | Co-domain | Mandatory/Optional | Default value
-
+| `solr.data.folder.path` | host folder to store Solr data outside of the container | String | Optional | <empty> +
 | `solr.clusterIndexPrefix` | prefix to be used for indexed inside Solr | String | Optional | <empty> +
 | `solr.port` | the host port to be used for the Solr server primary port | Integer | Optional | `8983` +
 | `solr.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
@@ -406,6 +406,7 @@ The following properties are part of the <<PropertiesFile>>.
 [cols="10%,60%,10%,10%,10%", width="99%, options="header"]
 |===
 | Key | Description | Co-domain | Mandatory/Optional | Default value
+| `solr.data.folder.path` | host folder to store Zookeeper data outside of the container in `<solr.data.folder.path>/zk` | String | Optional | <empty> +
 
 | `zookeeper.port` | the host port to be used for the Zookeeper's primary port | Integer | Optional | `2181` +
 | `zookeeper.metrics.port` | the host port to be used for the Zookeeper's metrics port | Integer | Optional | `7000` +
@@ -1060,6 +1061,8 @@ management of search indexes. It uses the same configuration as the ICM Docker p
 [cols="10%,45%,45%", width="99%, options="header"]
 |===
 | Task | Property Key | Property Value
+| *ZK + 
+*Solr | solr.data.folder.path | host folder to store Solr and Zookeeper data outside of the Solr/Zookeeper container. e.g. `D:/solr-data` 
 
 .2+| cleanUpSolr +
 listSolr| `solr.zooKeeperHostList` | A list of all Zookeeper hosts with port and the Solr server prefix. +
