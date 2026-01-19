@@ -32,7 +32,7 @@ RUN mkdir -p /intershop-prj/jgroups-share && \
     chown -R ${USERNAME}:intershop /intershop-init
 
 # FROM busybox:latest
-FROM eclipse-temurin:21.0.8_9-jre-noble
+FROM eclipse-temurin:21.0.9_10-jre-noble
 ARG USERNAME=intershop
 ARG USERID=150
 
