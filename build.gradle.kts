@@ -317,7 +317,7 @@ dependencies {
 
     implementation("org.apache.solr:solr-solrj:9.9.0")
     implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:9.4.0")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:7.0.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:7.1.0")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:7.0.0")
 }
 
