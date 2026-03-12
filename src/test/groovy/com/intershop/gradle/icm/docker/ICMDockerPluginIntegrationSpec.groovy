@@ -28,7 +28,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
 
-    final ICMGRADLEVERSION = "6.2.1"
+    final ICMGRADLEVERSION = "7.1.0"
 
     private def prepareBuildConfig(File testProjectDir, File settingsFile, File buildFile) {
         TestRepo repo = new TestRepo(new File(testProjectDir, "/repo"))
