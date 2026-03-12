@@ -812,9 +812,15 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
     def 'run start container'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
+        String configFilePath = Path.of(DevelopmentConfiguration.DEFAULT_CONFIG_PATH, DevelopmentConfiguration.CONFIG_FILE_NAME).toString()
+        createLocalFile(configFilePath, """
+            ${Configuration.AS_AUTOREMOVE_CONTAINER} = false
+        """)
+        String configDirectoryPath = new File(testProjectDir, DevelopmentConfiguration.DEFAULT_CONFIG_PATH).toPath()
+
         when:
         def result2 = getPreparedGradleRunner()
-                .withArguments("startWaitingAs", "-s")
+                .withArguments("startWaitingAs", "-PconfigDir=${configDirectoryPath}", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
@@ -839,7 +845,10 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
 
         String configFilePath = Path.of(DevelopmentConfiguration.DEFAULT_CONFIG_PATH, DevelopmentConfiguration.CONFIG_FILE_NAME).toString()
         String targetSitesFolderPath = new File(testProjectDir, "test_sites_folder").toString()
-        createLocalFile(configFilePath, "${Configuration.SITES_FOLDER_PATH} = ${targetSitesFolderPath.replaceAll("\\\\", "/")}")
+        createLocalFile(configFilePath, """
+            ${Configuration.SITES_FOLDER_PATH} = ${targetSitesFolderPath.replaceAll("\\\\\\\\", "/")}
+            ${Configuration.AS_AUTOREMOVE_CONTAINER} = false
+        """)
 
         String configDirectoryPath = new File(testProjectDir, DevelopmentConfiguration.DEFAULT_CONFIG_PATH).toPath()
 
@@ -869,9 +878,15 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
     def 'run solrcloud'() {
         prepareDefaultBuildConfig(testProjectDir, settingsFile, buildFile)
 
+        String configFilePath = Path.of(DevelopmentConfiguration.DEFAULT_CONFIG_PATH, DevelopmentConfiguration.CONFIG_FILE_NAME).toString()
+        createLocalFile(configFilePath, """
+            ${Configuration.SOLR_AUTOREMOVE_CONTAINER} = false
+        """)
+        String configDirectoryPath = new File(testProjectDir, DevelopmentConfiguration.DEFAULT_CONFIG_PATH).toPath()
+
         when:
         def result1 = getPreparedGradleRunner()
-                .withArguments("startSolr", "-s", "-i")
+                .withArguments("startSolr", "-PconfigDir=${configDirectoryPath}", "-s")
                 .withGradleVersion(gradleVersion)
                 .build()
 
