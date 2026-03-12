@@ -28,7 +28,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class TaskICMGenSpec extends AbstractIntegrationGroovySpec {
 
-    final ICMGRADLEVERSION = "6.2.1"
+    final ICMGRADLEVERSION = "7.1.0"
 
     String buildfileContent =
             """
