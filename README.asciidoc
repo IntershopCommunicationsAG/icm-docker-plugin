@@ -1136,14 +1136,14 @@ disable.ssl.verification = true
 ----
 
 === Setting icm-as environment variables
-For the task `createAS` which creates a Docker container for all the appserver starts (tasks: `startAS`, `dbPrepare`, `startASTestContainer`) there's a special handling of properties configured in the `icm.properties`-file. This means that properties with keys starting with `intershop.environment.` are provided as environment variables to the container:
+For the task `createAS`, which creates a Docker container for all the appserver starts (tasks: `startAS`, `dbPrepare`, `startASTestContainer`), there is a special handling of properties configured in the `icm.properties` file. Properties with keys starting with `intershop.environment.` are provided as environment variables to the container:
 
-* if the property's value contains no `=` at all: the key is transformed the following way: `intershop.environment.<symbolicName>` -> `<symbolicName>`
-* if the property's value contains at least 1 `=`: the key is transformed the following way: `intershop.environment.<symbolicName>` -> `ISH_ENV_<symbolicName>`
+* If the property's value contains no `=` at all, the key is transformed as follows: `intershop.environment.<symbolicName>` -> `<symbolicName>`
+* If the property's value contains at least 1 `=`, the key is transformed as follows: `intershop.environment.<symbolicName>` -> `ISH_ENV_<symbolicName>`
 
 NOTE: Environment variables with keys following the pattern `ISH_ENV_<symbolicName>` are picked up by the icm-as configuration finder `system`. Their value is split at `,` and all the parts are provided as separate configuration values.
 
-NOTE: Other environment variables may also be picked up by the icm-as configuration finder `system` their key matches a requested configuration property's name when transformed to upper case and all `.` replaced by `.` (example: `intershop.encryption.strictMode.enabled` -> `INTERSHOP_ENCRYPTION_STRICTMODE_ENABLED`).
+NOTE: Other environment variables may also be picked up by the icm-as configuration finder `system` if their key matches a requested configuration property's name when transformed to uppercase and all `.` are replaced by `_` (example: `intershop.encryption.strictMode.enabled` -> `INTERSHOP_ENCRYPTION_STRICTMODE_ENABLED`).
 
 == Contribute
 
