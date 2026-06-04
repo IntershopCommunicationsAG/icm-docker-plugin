@@ -304,14 +304,9 @@ open class DevelopmentConfiguration
 
     val intershopEnvironmentProperties: EnvironmentProperties by lazy {
         val envConfig = EnvironmentProperties(objectFactory)
-        val keys = configProperties.keys.filter {it.toString().startsWith(Configuration.INTERSHOP_ENVIRONMENT_PREFIX)
-                && ! it.equals(Configuration.CONTAINER_ENV_PROP)}
-            .stream().map { it.toString()}
+        val keys = IntershopEnvironmentProperty.extractKeys(configProperties)
         keys.forEach {
-            val p = getConfigProperty(it)
-            val k = it.replaceFirst(Configuration.INTERSHOP_ENVIRONMENT_PREFIX, ENV_PREFIX)
-                .uppercase(Locale.getDefault())
-            envConfig.config.put(k, p)
+            IntershopEnvironmentProperty(it) { key -> getConfigProperty(key) }.apply(envConfig.config)
         }
         envConfig
     }
@@ -349,6 +344,50 @@ open class DevelopmentConfiguration
                 Configuration.AS_JMX_CONNECTOR_CONTAINER_PORT_VALUE,
         ))
         config
+    }
+
+    class IntershopEnvironmentProperty(
+        val key: String,
+        val getValue: (String) -> String?
+    ) {
+        val value: String? = getValue(key)
+
+        companion object {
+            fun extractKeys(properties: Properties): Iterable<String> {
+                return properties.keys.map { it.toString() }.filter {
+                    it.startsWith(Configuration.INTERSHOP_ENVIRONMENT_PREFIX)
+                            && it != Configuration.CONTAINER_ENV_PROP
+                }
+            }
+        }
+
+        fun asPair(): Pair<String, String?> {
+            return Pair(targetKey(), value)
+        }
+
+        fun apply(target: MapProperty<String, String>) {
+            val pair: Pair<String, String?> = asPair()
+            pair.second?.run {
+                target.put(pair.first, this)
+            }
+        }
+
+        private fun isRenderAsPlain(): Boolean {
+            if (value.isNullOrBlank()) {
+                return false
+            }
+            return !value.contains("=")
+        }
+
+        private fun targetKey(): String {
+            if (isRenderAsPlain()) {
+                return key.replaceFirst(Configuration.INTERSHOP_ENVIRONMENT_PREFIX, "")
+            }
+
+            return key.replaceFirst(Configuration.INTERSHOP_ENVIRONMENT_PREFIX, ENV_PREFIX)
+                .uppercase(Locale.getDefault())
+
+        }
     }
 
     class DatabaseParameters(objectFactory: ObjectFactory) : Serializable {
