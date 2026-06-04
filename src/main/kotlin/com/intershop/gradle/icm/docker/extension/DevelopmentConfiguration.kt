@@ -366,10 +366,8 @@ open class DevelopmentConfiguration
         }
 
         fun apply(target: MapProperty<String, String>) {
-            val pair: Pair<String, String?> = asPair()
-            pair.second?.run {
-                target.put(pair.first, this)
-            }
+            val (targetKey, targetValue) = asPair()
+            targetValue?.run { target.put(targetKey, this) }
         }
 
         private fun isRenderAsPlain(): Boolean {
