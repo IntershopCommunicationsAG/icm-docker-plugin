@@ -21,6 +21,10 @@ import com.intershop.gradle.icm.docker.tasks.PrepareNetwork
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.utils.AbstractTaskPreparer
 import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.Configuration.WS_CONTAINER_HTTPS_PORT
+import com.intershop.gradle.icm.docker.utils.Configuration.WS_CONTAINER_HTTP_PORT
+import com.intershop.gradle.icm.docker.utils.Configuration.WS_HTTPS_PORT
+import com.intershop.gradle.icm.docker.utils.Configuration.WS_HTTP_PORT
 import com.intershop.gradle.icm.docker.utils.PortMapping
 import com.intershop.gradle.icm.docker.utils.appsrv.ASTaskPreparer
 import org.gradle.api.Project
@@ -89,8 +93,8 @@ class WATaskPreparer(
         )
 
         // Warn on mismatching host/container ports
-        warnOnPortMismatch(httpPortMapping, "webserver.http.port", "webserver.container.http.port")
-        warnOnPortMismatch(httpsPortMapping, "webserver.https.port", "webserver.container.https.port")
+        warnOnPortMismatch(httpPortMapping, WS_HTTP_PORT, WS_CONTAINER_HTTP_PORT)
+        warnOnPortMismatch(httpsPortMapping, WS_HTTPS_PORT, WS_CONTAINER_HTTPS_PORT)
 
         val env = with(dockerExtension.developmentConfig) {
             val env = ContainerEnvironment()
