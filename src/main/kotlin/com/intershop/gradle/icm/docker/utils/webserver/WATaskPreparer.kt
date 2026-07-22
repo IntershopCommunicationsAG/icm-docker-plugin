@@ -92,10 +92,6 @@ class WATaskPreparer(
                 true
         )
 
-        // Warn on mismatching host/container ports
-        warnOnPortMismatch(httpPortMapping, WS_HTTP_PORT, WS_CONTAINER_HTTP_PORT)
-        warnOnPortMismatch(httpsPortMapping, WS_HTTPS_PORT, WS_CONTAINER_HTTPS_PORT)
-
         val env = with(dockerExtension.developmentConfig) {
             val env = ContainerEnvironment()
 
@@ -155,6 +151,10 @@ class WATaskPreparer(
         }
 
         registerStartContainerTask(createTask).configure { task ->
+            // Warn on mismatching host/container ports
+            warnOnPortMismatch(httpPortMapping, WS_HTTP_PORT, WS_CONTAINER_HTTP_PORT)
+            warnOnPortMismatch(httpsPortMapping, WS_HTTPS_PORT, WS_CONTAINER_HTTPS_PORT)
+
             // add socketProbes to http and https ports
             with(dockerExtension.developmentConfig) {
                 task.withSocketProbe(
