@@ -351,10 +351,10 @@ The following properties are part of the <<PropertiesFile>>.
 |===
 | Key | Description | Co-domain | Mandatory/Optional | Default value
 
-| `webserver.http.port` | the host port to be used for the WebAdapter http port | Integer | Optional | `8080` +
-| `webserver.https.port` | the host port to be used for the WebAdapter https port | Integer | Optional | `8443` +
-| `webserver.container.http.port` | the container port to be used for the WebAdapter http port (normally no need to change) | Integer | Optional | `8080` +
-| `webserver.container.https.port` | the container port to be used for the WebAdapter https port (normally no need to change) | Integer | Optional | `8443` +
+| `webserver.http.port` | the host port to be used for the WebAdapter http port. To configure on a non-default port (e.g. `80`), set `webserver.container.http.port` to the same value. | Integer | Optional | `8080` +
+| `webserver.https.port` | the host port to be used for the WebAdapter https port. To configure on a non-default port (e.g. `443`) with correct secure URL generation, set `webserver.container.https.port` to the same value. | Integer | Optional | `8443` +
+| `webserver.container.http.port` | the container port the WebAdapter listens on and advertises for http URLs (via `ICM_WA_HTTP_PORT`). Set it equal to `webserver.http.port` when configuring a non-default http port. When a privileged container port (< 1024, e.g. `80`) is configured, the plugin automatically grants the WA container the `NET_BIND_SERVICE` capability so the non-root process can bind it. | Integer | Optional | `8080` +
+| `webserver.container.https.port` | the container port the WebAdapter listens on and advertises for secure URLs (via `ICM_WA_HTTPS_PORT`). Set it equal to `webserver.https.port` when configuring a non-default https port so generated secure links use that port instead of the default `8443`. When a privileged container port (< 1024, e.g. `443`) is configured, the plugin automatically grants the WA container the `NET_BIND_SERVICE` capability so the non-root process can bind it. | Integer | Optional | `8443` +
 | `webServer.cert.path` | the host path to look for TLS certificate and private key (if not defined, no certificates will be mounted for the WA) | Path | Optional | <none> +
 | `webserver.cert.server` | short name of the certificate file inside of `webServer.cert.path` + | String | mandatory if `webServer.cert.path` is set + | <none> +
 | `webserver.cert.privatekey` | short name of the private key file inside of `webServer.cert.path` + | String | mandatory if `webServer.cert.path` is set + | <none> +
@@ -364,6 +364,8 @@ The following properties are part of the <<PropertiesFile>>.
 | `wa.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
 | `wa.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
+
+NOTE: `webserver.http.port` / `webserver.https.port` are the *host* ports Docker configures, while `webserver.container.http.port` / `webserver.container.https.port` are the ports the WebAdapter listens on and uses to build absolute URLs (links, redirects, server name). With the defaults (`8080`/`8443`) they match. To configure a non-default port (e.g. `80`/`443`), set the matching container port to the same value; otherwise the WebAdapter advertises its internal port (e.g. `:8443`) in generated links, which the browser cannot reach.
 
 ===== WAA [[WAAConfiguration]]
 
