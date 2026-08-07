@@ -60,6 +60,7 @@ class ICMContainerEnvironmentBuilder {
         const val ENV_SOLR_CLUSTERINDEXPREFIX = "SOLR_CLUSTERINDEXPREFIX"
         const val PROP_MAIL_HOST = "mail.smtp.host"
         const val PROP_MAIL_PORT = "mail.smtp.port"
+        const val ENV_USE_SYSTEM_CA_CERTS = "USE_SYSTEM_CA_CERTS"
     }
 
     private var classpathLayout: Set<ClasspathLayout> = setOf()
@@ -84,6 +85,7 @@ class ICMContainerEnvironmentBuilder {
     private var addEnvironmentProperties = Properties()
     private var icmEncryptionStrictMode : Provider<ICMEncryptionStrictMode>? = null
     private var icmFilePollingConfiguration : Provider<ICMFilePollingConfiguration>? = null
+    private var enableCACertImport: Boolean? = null
 
     fun withClasspathLayout(classpathLayout: Set<ClasspathLayout>) : ICMContainerEnvironmentBuilder {
         this.classpathLayout = classpathLayout
@@ -192,6 +194,11 @@ class ICMContainerEnvironmentBuilder {
 
     fun withICMFilePollingConfiguration(icmFilePollingConfiguration: Provider<ICMFilePollingConfiguration>) : ICMContainerEnvironmentBuilder {
         this.icmFilePollingConfiguration = icmFilePollingConfiguration
+        return this
+    }
+
+    fun enableCACertImport(enableCACertImport: Boolean) : ICMContainerEnvironmentBuilder {
+        this.enableCACertImport = enableCACertImport
         return this
     }
 
@@ -309,6 +316,10 @@ class ICMContainerEnvironmentBuilder {
                     env.add(ContainerEnvironment.propertyNameToEnvName(interval.first), interval.second)
                 }
             }
+        }
+
+        if (enableCACertImport == true) {
+            env.add(ENV_USE_SYSTEM_CA_CERTS, "1")
         }
 
         return env
