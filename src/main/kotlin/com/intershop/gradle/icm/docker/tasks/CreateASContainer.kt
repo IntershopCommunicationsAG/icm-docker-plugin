@@ -25,6 +25,8 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.tasks.CopyLibraries
 import com.intershop.gradle.icm.utils.JavaDebugSupport
+import org.gradle.api.GradleException
+import org.gradle.api.internal.tasks.options.OptionValidationException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -34,6 +36,8 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
+import java.io.File
+import java.nio.file.Paths
 
 import javax.inject.Inject
 
@@ -50,6 +54,17 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
 
     companion object {
         const val PATTERN_READINESS_PROBE_URL = "http://localhost:%d/status/ReadinessProbe"
+        val DEFAULT_ENTRYPOINT = listOf(
+            "/bin/bash",
+            "-c",
+            $$"""
+                    source /__cacert_entrypoint.sh && \
+                    ADDITIONAL_JVM_ARGUMENTS="${ADDITIONAL_JVM_ARGUMENTS} ${JAVA_TOOL_OPTIONS}" && \
+                    printf '%.0s-' {1..80} && \
+                    echo && \
+                    /intershop/bin/intershop.sh                    
+                """.trimIndent()
+        )
     }
 
     /**
@@ -161,6 +176,36 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         }
 
     /**
+     * Provide custom bind mounts (volumes)
+     *
+     * @property volumes customer volumes
+     */
+    @set:Option(
+        option = "mount",
+        description = "Provide custom bind mounts (volumes) for the container. Expected pattern 'hostPath:containerPath'."
+    )
+    @get:Optional
+    @get:Input
+    var volumes: List<String>
+        get() = this.hostConfig.binds.get().map { b -> "${b.key}:${b.value}" }
+        set(value) {
+            value.map { curr ->
+                val lastColon = curr.lastIndexOf(':')
+                if (lastColon == -1)
+                {
+                    throw OptionValidationException("Invalid format for mount-option: '$curr'. Expected format 'hostPath:containerPath'.")
+                }
+                val hostPath = curr.substring(0, lastColon)
+                if (!File(hostPath).exists())
+                {
+                    throw GradleException("Host path '$hostPath' does not exist")
+                }
+                val containerPath = curr.substring(lastColon + 1)
+                withVolumes(mapOf(hostPath to containerPath))
+            }
+        }
+
+    /**
      * Provide the host list of the Zookeeper required by Solr Cloud
      */
     fun withSolrCloudZookeeperHostList(solrCloudZookeeperHostList: Provider<String>) {
@@ -178,6 +223,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
 
     init {
         val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+        entrypoint.set(DEFAULT_ENTRYPOINT)
         withEnvironment(
                 project.provider {
                     ICMContainerEnvironmentBuilder()
@@ -196,6 +242,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
                             .withICMFilePollingConfiguration(project.provider {
                                 ICMFilePollingConfiguration.fromDevelopmentConfiguration(devConfig)
                             })
+                            .enableCACertImport(true)
                             .build()
                 }
         )

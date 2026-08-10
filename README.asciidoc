@@ -608,8 +608,13 @@ IMPORTANT: The following parameters actually belong to the task `createAS` (not 
 | `heapdump` | toggles if a heapdump is written by the application server in case of an `OutOfMemoryError` + | Switch | `false` +
 | `appserver-name` | sets a custom name for the application server + | String | `appserver` +
 | `classpathLayout` | sets a custom classpath layout + | comma separated list of {`release`,`source`,`sourceJar`,`eclipse`}, default value is `sourceJar,release` | `sourceJar,release` +
+| `mount` | mount a host directory onto a container volume + | String[], each value following the pattern `hostPath:containerPath`, can be used multiple times to mount multiple directories | _none_ +
 |===
 NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localVersion` has to be set to `true` (see https://github.com/IntershopCommunicationsAG/gitflow-version-gradle-plugin#gradle-properties).
+
+NOTE: Using `--mount` one can achieve to let the startup scripts import custom SSL/TLS certificates into the JVM's _cacerts_. Ensure to use certificate files using the `PEM` format and having the file extension `crt`. The required environment variable `USE_SYSTEM_CA_CERTS=1` is set automatically (further details at https://hub.docker.com/r/amd64/eclipse-temurin/#can-i-add-my-internal-ca-certificates-to-the-truststore).
+
+NOTE: When using Windows as the host system ensure to use `\` (backslashes) in your host path.
 ++++
 <details>
 <summary>Examples</summary>
@@ -624,6 +629,11 @@ NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localV
 ----
 ./gradlew createAS --gclog --heapdump
 ----
+.start application server and mount custom SSL/TLS certificates to `/certificates`
+[source,shell]
+----
+./gradlew createAS --mount c:\my-icm\custom-certificates:/certificates startAS
+----
 .start application server container previously created
 [source,shell]
 ----
@@ -633,7 +643,7 @@ NOTE: To make the `classpathLayout` `sourceJar` work the gradle-property `localV
 </details>
 ++++
 
-IMPORTANT: As long as the application server is starting the container's log output is forwarded to the host's standard out. Afterwards, it is only accessible by `docker logs`.
+IMPORTANT: As long as the application server is starting the container's log output is forwarded to the host's standard out. Afterward, it is only accessible by `docker logs`.
 
 NOTE: the application server can be started using a custom image (e.g. different version) using the `--altImage` parameter.
 
