@@ -54,9 +54,9 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         val DEFAULT_ENTRYPOINT = listOf(
             "/bin/bash",
             "-c",
-            """
+            $$"""
                     source /__cacert_entrypoint.sh && \
-                    ADDITIONAL_JVM_ARGUMENTS="${'$'}{ADDITIONAL_JVM_ARGUMENTS} ${'$'}{JAVA_TOOL_OPTIONS}" && \
+                    ADDITIONAL_JVM_ARGUMENTS="${ADDITIONAL_JVM_ARGUMENTS} ${JAVA_TOOL_OPTIONS}" && \
                     printf '%.0s-' {1..80} && \
                     echo && \
                     /intershop/bin/intershop.sh                    
@@ -184,7 +184,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
     @get:Optional
     @get:Input
     var volumes: List<String>
-        get() = this.hostConfig.binds.get().map { b -> "${b.key} : ${b.value}" }
+        get() = this.hostConfig.binds.get().map { b -> "${b.key}:${b.value}" }
         set(value) {
             value.map { curr ->
                 val lastColon = curr.lastIndexOf(':')
