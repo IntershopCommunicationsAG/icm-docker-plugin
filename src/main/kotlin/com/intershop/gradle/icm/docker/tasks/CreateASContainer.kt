@@ -25,6 +25,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.tasks.CopyLibraries
 import com.intershop.gradle.icm.utils.JavaDebugSupport
+import org.gradle.api.GradleException
 import org.gradle.api.internal.tasks.options.OptionValidationException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -35,6 +36,8 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
+import java.io.File
+import java.nio.file.Paths
 
 import javax.inject.Inject
 
@@ -188,10 +191,15 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         set(value) {
             value.map { curr ->
                 val lastColon = curr.lastIndexOf(':')
-                if (lastColon == -1){
+                if (lastColon == -1)
+                {
                     throw OptionValidationException("Invalid format for mount-option: '$curr'. Expected format 'hostPath:containerPath'.")
                 }
                 val hostPath = curr.substring(0, lastColon)
+                if (!File(hostPath).exists())
+                {
+                    throw GradleException("Host path '$hostPath' does not exist")
+                }
                 val containerPath = curr.substring(lastColon + 1)
                 withVolumes(mapOf(hostPath to containerPath))
             }
