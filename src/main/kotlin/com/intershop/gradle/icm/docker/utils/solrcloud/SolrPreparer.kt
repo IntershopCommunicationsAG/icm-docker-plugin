@@ -55,6 +55,7 @@ class SolrPreparer(
                 "SOLR_PORT" to portMapping.containerPort.toString(),
                 "ZK_HOST" to zkPreparer.getRenderedHostPort(),
                 "SOLR_HOST" to "${IPFinder.getSystemIP().first}",
+                "SOLR_SECURITY_MANAGER_ENABLED" to "false",                
                 "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
         )
         val dataDir: File? = getLocalDataDir()
