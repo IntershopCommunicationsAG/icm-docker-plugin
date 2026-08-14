@@ -34,7 +34,6 @@ class SolrPreparer(
 
     companion object {
         const val EXT_NAME: String = "Solr"
-        const val CONTAINER_PORT = 8983
         const val GROUP_NAME = "icm container solrcloud"
     }
 
@@ -45,18 +44,29 @@ class SolrPreparer(
     override fun getAutoRemoveContainerConfigProperty() : String = Configuration.SOLR_AUTOREMOVE_CONTAINER
     override fun getTaskGroupExt(): String = "solrcloud"
 
+    // host port and container port must be identical: Solr registers itself in ZooKeeper with
+    // "SOLR_HOST:SOLR_PORT" and that address has to be reachable both from other containers and
+    // from the host (e.g. by CleanUpSolr), so no docker port remapping is allowed here
+    private val portMapping = dockerExtension.developmentConfig.getPortMapping(
+            "SOLR",
+            getHostPortConfigProperty(),
+            Configuration.SOLR_CLOUD_HOST_PORT_VALUE + (nodeNr - 1),
+            Configuration.SOLR_CLOUD_HOST_PORT_VALUE + (nodeNr - 1),
+            true)
+
     init {
         initBaseTasks()
-        val portMapping = dockerExtension.developmentConfig.getPortMapping(
-                "SOLR",
-                getHostPortConfigProperty(),
-                Configuration.SOLR_CLOUD_HOST_PORT_VALUE + (nodeNr - 1),
-                CONTAINER_PORT,
-                true)
+        val hostIP = "${IPFinder.getSystemIP().first}"
         val env = ContainerEnvironment().addAll(
+                // Solr 9 image reads SOLR_PORT/SOLR_HOST, Solr 10 renamed them to
+                // SOLR_PORT_LISTEN/SOLR_HOST_ADVERTISE (SOLR-15442) - set both so the node
+                // advertises this reachable address in ZooKeeper instead of falling back to
+                // its internal docker network IP
                 "SOLR_PORT" to portMapping.containerPort.toString(),
+                "SOLR_PORT_LISTEN" to portMapping.containerPort.toString(),
                 "ZK_HOST" to zkPreparer.getRenderedHostPort(),
-                "SOLR_HOST" to "${IPFinder.getSystemIP().first}",
+                "SOLR_HOST" to hostIP,
+                "SOLR_HOST_ADVERTISE" to hostIP,
                 "SOLR_SECURITY_MANAGER_ENABLED" to "false",
                 "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
         )
@@ -90,7 +100,7 @@ class SolrPreparer(
             if (nodeNr == 1) Configuration.SOLR_CLOUD_HOST_PORT else "${Configuration.SOLR_CLOUD_HOST_PORT}.$nodeNr"
 
     // address used by other containers on the same docker network to reach this node
-    fun getRenderedHostPort(): String = "${getContainerName()}:$CONTAINER_PORT"
+    fun getRenderedHostPort(): String = "${getContainerName()}:${portMapping.containerPort}"
 
     private fun getLocalDataDir(): File? {
         val dataPath = devConfig.getConfigProperty(Configuration.SOLR_DATA_FOLDER_PATH, "")
