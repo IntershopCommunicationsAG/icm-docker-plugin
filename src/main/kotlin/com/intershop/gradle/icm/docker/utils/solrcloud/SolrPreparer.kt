@@ -29,6 +29,7 @@ class SolrPreparer(
         project: Project,
         networkTask: Provider<PrepareNetwork>,
         zkPreparer: ZKPreparer,
+        private val nodeNr: Int = 1,
 ) : AbstractTaskPreparer(project, networkTask) {
 
     companion object {
@@ -37,7 +38,8 @@ class SolrPreparer(
         const val GROUP_NAME = "icm container solrcloud"
     }
 
-    override fun getExtensionName(): String = EXT_NAME
+    // node 1 keeps the original naming/config keys for backward compatibility
+    override fun getExtensionName(): String = if (nodeNr == 1) EXT_NAME else "$EXT_NAME$nodeNr"
     override fun getImage(): Provider<String> = dockerExtension.images.solr
     override fun getUseHostUserConfigProperty(): String = Configuration.SOLR_USE_HOST_USER
     override fun getAutoRemoveContainerConfigProperty() : String = Configuration.SOLR_AUTOREMOVE_CONTAINER
@@ -47,15 +49,15 @@ class SolrPreparer(
         initBaseTasks()
         val portMapping = dockerExtension.developmentConfig.getPortMapping(
                 "SOLR",
-                Configuration.SOLR_CLOUD_HOST_PORT,
-                Configuration.SOLR_CLOUD_HOST_PORT_VALUE,
+                getHostPortConfigProperty(),
+                Configuration.SOLR_CLOUD_HOST_PORT_VALUE + (nodeNr - 1),
                 CONTAINER_PORT,
                 true)
         val env = ContainerEnvironment().addAll(
                 "SOLR_PORT" to portMapping.containerPort.toString(),
                 "ZK_HOST" to zkPreparer.getRenderedHostPort(),
                 "SOLR_HOST" to "${IPFinder.getSystemIP().first}",
-                "SOLR_SECURITY_MANAGER_ENABLED" to "false",                
+                "SOLR_SECURITY_MANAGER_ENABLED" to "false",
                 "SOLR_OPTS" to "-Dsolr.disableConfigSetsCreateAuthChecks=true"
         )
         val dataDir: File? = getLocalDataDir()
@@ -83,12 +85,20 @@ class SolrPreparer(
 
     }
 
+    // node 1 keeps using the original "solr.port" property, additional nodes get their own port property
+    private fun getHostPortConfigProperty(): String =
+            if (nodeNr == 1) Configuration.SOLR_CLOUD_HOST_PORT else "${Configuration.SOLR_CLOUD_HOST_PORT}.$nodeNr"
+
+    // address used by other containers on the same docker network to reach this node
+    fun getRenderedHostPort(): String = "${getContainerName()}:$CONTAINER_PORT"
+
     private fun getLocalDataDir(): File? {
         val dataPath = devConfig.getConfigProperty(Configuration.SOLR_DATA_FOLDER_PATH, "")
         if (dataPath.isBlank()) {
             return null
         }
-        return File(dataPath)
+        // node 1 keeps using the original data folder for backward compatibility
+        return if (nodeNr == 1) File(dataPath) else File(dataPath, "node$nodeNr")
     }
 
 }

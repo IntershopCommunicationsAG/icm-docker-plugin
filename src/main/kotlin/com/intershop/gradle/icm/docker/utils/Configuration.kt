@@ -124,6 +124,13 @@ object Configuration {
     const val SOLR_DATA_FOLDER_PATH = "solr.data.folder.path"
     const val SOLR_USE_HOST_USER = "solr.useHostUser"
     const val SOLR_AUTOREMOVE_CONTAINER = "solr.autoRemoveContainer"
+    const val SOLR_NODES_COUNT = "solr.nodes"
+    const val SOLR_NODES_COUNT_VALUE = 1
+
+    const val SOLR_LB_HOST_PORT = "solr.lb.port"
+    const val SOLR_LB_HOST_PORT_VALUE = 8990
+    const val SOLR_LB_USE_HOST_USER = "solr.lb.useHostUser"
+    const val SOLR_LB_AUTOREMOVE_CONTAINER = "solr.lb.autoRemoveContainer"
 
     const val ZOOKEEPER_HOST_PORT = "zookeeper.port"
     const val ZOOKEEPER_HOST_PORT_VALUE = 2181
