@@ -19,7 +19,7 @@ package com.intershop.gradle.icm.docker.tasks.solrCloud
 
 import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.apache.solr.client.solrj.SolrClient
-import org.apache.solr.client.solrj.impl.CloudSolrClient
+import org.apache.solr.client.solrj.impl.CloudHttp2SolrClient
 import org.gradle.api.DefaultTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -65,7 +65,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
 
     }
 
-    private fun getClient(connectStr: String): CloudSolrClient {
+    private fun getClient(connectStr: String): SolrClient {
         val pathList = connectStr.split("/")
 
         val path = if (pathList.size > 1) {
@@ -75,7 +75,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
         }
         val zkHosts = pathList[0].split(";")
 
-        return CloudSolrClient.Builder(zkHosts, path)
+        return CloudHttp2SolrClient.Builder(zkHosts, path)
             .withZkConnectTimeout(connectionTimeout.get(), TimeUnit.MILLISECONDS)
             .build()
     }
