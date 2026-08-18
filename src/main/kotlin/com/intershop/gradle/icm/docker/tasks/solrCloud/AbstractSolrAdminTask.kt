@@ -105,7 +105,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
             java.util.Optional.empty()
         }
 
-        return CloudHttp2SolrClient.Builder(zkHosts.split(';'), path)
+        return CloudHttp2SolrClient.Builder(zkHosts.split(',', ';'), path)
             .withHttpClientBuilder(Http2SolrClient.Builder().useHttp1_1(true))
                 .withZkConnectTimeout(connectionTimeout.get(), TimeUnit.MILLISECONDS)
                 .build()
