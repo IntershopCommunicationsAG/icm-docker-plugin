@@ -31,6 +31,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_HOSTLIST
 import com.intershop.gradle.icm.docker.utils.Configuration.SOLR_CLOUD_INDEXPREFIX
 import com.intershop.gradle.icm.docker.utils.Configuration.SSL_VERIFICATION
 import com.intershop.gradle.icm.docker.utils.appsrv.ASTaskPreparer
+import com.intershop.gradle.icm.docker.utils.solrcloud.SolrConnectionResolver
 import com.intershop.gradle.icm.docker.utils.webserver.WATaskPreparer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -79,13 +80,25 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                         wfs.mustRunAfter(startWAProvider, startASProvider)
                     }
 
-                    val solrCloudHostList = getConfigProperty(SOLR_CLOUD_HOSTLIST, "localhost")
+                        val nodeCount = getIntProperty(Configuration.SOLR_NODES_COUNT, Configuration.SOLR_NODES_COUNT_VALUE)
+                        val solrConnection = SolrConnectionResolver.resolve(this, nodeCount)
+                            val configuredURLs = getConfigProperty(Configuration.SOLR_CLOUD_SERVER_URLS)
+                            val configuredZookeeper = getConfigProperty(SOLR_CLOUD_HOSTLIST)
+                            if (configuredURLs.isNotEmpty() && configuredZookeeper.isNotEmpty()) {
+                                logger.warn(
+                                    "Both '${Configuration.SOLR_CLOUD_SERVER_URLS}' and '$SOLR_CLOUD_HOSTLIST' " +
+                                        "are configured; using the URL property.")
+                            } else if (configuredURLs.isEmpty() && configuredZookeeper.isNotEmpty()) {
+                                logger.warn(
+                                    "Property '$SOLR_CLOUD_HOSTLIST' is deprecated for Solr admin tasks; " +
+                                    "prefer '${Configuration.SOLR_CLOUD_SERVER_URLS}'.")
+                        }
                     val solrCloudIndexPrefix = getConfigProperty(SOLR_CLOUD_INDEXPREFIX, "")
                     val solrCleanUp = project.tasks.register("cleanUpSolr", CleanUpSolr::class.java) { cus ->
                         cus.group = SOLR_GROUP
                         cus.description = "Removes all collections and configuration for the specified prefix"
 
-                        cus.solrConfiguration.set(solrCloudHostList)
+                        cus.solrConfiguration.set(solrConnection.value)
                         cus.solrClusterPrefixProperty.convention(solrCloudIndexPrefix)
                         cus.mustRunAfter(startSolrCloud, wfsTask)
                     }
@@ -114,7 +127,7 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                         lst.group = "Solr Cloud Support"
                         lst.description = "List all collections and configuration for the specified prefix"
 
-                        lst.solrConfiguration.set(solrCloudHostList)
+                        lst.solrConfiguration.set(solrConnection.value)
                         lst.solrClusterPrefixProperty.convention(solrCloudIndexPrefix)
 
                         lst.mustRunAfter(rebuildIndex, solrCleanUp)

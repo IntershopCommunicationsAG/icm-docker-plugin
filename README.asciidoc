@@ -1076,9 +1076,11 @@ management of search indexes. It uses the same configuration as the ICM Docker p
 | *ZK + 
 *Solr | solr.data.folder.path | host folder to store Solr and Zookeeper data outside of the Solr/Zookeeper container. e.g. `D:/solr-data` 
 
-.2+| cleanUpSolr +
-listSolr| `solr.zooKeeperHostList` | A list of all Zookeeper hosts with port and the Solr server prefix. +
-e.g. zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/solr
+.3+| cleanUpSolr +
+listSolr| `solr.cloudSolrServerURLs` | Preferred Solr HTTP endpoint configuration. Use one or more comma-separated Solr URLs, e.g. `http://solr.example.com:8983/solr` or `http://solr1:8983/solr,http://solr2:8984/solr`.
+| `solr.zooKeeperHostList` | Legacy Solr connection configuration. A list of Zookeeper hosts with port and an optional Zookeeper root. +
+e.g. zookeeper1:2181;zookeeper2:2181;zookeeper3:2181/solr
+If neither connection property is configured, ICM uses `http://<solr-container>:8983/solr` for one node and `http://<solr-lb-container>:80/solr` when `solr.nodes` is greater than one.
 | `solr.clusterIndexPrefix` | A simple installation specific prefix for the Solr search configuration, e.g. the hostname.
 .3+| rebuildSearchIndex | `intershop.smc.admin.user.name` | This is the ICM SMC admin user. Default: admin.
 | `intershop.smc.admin.user.password` | This is the password of the SMC admin user.
@@ -1127,6 +1129,11 @@ intershop.servletEngine.connector.port = 7743
 intershop.local.hostname = 192.168.2.205
 
 # solr configuration
+# Preferred: Solr HTTP endpoint(s) used by ICM and Solr administration tasks.
+# For multiple endpoints, separate URLs with commas.
+solr.cloudSolrServerURLs = http://localhost:8983/solr
+
+# Legacy alternative. If both properties are set, solr.cloudSolrServerURLs wins.
 solr.zooKeeperHostList = jengsolr1.intershop.de:2181;jengsolr2.intershop.de:2181;jengsolr3.intershop.de:2181/solr8
 solr.clusterIndexPrefix = devhost
 

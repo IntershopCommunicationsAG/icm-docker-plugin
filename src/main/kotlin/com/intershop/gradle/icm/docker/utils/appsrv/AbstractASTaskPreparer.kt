@@ -28,6 +28,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.docker.utils.OS
 import com.intershop.gradle.icm.docker.utils.PortMapping
+import com.intershop.gradle.icm.docker.utils.solrcloud.SolrConnectionResolver
 import com.intershop.gradle.icm.docker.utils.solrcloud.ZKPreparer
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -116,25 +117,41 @@ abstract class AbstractASTaskPreparer(
             }
 
             // ensure AS knows connection to Solr/ZK
+            val solrCloudServerURLs = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_SERVER_URLS)
             val solrCloudHostList = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_HOSTLIST)
             val solrCloudIndexPrefix = devConfig.getConfigProperty(Configuration.SOLR_CLOUD_INDEXPREFIX)
+            val nodeCount = devConfig.getIntProperty(Configuration.SOLR_NODES_COUNT, Configuration.SOLR_NODES_COUNT_VALUE)
 
-            if (zkTaskProvider != null && solrCloudHostList.isEmpty()) {
-                task.withSolrCloudZookeeperHostList(project.provider {
-                    val containerPort = zkTaskProvider!!.get().getPortMappings().stream()
-                            .filter { it.name == ZKPreparer.CONTAINER_PORTMAPPING }
-                            .findFirst().get().containerPort
-                    "${zkTaskProvider!!.get().containerName.get()}:${containerPort}"
-                })
-            } else if (solrCloudHostList.isNotEmpty()) {
-                task.withSolrCloudZookeeperHostList(project.provider {
-                    solrCloudHostList
-                })
-
-                if (solrCloudIndexPrefix.isNotEmpty()) {
-                    task.withEnvironment(ICMContainerEnvironmentBuilder().withSolrClusterIndexPrefix(
-                            project.provider { solrCloudIndexPrefix }).build())
+            if (solrCloudServerURLs.isNotEmpty()) {
+                if (solrCloudHostList.isNotEmpty()) {
+                    project.logger.warn(
+                            "Both '${Configuration.SOLR_CLOUD_SERVER_URLS}' and " +
+                                    "'${Configuration.SOLR_CLOUD_HOSTLIST}' are configured; using the URL property.")
                 }
+                task.withSolrCloudServerURLs(project.provider { solrCloudServerURLs })
+            } else if (solrCloudHostList.isNotEmpty()) {
+                project.logger.warn(
+                        "Property '${Configuration.SOLR_CLOUD_HOSTLIST}' is deprecated for ICM startup; " +
+                                "prefer '${Configuration.SOLR_CLOUD_SERVER_URLS}'.")
+                task.withSolrCloudZookeeperHostList(project.provider { solrCloudHostList })
+            } else {
+                val defaultHost = if (nodeCount > 1) {
+                    "${dockerExtension.containerPrefix}-solr-lb"
+                } else {
+                    "${dockerExtension.containerPrefix}-solr"
+                }
+                val connection = SolrConnectionResolver.resolve(
+                    devConfig,
+                    nodeCount,
+                    defaultHost,
+                    if (nodeCount > 1) 80 else null
+                )
+                task.withSolrCloudServerURLs(project.provider { connection.value })
+            }
+
+            if (solrCloudIndexPrefix.isNotEmpty()) {
+                task.withEnvironment(ICMContainerEnvironmentBuilder().withSolrClusterIndexPrefix(
+                        project.provider { solrCloudIndexPrefix }).build())
             }
         }
         return createTask

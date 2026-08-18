@@ -85,7 +85,7 @@ class SolrPreparer(
         registerStartContainerTask(createTask).configure { task ->
             task.doLast {
                 task.logger.quiet(
-                        "The Solr server can be connected with {}:{}",
+                        "The Solr server can be connected with http://{}:{}/solr",
                         getContainerName(),
                         portMapping.containerPort
                 )

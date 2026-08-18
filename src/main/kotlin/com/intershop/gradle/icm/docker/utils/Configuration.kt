@@ -118,6 +118,7 @@ object Configuration {
     const val AS_AUTOREMOVE_CONTAINER = "intershop.as.autoRemoveContainer"
 
     const val SOLR_CLOUD_HOSTLIST = "solr.zooKeeperHostList"
+    const val SOLR_CLOUD_SERVER_URLS = "solr.cloudSolrServerURLs"
     const val SOLR_CLOUD_INDEXPREFIX = "solr.clusterIndexPrefix"
     const val SOLR_CLOUD_HOST_PORT = "solr.port"
     const val SOLR_CLOUD_HOST_PORT_VALUE = 8983

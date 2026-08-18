@@ -206,11 +206,20 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         }
 
     /**
-     * Provide the host list of the Zookeeper required by Solr Cloud
+     * Provide the host list of the Zookeeper cluster for Solr Cloud Adapter. This is used to connect to Solr Cloud when using the SolrCloudAdapter.
      */
     fun withSolrCloudZookeeperHostList(solrCloudZookeeperHostList: Provider<String>) {
         withEnvironment(project.provider {
             ICMContainerEnvironmentBuilder().withSolrCloudZookeeperHostList(solrCloudZookeeperHostList).build()
+        })
+    }
+
+    /**
+     * Provide the Solr URL for Solr Cloud Adapter. This is used to connect to Solr Cloud when using the SolrCloudAdapter.
+     */
+    fun withSolrCloudServerURLs(solrCloudServerURLs: Provider<String>) {
+        withEnvironment(project.provider {
+            ICMContainerEnvironmentBuilder().withSolrCloudServerURLs(solrCloudServerURLs).build()
         })
     }
 
