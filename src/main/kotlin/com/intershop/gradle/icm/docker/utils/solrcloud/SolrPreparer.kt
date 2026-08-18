@@ -47,12 +47,13 @@ class SolrPreparer(
     // host port and container port must be identical: Solr registers itself in ZooKeeper with
     // "SOLR_HOST:SOLR_PORT" and that address has to be reachable both from other containers and
     // from the host (e.g. by CleanUpSolr), so no docker port remapping is allowed here
-    private val portMapping = dockerExtension.developmentConfig.getPortMapping(
-            "SOLR",
+    private val portMapping = run {
+        val port = dockerExtension.developmentConfig.getIntProperty(
             getHostPortConfigProperty(),
-            Configuration.SOLR_CLOUD_HOST_PORT_VALUE + (nodeNr - 1),
-            Configuration.SOLR_CLOUD_HOST_PORT_VALUE + (nodeNr - 1),
-            true)
+            Configuration.SOLR_CLOUD_HOST_PORT_VALUE + (nodeNr - 1)
+        )
+        com.intershop.gradle.icm.docker.utils.PortMapping("SOLR", port, port, true)
+    }
 
     init {
         initBaseTasks()

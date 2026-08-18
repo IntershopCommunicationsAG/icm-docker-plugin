@@ -71,7 +71,8 @@ class SolrLBPreparer(
         registerStartContainerTask(createTask).configure { task ->
             task.doLast {
                 task.logger.quiet(
-                        "The Solr load balancer can be connected with http://{}:{}/solr",
+                        "The Solr load balancer can be connected with http://localhost:{}/solr (host) or http://{}:{}/solr (docker network)",
+                        portMapping.hostPort,
                         getContainerName(),
                         portMapping.containerPort
                 )
