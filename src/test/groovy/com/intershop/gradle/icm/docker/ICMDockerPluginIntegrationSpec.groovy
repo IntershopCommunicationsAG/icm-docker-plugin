@@ -245,8 +245,8 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
                 images {
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
-                    solr = 'solr:8.5.2-slim'
-                    zookeeper = 'zookeeper:3.6.2'
+                    solr = 'solr:9.10.1-slim'
+                    zookeeper = 'zookeeper:3.8.6'
                 }
 
                 ishUnitTests {
