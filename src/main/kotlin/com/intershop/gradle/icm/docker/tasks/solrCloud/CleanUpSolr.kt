@@ -79,13 +79,13 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
                 }
             }
 
-            project.logger.quiet("{} aliases, {} collections and {} configuration sets for prefix '{}' deleted.",
+            logger.quiet("{} aliases, {} collections and {} configuration sets for prefix '{}' deleted.",
                 aliases, collections, configs, prefixName())
         }
     }
 
     private fun removeAlias(solrClient: SolrClient, alias: String) {
-        project.logger.info("Alias {} found for prefix '{}'", alias, prefixName())
+        logger.info("Alias {} found for prefix '{}'", alias, prefixName())
 
         val deleteAlias = CollectionAdminRequest.DeleteAlias.deleteAlias(alias)
         val deleteAliasResponse = deleteAlias.process(solrClient)
@@ -96,7 +96,7 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
     }
 
     private fun removeCollection(solrClient: SolrClient, colName: String) {
-        project.logger.info("Collection {} found for prefix '{}'", colName, prefixName())
+        logger.info("Collection {} found for prefix '{}'", colName, prefixName())
 
         val deleteColl = CollectionAdminRequest.Delete.deleteCollection(colName)
         val deleteCollResponse = deleteColl.process(solrClient)
@@ -106,7 +106,7 @@ open class CleanUpSolr @Inject constructor(objectFactory: ObjectFactory) : Abstr
     }
 
     private fun removeConfigurationSet(solrClient: SolrClient, confName: String) {
-        project.logger.info("Configuration set {} found for prefix '{}'", confName, prefixName())
+        logger.info("Configuration set {} found for prefix '{}'", confName, prefixName())
 
         val deleteConfRequest = ConfigSetAdminRequest.Delete()
         deleteConfRequest.configSetName = confName

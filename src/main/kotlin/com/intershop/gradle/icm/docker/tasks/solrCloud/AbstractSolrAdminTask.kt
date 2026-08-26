@@ -61,7 +61,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
     @Internal
     protected fun getSolrClient(): SolrClient {
         return if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
-            project.logger.quiet("\nUsing '${solrConfiguration.get()}' to connect to Solr.\n")
+            logger.quiet("\nUsing '${solrConfiguration.get()}' to connect to Solr.\n")
             getClient(solrConfiguration.get())
         } else {
             val dockerExtension = project.extensions.getByType<IntershopDockerExtension>()
@@ -71,7 +71,7 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
                     Configuration.SOLR_NODES_COUNT_VALUE
             )
             val defaultConnection = SolrConnectionResolver.resolve(devConfig, nodeCount)
-            project.logger.quiet("\nUse default Solr connection '${defaultConnection.value}' for the client.\n")
+            logger.quiet("\nUse default Solr connection '${defaultConnection.value}' for the client.\n")
             getClient(defaultConnection.value)
         }
 
