@@ -124,13 +124,13 @@ abstract class AbstractASTaskPreparer(
 
             if (solrCloudServerURLs.isNotEmpty()) {
                 if (solrCloudHostList.isNotEmpty()) {
-                    logger.warn(
+                    task.logger.warn(
                             "Both '${Configuration.SOLR_CLOUD_SERVER_URLS}' and " +
                                     "'${Configuration.SOLR_CLOUD_HOSTLIST}' are configured; using the URL property.")
                 }
                 task.withSolrCloudServerURLs(project.provider { solrCloudServerURLs })
             } else if (solrCloudHostList.isNotEmpty()) {
-                logger.warn(
+                task.logger.warn(
                         "Property '${Configuration.SOLR_CLOUD_HOSTLIST}' is deprecated for ICM startup; " +
                                 "prefer '${Configuration.SOLR_CLOUD_SERVER_URLS}'.")
                 task.withSolrCloudZookeeperHostList(project.provider { solrCloudHostList })
@@ -161,7 +161,7 @@ abstract class AbstractASTaskPreparer(
         val sitesFolderPath = dockerExtension.developmentConfig.getFileProperty(
             Configuration.SITES_FOLDER_PATH,
             project.layout.buildDirectory.dir("sites_folder").get().asFile).absolutePath
-        logger.quiet("Sites folder: {}", sitesFolderPath)
+        project.logger.quiet("Sites folder: {}", sitesFolderPath)
 
         val volumes = mutableMapOf(
             sitesFolderPath
@@ -264,7 +264,7 @@ abstract class AbstractASTaskPreparer(
                     StartMailServerContainer::class.java
             )
         } catch (ex: UnknownTaskException) {
-            logger.warn("MailSrv task not found", ex)
+            project.logger.warn("MailSrv task not found", ex)
             null
         }
     }
@@ -276,7 +276,7 @@ abstract class AbstractASTaskPreparer(
                     CreateExtraContainer::class.java
             )
         } catch (ex: UnknownTaskException) {
-            logger.info("ZooKeeper task not found", ex)
+            project.logger.info("ZooKeeper task not found", ex)
             null
         }
     }
