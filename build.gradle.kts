@@ -140,7 +140,11 @@ testing {
         targets {
             all {
                 testTask.configure {
-                    systemProperty("intershop.gradle.versions", "8.5,8.10.2,9.1.0")
+                    systemProperty(
+                        "intershop.gradle.versions",
+                        providers.systemProperty("intershop.gradle.versions")
+                            .getOrElse("8.5,8.10.2,9.1.0")
+                    )
                     testLogging {
                         showStandardStreams = true
                     }
@@ -315,7 +319,7 @@ dependencies {
     implementation(gradleApi())
     implementation(gradleKotlinDsl())
 
-    implementation("org.apache.solr:solr-solrj:9.9.0")
+    implementation("org.apache.solr:solr-solrj:9.10.1")
     implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:9.4.0")
     implementation("com.intershop.gradle.icm:icm-gradle-plugin:7.2.0")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:7.0.0")

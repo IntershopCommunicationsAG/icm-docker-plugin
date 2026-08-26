@@ -94,7 +94,7 @@ open class GenICMProperties @Inject constructor(
 
         const val asConnectorAdressProp = Configuration.AS_CONNECTOR_ADDRESS
 
-        const val asSolrZKListProp = Configuration.SOLR_CLOUD_HOSTLIST
+        const val asSolrServerURLsProp = Configuration.SOLR_CLOUD_SERVER_URLS
         const val asSolrPrefixProp = Configuration.SOLR_CLOUD_INDEXPREFIX
 
         const val asMailHostProp = "mail.smtp.host"
@@ -117,7 +117,7 @@ open class GenICMProperties @Inject constructor(
     """A comma-separated list of options for the icm.properties files.
             dev - General development properties for the application server
             mail - MailHog container is used as test mail server
-            solr - Single node solr cluster with containers is used
+            solr - Solr cluster with containers is used
         """)
     @get:Input
     val contentOptions: Property<String> = project.objects.property(String::class.java)
@@ -396,7 +396,7 @@ open class GenICMProperties @Inject constructor(
         val port = if (container) {
             "25"
         } else {
-            "<port of the external zookeeper node>"
+            "<port of the external mail server node>"
         }
 
         val text =
@@ -413,26 +413,34 @@ open class GenICMProperties @Inject constructor(
     }
 
     private fun writeSolrProps(file: File, container: Boolean) {
-
+        val nodeCount = extension.developmentConfig.getIntProperty(
+                Configuration.SOLR_NODES_COUNT,
+                Configuration.SOLR_NODES_COUNT_VALUE
+        )
         val host = if (container) {
-            IPFinder.getSystemIP()
+            IPFinder.getSystemIP().first ?: "localhost"
         } else {
-            "<hostname of min. one external zookeeper node>"
+            "<hostname of the external Solr server>"
         }
         val port = if (container) {
-            "2181"
+            if (nodeCount > 1) {
+                extension.developmentConfig.getIntProperty(
+                        Configuration.SOLR_LB_HOST_PORT,
+                        Configuration.SOLR_LB_HOST_PORT_VALUE
+                ).toString()
+            } else {
+                extension.developmentConfig.getIntProperty(
+                        Configuration.SOLR_CLOUD_HOST_PORT,
+                        Configuration.SOLR_CLOUD_HOST_PORT_VALUE
+                ).toString()
+            }
         } else {
-            "<port of the external zookeeper node>"
-        }
-        val solrpath = if (container) {
-            ""
-        } else {
-            "/<path of the solr cluster>"
+            "<port of the external Solr server>"
         }
 
         val text =
                 """
-            $asSolrZKListProp = $host:${port}${solrpath}
+            $asSolrServerURLsProp = http://$host:$port/solr
             $asSolrPrefixProp = ${extension.containerPrefix}
             """.trimIndent()
 

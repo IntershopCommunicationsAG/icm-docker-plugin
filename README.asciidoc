@@ -306,7 +306,7 @@ The task can be called with the following parameters:
 | --icmenvops  | A comma-separated list of options for the icm.properties files. +
             _dev_ - General development properties for the application server +
             _mail_ - MailHog container is used as test mail server +
-            _solr_ - Single node solr cluster with containers is used
+            _solr_ - Solr cluster with containers is used
 |===
 
 [[TaskClasses]]
@@ -397,11 +397,19 @@ NOTE: `webserver.http.port` / `webserver.https.port` are the *host* ports Docker
 |===
 | Key | Description | Co-domain | Mandatory/Optional | Default value
 | `solr.data.folder.path` | host folder to store Solr data outside of the container | String | Optional | <empty> +
+| `solr.nodes` | number of Solr nodes to start. When greater than `1`, a `solr-lb` nginx load-balancer container is started. | Integer | Optional | `1` +
+| `solr.cloudSolrServerURLs` | preferred Solr HTTP endpoint configuration. Use one or more comma-separated URLs, for example `http://solr.example.com:8983/solr` or `http://solr1:8983/solr,http://solr2:8984/solr`. | URL | Optional | automatic default +
+| `solr.zooKeeperHostList` | legacy Solr connection configuration. Used when `solr.cloudSolrServerURLs` is not configured. | String | Optional | <empty> +
 | `solr.clusterIndexPrefix` | prefix to be used for indexed inside Solr | String | Optional | <empty> +
 | `solr.port` | the host port to be used for the Solr server primary port | Integer | Optional | `8983` +
+| `solr.lb.port` | the host port to be used for the `solr-lb` HTTP port when `solr.nodes` is greater than `1` | Integer | Optional | `8990` +
 | `solr.useHostUser` | controls if the host system's current user is used for the container start | Boolean | Optional | `false` +
+| `solr.lb.useHostUser` | controls if the host system's current user is used for the `solr-lb` container start | Boolean | Optional | `false` +
 | `solr.autoRemoveContainer` | controls if the container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
+| `solr.lb.autoRemoveContainer` | controls if the `solr-lb` container is created with `autoRemove==true` (remove container when stopped) | Boolean | Optional | `true` +
 |===
+
+When both connection properties are configured, `solr.cloudSolrServerURLs` takes precedence. If neither is configured, the generated default is `http://<solr-host>:8983/solr` for one node, or `http://<solr-lb-host>:<solr.lb.port>/solr` when `solr.nodes` is greater than `1`.
 
 ===== ZooKeeper [[ZKConfiguration]]
 
@@ -1077,8 +1085,7 @@ management of search indexes. It uses the same configuration as the ICM Docker p
 *Solr | solr.data.folder.path | host folder to store Solr and Zookeeper data outside of the Solr/Zookeeper container. e.g. `D:/solr-data` 
 
 .2+| cleanUpSolr +
-listSolr| `solr.zooKeeperHostList` | A list of all Zookeeper hosts with port and the Solr server prefix. +
-e.g. zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/solr
+listSolr| Solr connection properties | See <<SolrConfiguration>> for the preferred URL property, legacy ZooKeeper property, precedence, and automatic defaults.
 | `solr.clusterIndexPrefix` | A simple installation specific prefix for the Solr search configuration, e.g. the hostname.
 .3+| rebuildSearchIndex | `intershop.smc.admin.user.name` | This is the ICM SMC admin user. Default: admin.
 | `intershop.smc.admin.user.password` | This is the password of the SMC admin user.
@@ -1127,6 +1134,11 @@ intershop.servletEngine.connector.port = 7743
 intershop.local.hostname = 192.168.2.205
 
 # solr configuration
+# Preferred: Solr HTTP endpoint(s) used by ICM and Solr administration tasks.
+# For multiple endpoints, separate URLs with commas.
+solr.cloudSolrServerURLs = http://localhost:8983/solr
+
+# Legacy alternative. If both properties are set, solr.cloudSolrServerURLs wins.
 solr.zooKeeperHostList = jengsolr1.intershop.de:2181;jengsolr2.intershop.de:2181;jengsolr3.intershop.de:2181/solr8
 solr.clusterIndexPrefix = devhost
 

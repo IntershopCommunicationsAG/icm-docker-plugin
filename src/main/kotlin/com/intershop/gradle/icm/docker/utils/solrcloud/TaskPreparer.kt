@@ -17,9 +17,12 @@
 
 package com.intershop.gradle.icm.docker.utils.solrcloud
 
+import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.utils.Configuration
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.getByType
 
 class TaskPreparer(
         val project: Project,
@@ -32,26 +35,44 @@ class TaskPreparer(
 
     init {
         val zkTasks = ZKPreparer(project, networkTasks.createNetworkTask)
-        val solrTasks = SolrPreparer(project, networkTasks.createNetworkTask, zkTasks)
+        val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+        val nodeCount = devConfig.getIntProperty(Configuration.SOLR_NODES_COUNT, Configuration.SOLR_NODES_COUNT_VALUE)
+        val solrTasks = (1..nodeCount).map { nodeNr ->
+            SolrPreparer(project, networkTasks.createNetworkTask, zkTasks, nodeNr)
+        }
+        // only needed to distribute requests across multiple Solr nodes
+        val solrLBTask = if (nodeCount > 1) {
+            SolrLBPreparer(project, networkTasks.createNetworkTask, solrTasks)
+        } else {
+            null
+        }
 
         project.tasks.register(
                 "start${TASK_EXT_SERVER}").configure { task ->
-            configureSolrCloudTasks(task, "Start all components of a one node SolrCloud cluster")
-            task.dependsOn(zkTasks.startTask, solrTasks.startTask, networkTasks.createNetworkTask)
+            configureSolrCloudTasks(task, "Start all components of a SolrCloud cluster with ${nodeCount} nodes")
+            task.dependsOn(zkTasks.startTask, networkTasks.createNetworkTask)
+            task.dependsOn(solrTasks.map { it.startTask })
+            solrLBTask?.let { task.dependsOn(it.startTask) }
         }
 
         project.tasks.register("stop${TASK_EXT_SERVER}") { task ->
-            configureSolrCloudTasks(task, "Stop all components of a one node SolrCloud cluster")
-            task.dependsOn(zkTasks.stopTask, solrTasks.stopTask)
+            configureSolrCloudTasks(task, "Stop all components of a SolrCloud cluster")
+            task.dependsOn(zkTasks.stopTask)
+            task.dependsOn(solrTasks.map { it.stopTask })
+            solrLBTask?.let { task.dependsOn(it.stopTask) }
         }
 
         project.tasks.register("remove${TASK_EXT_SERVER}") { task ->
-            configureSolrCloudTasks(task, "Removes all components of a one node SolrCloud cluster")
-            task.dependsOn(zkTasks.removeTask, solrTasks.removeTask)
+            configureSolrCloudTasks(task, "Removes all components of a $nodeCount node SolrCloud cluster")
+            task.dependsOn(zkTasks.removeTask)
+            task.dependsOn(solrTasks.map { it.removeTask })
+            solrLBTask?.let { task.dependsOn(it.removeTask) }
         }
 
         networkTasks.removeNetworkTask.configure {
-            it.mustRunAfter(zkTasks.removeTask, solrTasks.removeTask)
+            it.mustRunAfter(zkTasks.removeTask)
+            it.mustRunAfter(solrTasks.map { solrTask -> solrTask.removeTask })
+            solrLBTask?.let { lb -> it.mustRunAfter(lb.removeTask) }
         }
     }
 

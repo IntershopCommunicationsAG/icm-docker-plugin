@@ -17,15 +17,20 @@
 
 package com.intershop.gradle.icm.docker.tasks.solrCloud
 
-import com.intershop.gradle.icm.docker.utils.IPFinder
+import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
+import com.intershop.gradle.icm.docker.utils.Configuration
+import com.intershop.gradle.icm.docker.utils.solrcloud.SolrConnectionResolver
 import org.apache.solr.client.solrj.SolrClient
-import org.apache.solr.client.solrj.impl.CloudSolrClient
+import org.apache.solr.client.solrj.impl.CloudHttp2SolrClient
+import org.apache.solr.client.solrj.impl.Http2SolrClient
 import org.gradle.api.DefaultTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
+import org.gradle.kotlin.dsl.getByType
+import java.net.URI
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -56,27 +61,53 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
     @Internal
     protected fun getSolrClient(): SolrClient {
         return if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
+            logger.quiet("\nUsing '${solrConfiguration.get()}' to connect to Solr.\n")
             getClient(solrConfiguration.get())
         } else {
-            val defaultConStr = "${IPFinder.getSystemIP().first}:2181"
-            project.logger.quiet("\n!!! Use default connect string '${defaultConStr}' for the client! \n")
-            getClient(defaultConStr)
+            val dockerExtension = project.extensions.getByType<IntershopDockerExtension>()
+            val devConfig = dockerExtension.developmentConfig
+            val nodeCount = devConfig.getIntProperty(
+                    Configuration.SOLR_NODES_COUNT,
+                    Configuration.SOLR_NODES_COUNT_VALUE
+            )
+            val defaultConnection = SolrConnectionResolver.resolve(devConfig, nodeCount)
+            logger.quiet("\nUse default Solr connection '${defaultConnection.value}' for the client.\n")
+            getClient(defaultConnection.value)
         }
 
     }
 
-    private fun getClient(connectStr: String): CloudSolrClient {
-        val pathList = connectStr.split("/")
+    private fun getClient(connectStr: String): SolrClient {
+        val values = connectStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        if (values.isEmpty()) {
+            throw IllegalArgumentException("Solr connection configuration must not be empty")
+        }
 
-        val path = if (pathList.size > 1) {
-            java.util.Optional.of("/${pathList[1].trim()}")
+        if (values.first().startsWith("http://") || values.first().startsWith("https://")) {
+            if (values.any { !it.startsWith("http://") && !it.startsWith("https://") }) {
+                throw IllegalArgumentException("Solr URL configuration must contain only HTTP(S) URLs: '$connectStr'")
+            }
+            values.forEach { URI.create(it) }
+                return CloudHttp2SolrClient.Builder(values)
+                    .withHttpClientBuilder(Http2SolrClient.Builder().useHttp1_1(true))
+                    .build()
+        }
+
+        if (values.any { it.startsWith("http://") || it.startsWith("https://") }) {
+            throw IllegalArgumentException("Solr connection configuration cannot mix URLs and ZooKeeper hosts: '$connectStr'")
+        }
+
+        val separator = connectStr.indexOf('/')
+        val zkHosts = if (separator >= 0) connectStr.substring(0, separator) else connectStr
+        val path = if (separator >= 0 && separator < connectStr.length - 1) {
+            java.util.Optional.of("/${connectStr.substring(separator + 1).trim('/')}")
         } else {
             java.util.Optional.empty()
         }
-        val zkHosts = pathList[0].split(";")
 
-        return CloudSolrClient.Builder(zkHosts, path)
-            .withZkConnectTimeout(connectionTimeout.get(), TimeUnit.MILLISECONDS)
-            .build()
+        return CloudHttp2SolrClient.Builder(zkHosts.split(',', ';'), path)
+            .withHttpClientBuilder(Http2SolrClient.Builder().useHttp1_1(true))
+                .withZkConnectTimeout(connectionTimeout.get(), TimeUnit.MILLISECONDS)
+                .build()
     }
 }

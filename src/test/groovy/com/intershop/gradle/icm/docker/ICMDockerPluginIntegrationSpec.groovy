@@ -22,6 +22,7 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.test.AbstractIntegrationGroovySpec
 
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 
 import static org.gradle.testkit.runner.TaskOutcome.SKIPPED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
@@ -245,8 +246,8 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
                 images {
                     mssqldb = 'mcr.microsoft.com/mssql/server:2019-CU4-ubuntu-16.04'
                     
-                    solr = 'solr:8.5.2-slim'
-                    zookeeper = 'zookeeper:3.6.2'
+                    solr = 'solr:9.10.1-slim'
+                    zookeeper = 'zookeeper:3.8.6'
                 }
 
                 ishUnitTests {
@@ -893,18 +894,27 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
         then:
         result1.task(":startSolr").outcome == SUCCESS
 
-        /**
         when:
-        sleep(30000)
+        sleep(5_000) // wait a bit for solr to be ready
+        def listResult = runUntilSolrIsReady(
+            "listSolr",
+            ["-PconfigDir=${configDirectoryPath}"],
+            gradleVersion
+        )
 
-        def resultTest = getPreparedGradleRunner()
-                .withArguments("cleanUpSolr", "-s", "-i")
-                .withGradleVersion(gradleVersion)
-                .build()
+        then:
+        listResult.task(":listSolr").outcome == SUCCESS
+
+        when:
+        def resultTest = runUntilSolrIsReady(
+            "cleanUpSolr",
+            ["-PconfigDir=${configDirectoryPath}", "-s", "-i"],
+            gradleVersion
+        )
 
         then:
         resultTest.task(":cleanUpSolr").outcome == SUCCESS
-        **/
+
         when:
         def result2 = getPreparedGradleRunner()
                 .withArguments("stopZK", "-s", "-i")
@@ -991,5 +1001,24 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
         def testFile = new File(testProjectDir, path)
         testFile.parentFile.mkdirs()
         testFile << content.stripIndent()
+    }
+
+    private def runUntilSolrIsReady(String taskName, List<String> arguments, String gradleVersion) {
+        def deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
+        Throwable lastFailure
+
+        while (System.nanoTime() < deadline) {
+            try {
+                return getPreparedGradleRunner()
+                    .withArguments(([taskName] + arguments) as String[])
+                    .withGradleVersion(gradleVersion)
+                    .build()
+            } catch (Exception ex) {
+                lastFailure = ex
+                Thread.sleep(1_000)
+            }
+        }
+
+        throw new AssertionError("Solr task '${taskName}' did not succeed within 30 seconds.", lastFailure)
     }
 }

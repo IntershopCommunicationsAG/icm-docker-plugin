@@ -78,6 +78,7 @@ class ICMContainerEnvironmentBuilder {
     private var enableHeapDump: Boolean? = null
     private var enableGCLog: Boolean? = null
     private var solrCloudTZookeeperHostList : Provider<String>? = null
+    private var solrCloudServerURLs: Provider<String>? = null
     private var solrClusterIndexPrefix: Provider<String>? = null
     private var mailServer : Provider<HostAndPort>? = null
     private var developmentProperties: DevelopmentProperties? = null
@@ -159,6 +160,11 @@ class ICMContainerEnvironmentBuilder {
 
     fun withSolrCloudZookeeperHostList(hostList : Provider<String>) : ICMContainerEnvironmentBuilder {
         this.solrCloudTZookeeperHostList = hostList
+        return this
+    }
+
+    fun withSolrCloudServerURLs(serverURLs: Provider<String>) : ICMContainerEnvironmentBuilder {
+        this.solrCloudServerURLs = serverURLs
         return this
     }
 
@@ -272,6 +278,11 @@ class ICMContainerEnvironmentBuilder {
         solrCloudTZookeeperHostList?.run {
             if (isPresent) {
                 env.add(ContainerEnvironment.propertyNameToEnvName(Configuration.SOLR_CLOUD_HOSTLIST), this)
+            }
+        }
+        solrCloudServerURLs?.run {
+            if (isPresent) {
+                env.add(ContainerEnvironment.propertyNameToEnvName(Configuration.SOLR_CLOUD_SERVER_URLS), this)
             }
         }
         solrClusterIndexPrefix?.run {

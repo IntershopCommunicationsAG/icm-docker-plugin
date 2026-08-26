@@ -28,35 +28,35 @@ open class ListSolr @Inject constructor(objectFactory: ObjectFactory) : Abstract
 
     @TaskAction
     fun listSolrCollectionConfig() {
-        val solrClient = getSolrClient()
+        // close the client even on failure, otherwise its ZooKeeper connection keeps retrying
+        // in the background and leaks into the (long-lived) Gradle daemon
+        getSolrClient().use { solrClient ->
+            val aliasesList = CollectionAdminRequest.ListAliases().process(solrClient).aliasesAsLists
+            aliasesList.forEach { al ->
+                if (al.key.startsWith(solrClusterPrefixProperty.get(), true)) {
+                    logger.quiet("Alias {} found for {}",
+                        al.key, solrClusterPrefixProperty.get())
+                }
+            }
 
-        val aliasesList = CollectionAdminRequest.ListAliases().process(solrClient).aliasesAsLists
-        aliasesList.forEach { al ->
-            if (al.key.startsWith(solrClusterPrefixProperty.get(), true)) {
-                project.logger.quiet("Alias {} found for {}",
-                    al.key, solrClusterPrefixProperty.get())
+            val collectionsList = CollectionAdminRequest.List.listCollections(solrClient)
+            collectionsList.forEach { col ->
+                if (col.startsWith(solrClusterPrefixProperty.get(), true)) {
+                    logger.quiet("Collection {} found for {}",
+                        col, solrClusterPrefixProperty.get())
+                }
+            }
+
+            val request: ConfigSetAdminRequest.List  = ConfigSetAdminRequest.List()
+            val response: ConfigSetAdminResponse.List  = request.process(solrClient)
+            val actualConfigSets = response.configSets
+
+            actualConfigSets.forEach { conf ->
+                if (conf.startsWith(solrClusterPrefixProperty.get(), true)) {
+                    logger.quiet("Configuration set {} found for {}",
+                        conf, solrClusterPrefixProperty.get())
+                }
             }
         }
-
-        val collectionsList = CollectionAdminRequest.List.listCollections(solrClient)
-        collectionsList.forEach { col ->
-            if (col.startsWith(solrClusterPrefixProperty.get(), true)) {
-                project.logger.quiet("Collection {} found for {}",
-                    col, solrClusterPrefixProperty.get())
-            }
-        }
-
-        val request: ConfigSetAdminRequest.List  = ConfigSetAdminRequest.List()
-        val response: ConfigSetAdminResponse.List  = request.process(solrClient)
-        val actualConfigSets = response.configSets
-
-        actualConfigSets.forEach { conf ->
-            if (conf.startsWith(solrClusterPrefixProperty.get(), true)) {
-                project.logger.quiet("Configuration set {} found for {}",
-                    conf, solrClusterPrefixProperty.get())
-            }
-        }
-
-        solrClient.close()
     }
 }
