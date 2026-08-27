@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.tasks
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
+import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareProgressReporter
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLoggerCallback
 import org.gradle.api.GradleException
@@ -28,18 +29,54 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
+import com.intershop.gradle.icm.docker.utils.IPFinder
+import org.gradle.internal.logging.progress.ProgressLogger
+import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import javax.inject.Inject
 
 /**
  * Task to run dbPrepare on a running container.
  */
 open class DBPrepareTask
-@Inject constructor(project: Project) :
-        AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
+@Inject constructor(project: Project, private val progressLoggerFactory: ProgressLoggerFactory) :
+    AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
 
     companion object {
         const val TASK_NAME = "dbPrepare"
+
+        /**
+         * Creates the environment the dbPrepare process inside the container is started with.
+         *
+         * The preparation progress is exposed by that process as JMX attributes, so the JMX connector of the container
+         * is enabled. The RMI stubs it hands out are created for [jmxHost], otherwise they would refer to an address
+         * that cannot be resolved outside the container.
+         *
+         * @param jmxHost the host the JMX connector of the container is reachable at
+         * @return the environment variables to be added to the ones of the container
+         */
+        @JvmStatic
+        fun createDBPrepareEnvironment(jmxHost: String): ContainerEnvironment =
+            ContainerEnvironment()
+                .add(ICMContainerEnvironmentBuilder.ENV_IS_DBPREPARE, true)
+                .add(ICMContainerEnvironmentBuilder.ENV_ENABLE_JMX, true)
+                .add(ICMContainerEnvironmentBuilder.ENV_EXTERNAL_CONTAINER_IP, jmxHost)
     }
+
+    /**
+     * Renders the progress reported by the process inside the container in Gradle's status line.
+     */
+    private var progressLogger: ProgressLogger? = null
+
+    /**
+     * Reads the progress reported by the process inside the container.
+     */
+    private var progressReporter: DBPrepareProgressReporter? = null
+
+    /**
+     * The host the JMX connector of the container is reachable at. It is also passed to the container as the host name
+     * the RMI stubs are created for, so that they can be resolved by this build.
+     */
+    private val jmxHost: String = IPFinder.getSystemIP().first ?: "localhost"
 
     @get:Option(option = "mode", description = "Mode in which dbPrepare runs: 'init', 'migrate' or 'auto'. " +
                                                "The default is 'auto'.")
@@ -95,11 +132,8 @@ open class DBPrepareTask
         }
     }
 
-    override fun createContainerEnvironment(): ContainerEnvironment {
-        val ownEnv = ContainerEnvironment()
-        ownEnv.add(ICMContainerEnvironmentBuilder.ENV_IS_DBPREPARE, true)
-        return super.createContainerEnvironment().merge(ownEnv)
-    }
+    override fun createContainerEnvironment(): ContainerEnvironment =
+        super.createContainerEnvironment().merge(createDBPrepareEnvironment(jmxHost))
 
     override fun createAdditionalParameters(): AdditionalICMParameters {
         // add additional parameters to env
@@ -126,14 +160,28 @@ open class DBPrepareTask
     override fun createCartridgeList(): Provider<Set<String>> = testCartridgeList
 
     override fun createCallback(): RedirectToLoggerCallback {
+        // the process inside the container exposes its progress via JMX, it is read while the command is running
+        progressLogger = progressLoggerFactory.newOperation(DBPrepareTask::class.java).start(TASK_NAME, TASK_NAME)
+        progressReporter = DBPrepareProgressReporter(
+            jmxHost,
+            portConfiguration.get().jmx.get().hostPort
+        ) { progressLogger?.progress(it) }.also { it.start() }
+
         return RedirectToLoggerCallback(project.logger)
     }
 
     override fun waitForCompletion(
-            resultCallbackTemplate: RedirectToLoggerCallback,
-            execResponse: ExecCreateCmdResponse,
+        resultCallbackTemplate: RedirectToLoggerCallback,
+        execResponse: ExecCreateCmdResponse,
     ): Long {
-        resultCallbackTemplate.awaitCompletion()
-        return waitForExit(execResponse.id)
+        try {
+            resultCallbackTemplate.awaitCompletion()
+            return waitForExit(execResponse.id)
+        } finally {
+            progressReporter?.stop()
+            progressReporter = null
+            progressLogger?.completed()
+            progressLogger = null
+        }
     }
 }
