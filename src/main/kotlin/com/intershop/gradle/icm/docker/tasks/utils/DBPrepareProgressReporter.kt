@@ -100,8 +100,22 @@ class DBPrepareProgressReporter(
         Thread(runnable, "dbPrepare-progress").apply { isDaemon = true }
     }
 
+    /**
+     * The connection is established by the thread reading the progress,
+     * but it is released by the thread stopping this reporter,
+     * so the state shared by both threads is volatile.
+     */
+    @Volatile
     private var connector: JMXConnector? = null
+
+    @Volatile
     private var connection: MBeanServerConnection? = null
+
+    /** Set by [stop], so no connection is established anymore
+     * once this reporter has been stopped. */
+    @Volatile
+    private var stopped = false
+
     private val objectName = ObjectName(MBEAN_NAME)
 
     /**
@@ -117,15 +131,15 @@ class DBPrepareProgressReporter(
      * Stops reading the progress and releases the connection to the container.
      */
     fun stop() {
+        // set before the connection is released, so a connection established concurrently is released as well
+        stopped = true
         executor.shutdownNow()
-        runCatching { connector?.close() }
-        connector = null
-        connection = null
+        releaseConnection()
     }
 
     private fun readProgress() {
         try {
-            val mBeanServer = connection ?: connect()
+            val mBeanServer = connection ?: connect() ?: return
             // the MBean only exists while preparation steps are executed
             if (!mBeanServer.isRegistered(objectName)) {
                 return
@@ -143,21 +157,35 @@ class DBPrepareProgressReporter(
                 )
             )
         } catch (_: Exception) {
-            runCatching { connector?.close() }
-            connector = null
-            connection = null
+            releaseConnection()
         }
+    }
+
+    /**
+     * Releases the connection to the container.
+     * It is safe to call this concurrently to the thread reading the progress:
+     * that thread only re-establishes a connection while this reporter has not been stopped.
+     */
+    private fun releaseConnection() {
+        runCatching { connector?.close() }
+        connector = null
+        connection = null
     }
 
     /**
      * Connects to the JMX connector of the container.
      *
-     * @return the connection to the MBean server
+     * @return the connection to the MBean server, `null` if this reporter has been stopped meanwhile
      */
-    private fun connect(): MBeanServerConnection {
+    private fun connect(): MBeanServerConnection? {
         val jmxConnector = JMXConnectorFactory.connect(
             JMXServiceURL("service:jmx:rmi:///jndi/rmi://$host:$port/jmxrmi")
         )
+        if (stopped) {
+            // stopped while connecting, the connection would not be released by anybody else
+            runCatching { jmxConnector.close() }
+            return null
+        }
         connector = jmxConnector
         connection = jmxConnector.mBeanServerConnection
         return jmxConnector.mBeanServerConnection
