@@ -22,7 +22,6 @@ import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.Databa
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DevelopmentProperties
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.EnvironmentProperties
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
-import com.intershop.gradle.icm.docker.tasks.utils.ICMFilePollingConfiguration
 import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.HostAndPort
 import com.intershop.gradle.icm.utils.ICMEncryptionStrictMode
@@ -37,6 +36,8 @@ class ICMContainerEnvironmentBuilder {
 
     companion object {
         const val ENV_IS_DBPREPARE = "IS_DBPREPARE"
+        const val ENV_ENABLE_JMX = "ENABLE_JMX"
+        const val ENV_EXTERNAL_CONTAINER_IP = "EXTERNAL_CONTAINER_IP"
         const val ENV_ENVIRONMENT = "ENVIRONMENT"
         const val ENV_DEBUG_ICM = "DEBUG_ICM"
         const val ENV_DB_TYPE = "INTERSHOP_DATABASETYPE"
