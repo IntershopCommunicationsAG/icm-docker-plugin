@@ -45,11 +45,11 @@ open class ShowICMASConfig : DefaultTask() {
             --------------------------------------------------------------
             # webserver configuration
             # if youn want change the ports of the webserver, it is necessary to change the ports 
-            # in ${GenICMProperties.webserverUrlProp} and ${GenICMProperties.webserverSecureUrlProp} 
+            # in ${Configuration.WS_URL} and ${Configuration.WS_SECURE_URL} 
             # according to the settings ${Configuration.WS_HTTP_PORT} and ${Configuration.WS_HTTPS_PORT}
             #
-            ${GenICMProperties.webserverUrlProp} = http://$hostname:${Configuration.WS_HTTP_PORT_VALUE}
-            ${GenICMProperties.webserverSecureUrlProp} = https://$hostname:${Configuration.WS_HTTPS_PORT_VALUE}
+            ${Configuration.WS_URL} = http://$hostname:${Configuration.WS_HTTP_PORT_VALUE}
+            ${Configuration.WS_SECURE_URL} = https://$hostname:${Configuration.WS_HTTPS_PORT_VALUE}
                 
             # port number to be used for service connector inside of the servlet engine
             ${Configuration.AS_SERVICE_CONNECTOR_PORT} = ${Configuration.AS_SERVICE_CONNECTOR_PORT_VALUE}
@@ -60,7 +60,7 @@ open class ShowICMASConfig : DefaultTask() {
             # both values must match    
             ${Configuration.LOCAL_CONNECTOR_HOST} = ${systemIP.first}
             # WebAdapapter container configuration
-            ${GenICMProperties.asConnectorAdressProp} = ${systemIP.first}
+            ${Configuration.AS_CONNECTOR_ADDRESS} = ${systemIP.first}
             ==============================================================
             """.trimIndent())
     }
