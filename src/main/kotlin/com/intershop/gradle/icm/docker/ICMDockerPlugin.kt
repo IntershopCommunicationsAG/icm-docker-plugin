@@ -21,7 +21,6 @@ import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.extension.image.build.ImageConfiguration
 import com.intershop.gradle.icm.docker.extension.image.build.ProjectConfiguration
 import com.intershop.gradle.icm.docker.tasks.BuildImage
-import com.intershop.gradle.icm.docker.tasks.GenICMProperties
 import com.intershop.gradle.icm.docker.tasks.PushImages
 import com.intershop.gradle.icm.docker.tasks.RemoveContainerByName
 import com.intershop.gradle.icm.docker.tasks.ShowICMASConfig
@@ -111,7 +110,7 @@ open class ICMDockerPlugin : Plugin<Project> {
                 it.mustRunAfter(tasks.withType(RemoveContainerByName::class.java))
             }
 
-            createICMPropertiesGenTask(project)
+            registerShowICMPropertiesTask(project)
 
             createImageTasks(project, extension)
 
@@ -119,11 +118,7 @@ open class ICMDockerPlugin : Plugin<Project> {
         }
     }
 
-    private fun createICMPropertiesGenTask(project: Project) {
-        project.tasks.register("generateICMProps", GenICMProperties::class.java).configure {
-            it.group = "icm project setup"
-            it.description = "Generates an icm properties file."
-        }
+    private fun registerShowICMPropertiesTask(project: Project) {
         project.tasks.register("showICMASConfig", ShowICMASConfig::class.java).configure {
             it.group = "icm project setup"
             it.description = "Shows a special part of the configuration for local application server development"
