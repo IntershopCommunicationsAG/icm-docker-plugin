@@ -21,9 +21,12 @@ import com.intershop.gradle.icm.docker.tasks.utils.ContainerEnvironment
 import com.intershop.gradle.icm.docker.tasks.utils.ISHUnitTestResult
 import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLoggerCallback
 import org.gradle.api.GradleException
-import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
@@ -31,6 +34,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.internal.resources.ResourceLock
+import org.gradle.work.DisableCachingByDefault
 import java.util.Collections
 import javax.inject.Inject
 
@@ -38,9 +42,14 @@ import javax.inject.Inject
 /**
  * Task to run ishunit tests on a running container.
  */
-open class ISHUnitTest
-@Inject constructor(project: Project) :
-        AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
+@DisableCachingByDefault(because = "Operates against a running ICM server - the result depends on external server state and must never be taken from the build cache")
+abstract class ISHUnitTest
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+        projectLayout: ProjectLayout,
+) : AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(
+        objectFactory, providerFactory) {
 
     companion object {
         const val COMMAND = "/intershop/bin/ishunitrunner.sh"
@@ -52,16 +61,23 @@ open class ISHUnitTest
     }
 
     /**
+     * Directory the ISHUnit runner writes its results to.
+     */
+    @get:Internal
+    val ishUnitRunnerDirectory: DirectoryProperty = objectFactory.directoryProperty()
+            .convention(projectLayout.buildDirectory.dir("ishunitrunner"))
+
+    /**
      * The name of the cartridge to be tested
      */
     @get:Input
-    val testCartridge: Property<String> = project.objects.property(String::class.java)
+    val testCartridge: Property<String> = objectFactory.property(String::class.java)
 
     /**
      * The name of the test suite to be executed
      */
     @get:Input
-    val testSuite: Property<String> = project.objects.property(String::class.java)
+    val testSuite: Property<String> = objectFactory.property(String::class.java)
 
     /**
      * Additional environment variables
@@ -69,7 +85,7 @@ open class ISHUnitTest
     @get:Input
     @Optional
     val additionalEnvironment: Property<ContainerEnvironment> =
-            project.objects.property(ContainerEnvironment::class.java)
+            objectFactory.property(ContainerEnvironment::class.java)
 
     @Internal
     override fun getSharedResources(): List<ResourceLock> {
@@ -95,7 +111,7 @@ open class ISHUnitTest
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} finished successfully")
             1L -> ISHUnitTestResult(1L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed with failures. " +
-                    "Please check files in " + project.layout.buildDirectory.dir("ishunitrunner").get().asFile)
+                    "Please check files in " + ishUnitRunnerDirectory.get().asFile)
             2L -> ISHUnitTestResult(2L,
                     "ISHUnit ${testCartridge.get()} with ${testSuite.get()} run failed. " +
                     "Please check your test configuration")
@@ -104,13 +120,13 @@ open class ISHUnitTest
                     "code. Please check your test configuration")
         }
 
-        project.logger.info(exitMsg.message)
+        logger.info(exitMsg.message)
         if (exitMsg.returnValue > 0L) {
             throw GradleException(exitMsg.message)
         }
     }
 
-    override fun createCartridgeList(): Provider<Set<String>> = project.provider {
+    override fun createCartridgeList(): Provider<Set<String>> = providerFactory.provider {
         // use normal cartridge list plus testCartridge
         super.createCartridgeList().get().plus(testCartridge.get())
     }
@@ -127,7 +143,7 @@ open class ISHUnitTest
     }
 
     override fun createCallback(): RedirectToLoggerCallback {
-        return RedirectToLoggerCallback(project.logger)
+        return RedirectToLoggerCallback(logger)
     }
 
     override fun waitForCompletion(

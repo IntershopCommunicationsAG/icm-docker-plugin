@@ -240,6 +240,9 @@ open class ICMDockerCustomizationPlugin : Plugin<Project> {
                 ISHUnitHTMLTestReport::class.java) { task ->
             task.group = ICMDockerPlugin.GROUP_SERVERBUILD
             task.description = "Generates report for ISHUnitTest execution"
+            // wire the report classpath here (configuration time). The task must not resolve it from
+            // the project itself, because that would happen during input snapshotting at execution time.
+            task.taskClassPath.from(project.configurations.named(HTML_ANT_TESTREPORT_CONFIG))
         }
 
         extension.ishUnitTests.all { suite ->

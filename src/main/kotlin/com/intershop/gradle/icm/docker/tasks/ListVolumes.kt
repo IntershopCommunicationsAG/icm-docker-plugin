@@ -20,9 +20,11 @@ import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class ListVolumes @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class ListVolumes @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask() {
 
     @get:Input
     val filter: ListProperty<String> = objectFactory.listProperty(String::class.java)

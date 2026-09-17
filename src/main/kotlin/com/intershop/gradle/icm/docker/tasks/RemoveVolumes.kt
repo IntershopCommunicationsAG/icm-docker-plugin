@@ -22,9 +22,11 @@ import com.github.dockerjava.api.exception.NotFoundException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class RemoveVolumes @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class RemoveVolumes @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask() {
 
     @get:Input
     val volumeNames: ListProperty<String> = objectFactory.listProperty(String::class.java)
@@ -41,10 +43,10 @@ open class RemoveVolumes @Inject constructor(objectFactory: ObjectFactory) : Abs
             try {
                 dockerClient.removeVolumeCmd(it).exec()
             } catch (exnf: NotFoundException) {
-                project.logger.warn("Volume '${it}' not found! ", exnf.message)
+                logger.warn("Volume '${it}' not found! ", exnf.message)
             } catch (exc: ConflictException) {
                 var retry = 0
-                project.logger.warn("Volume '${it}' is still used! Try it again ... ({}).", retry, exc.message)
+                logger.warn("Volume '${it}' is still used! Try it again ... ({}).", retry, exc.message)
                 // try it again ...
                 do {
                     Thread.sleep(10000)
@@ -53,7 +55,7 @@ open class RemoveVolumes @Inject constructor(objectFactory: ObjectFactory) : Abs
                         break
                     } catch (ex: Exception) {
                         retry++
-                        project.logger.warn("Volume '${it}' is still used! Try it again ... ({}).", retry, ex.message)
+                        logger.warn("Volume '${it}' is still used! Try it again ... ({}).", retry, ex.message)
                     }
                 } while( retry < 5)
             }

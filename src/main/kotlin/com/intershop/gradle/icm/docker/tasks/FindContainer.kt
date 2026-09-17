@@ -16,19 +16,28 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
+import org.gradle.work.DisableCachingByDefault
+import javax.inject.Inject
 
-abstract class FindContainer : AbstractContainerTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class FindContainer
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : AbstractContainerTask(objectFactory, providerFactory) {
 
     @get:Internal
-    val foundContainer: Property<ContainerHandle> = project.objects.property(ContainerHandle::class.java)
+    val foundContainer: Property<ContainerHandle> = objectFactory.property(ContainerHandle::class.java)
 
     override fun runRemoteCommand() {
         val currContainerState = currentContainerState().get()
 
         if (currContainerState.exists()) {
-            project.logger.quiet("{} exists ({})", currContainerState,
+            logger.quiet("{} exists ({})", currContainerState,
                 if (currContainerState.isRunning()) {
                     "RUNNING"
                 } else {
@@ -36,7 +45,7 @@ abstract class FindContainer : AbstractContainerTask() {
                 }
             )
         } else {
-            project.logger.quiet("{} does not exist", currContainerState)
+            logger.quiet("{} does not exist", currContainerState)
         }
         foundContainer.set(currContainerState)
     }

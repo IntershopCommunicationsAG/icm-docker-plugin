@@ -23,9 +23,11 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class WaitForServer @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
+@DisableCachingByDefault(because = "Operates against a running ICM server - the result depends on external server state and must never be taken from the build cache")
+abstract class WaitForServer @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
 
     @get:Internal
     val probes: ListProperty<Probe> = objectFactory.listProperty(Probe::class.java)
@@ -42,7 +44,7 @@ open class WaitForServer @Inject constructor(objectFactory: ObjectFactory) : Def
             }
         }
 
-        project.logger.quiet("Server is ready!")
+        logger.quiet("Server is ready!")
     }
 }
 

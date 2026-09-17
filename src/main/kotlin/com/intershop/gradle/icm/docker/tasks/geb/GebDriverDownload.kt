@@ -28,6 +28,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -35,6 +36,8 @@ import java.net.URI
 import java.nio.file.Paths
 import javax.inject.Inject
 
+@DisableCachingByDefault(because = "Downloads a browser driver from a remote location into a local " +
+        "directory - the download is environment specific and not worth caching")
 open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
                                                  projectLayout: ProjectLayout,
                                                  private val fsOps: FileSystemOperations,

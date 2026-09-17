@@ -26,9 +26,11 @@ import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class PushImages
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class PushImages
         @Inject constructor(objectFactory: ObjectFactory):
         AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
 
@@ -46,7 +48,7 @@ open class PushImages
      * The images including repository, image name and tag used e.g. {@code vieux/apache:2.0}.
      */
     @get:Input
-    val images: SetProperty<String> = project.objects.setProperty(String::class.java)
+    val images: SetProperty<String> = objectFactory.setProperty(String::class.java)
 
     /**
      * Configures the target Docker registry credentials for use with a task.

@@ -20,8 +20,11 @@ import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - network state is external " +
+        "and must never be taken from the build cache")
 abstract class AbstractNetworkTask @Inject constructor(objectFactory: ObjectFactory): AbstractDockerRemoteApiTask() {
 
     @get:Input

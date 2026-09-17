@@ -846,8 +846,14 @@ class ICMDockerPluginIntegrationSpec extends AbstractIntegrationGroovySpec {
 
         String configFilePath = Path.of(DevelopmentConfiguration.DEFAULT_CONFIG_PATH, DevelopmentConfiguration.CONFIG_FILE_NAME).toString()
         String targetSitesFolderPath = new File(testProjectDir, "test_sites_folder").toString()
+        // the value is written into a .properties file, where a backslash starts an escape sequence
+        // (e.g. '\test_sites_folder' would become a TAB). Use forward slashes instead - the plugin
+        // resolves the value via File(..).absolutePath, which normalizes them back to the platform
+        // separator, so the assertion on 'targetSitesFolderPath' below still holds.
+        // NOTE: String.replace(..) is a literal replacement; the previous replaceAll("\\\\\\\\", "/")
+        // was a regex matching *two* consecutive backslashes and therefore never matched.
         createLocalFile(configFilePath, """
-            ${Configuration.SITES_FOLDER_PATH} = ${targetSitesFolderPath.replaceAll("\\\\\\\\", "/")}
+            ${Configuration.SITES_FOLDER_PATH} = ${targetSitesFolderPath.replace("\\", "/")}
             ${Configuration.AS_AUTOREMOVE_CONTAINER} = false
         """)
 

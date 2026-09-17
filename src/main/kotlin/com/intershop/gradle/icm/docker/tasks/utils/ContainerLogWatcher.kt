@@ -18,16 +18,19 @@ package com.intershop.gradle.icm.docker.tasks.utils
 
 import com.github.dockerjava.api.DockerClient
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerLogWatcher.Handle
-import org.gradle.api.Project
+import org.gradle.api.logging.Logger
 import kotlin.concurrent.thread
 
 /**
  * Encapsulates the functionality execute `docker logs`-command for a running container. The container logs are
- * logged using the [Project.getLogger] inside a new [Thread] (so [start] does not block). Calling code has to ensure
+ * logged using the given [Logger] inside a new [Thread] (so [start] does not block). Calling code has to ensure
  * [Handle.close] is called to actually finish the `docker logs`-command.
+ *
+ * NOTE: this class deliberately takes a [Logger] instead of the `Project`. It is used at task execution time, where
+ * accessing `Task.project` is deprecated in Gradle 9 and fails in Gradle 10 (configuration cache incompatible).
  */
 class ContainerLogWatcher(
-        private val project: Project,
+        private val logger: Logger,
         private val dockerClient: DockerClient,
 ) {
 
@@ -44,13 +47,13 @@ class ContainerLogWatcher(
         logCommand.withStdOut(true)
         logCommand.withTailAll()
         logCommand.withFollowStream(true)
-        val containerCallback = RedirectToLoggerCallback(project.logger)
+        val containerCallback = RedirectToLoggerCallback(logger)
 
         val thread = thread(start = true) {
             try {
                 logCommand.exec(containerCallback).awaitCompletion()
             } catch (ex: Exception) {
-                project.logger.info("Log command finished.")
+                logger.info("Log command finished.")
             }
         }
 

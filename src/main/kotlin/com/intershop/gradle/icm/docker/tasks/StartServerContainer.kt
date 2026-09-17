@@ -18,10 +18,16 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class StartServerContainer
-@Inject constructor(objectFactory: ObjectFactory) : StartExtraContainer(objectFactory) {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class StartServerContainer
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : StartExtraContainer(objectFactory, providerFactory) {
 
     init {
         enableLogWatcher.convention(true)

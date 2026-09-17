@@ -20,9 +20,11 @@ import com.intershop.gradle.icm.docker.utils.Configuration
 import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import java.net.UnknownHostException
 
-open class ShowICMASConfig : DefaultTask() {
+@DisableCachingByDefault(because = "Operates against a running ICM server - the result depends on external server state and must never be taken from the build cache")
+abstract class ShowICMASConfig : DefaultTask() {
 
     @TaskAction
     fun showconfig() {

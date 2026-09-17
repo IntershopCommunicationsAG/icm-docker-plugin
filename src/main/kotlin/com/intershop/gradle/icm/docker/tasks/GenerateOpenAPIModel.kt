@@ -25,8 +25,10 @@ import com.intershop.gradle.icm.docker.utils.GenerateOpenAPIModelService
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.internal.BuildServiceRegistryInternal
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
@@ -34,14 +36,19 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.internal.resources.ResourceLock
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 /**
  * Task to execute the OpenAPI model generator on a running container.
  */
+@DisableCachingByDefault(because = "Operates against a running ICM server - the result depends on external server state and must never be taken from the build cache")
 abstract class GenerateOpenAPIModel
-@Inject constructor(project: Project) :
-    AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(
+        objectFactory, providerFactory) {
 
     companion object {
         /**
@@ -91,7 +98,7 @@ abstract class GenerateOpenAPIModel
     )
 
     @get:Input
-    val fileOutputFormat: Property<FileOutputFormat> = project.objects.property(
+    val fileOutputFormat: Property<FileOutputFormat> = objectFactory.property(
         FileOutputFormat::class.java
     ).convention(FileOutputFormat.YAML)
 
@@ -111,7 +118,7 @@ abstract class GenerateOpenAPIModel
     )
     @get:Input
     @get:Optional
-    val applicationsIDs: Property<String> = project.objects.property(String::class.java)
+    val applicationsIDs: Property<String> = objectFactory.property(String::class.java)
 
     /**
      * CLI option for embedded dbPrepare property (default=false).
@@ -122,7 +129,7 @@ abstract class GenerateOpenAPIModel
     )
     @get:Input
     @get:Optional
-    val embeddedDBPrepare: Property<Boolean> = project.objects.property(Boolean::class.java).convention(false)
+    val embeddedDBPrepare: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(false)
 
     /*
         @get:Internal
@@ -131,7 +138,7 @@ abstract class GenerateOpenAPIModel
     @Internal
     override fun getSharedResources(): List<ResourceLock> {
         val serviceRegistry: BuildServiceRegistryInternal = services.get(BuildServiceRegistryInternal::class.java)
-        val generateOpenAPIModelService = GenerateOpenAPIModelService.lookup(project.provider { serviceRegistry })
+        val generateOpenAPIModelService = GenerateOpenAPIModelService.lookup(providerFactory.provider { serviceRegistry })
         return super.getSharedResources() + serviceRegistry.getSharedResources(setOf(generateOpenAPIModelService))
     }
 
@@ -174,7 +181,7 @@ abstract class GenerateOpenAPIModel
     }
 
     override fun createCallback(): RedirectToLoggerCallback {
-        return RedirectToLoggerCallback(project.logger)
+        return RedirectToLoggerCallback(logger)
     }
 
     override fun waitForCompletion(

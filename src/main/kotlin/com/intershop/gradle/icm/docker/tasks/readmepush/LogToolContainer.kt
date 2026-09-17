@@ -17,8 +17,11 @@
 package com.intershop.gradle.icm.docker.tasks.readmepush
 
 import com.bmuschko.gradle.docker.tasks.container.DockerLogsContainer
+import org.gradle.work.DisableCachingByDefault
 
-open class LogToolContainer:  DockerLogsContainer() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and " +
+        "volume state is external to the build and must never be taken from the build cache")
+abstract class LogToolContainer:  DockerLogsContainer() {
     init {
         group = "icm container readme push"
         description = "Create image for pushing readme"

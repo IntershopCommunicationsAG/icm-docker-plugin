@@ -21,10 +21,12 @@ import org.apache.solr.client.solrj.request.ConfigSetAdminRequest
 import org.apache.solr.client.solrj.response.ConfigSetAdminResponse
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 
-open class ListSolr @Inject constructor(objectFactory: ObjectFactory) : AbstractSolrAdminTask(objectFactory) {
+@DisableCachingByDefault(because = "Operates against a running Solr cloud - the result depends on external server state and must never be taken from the build cache")
+abstract class ListSolr @Inject constructor(objectFactory: ObjectFactory) : AbstractSolrAdminTask(objectFactory) {
 
     @TaskAction
     fun listSolrCollectionConfig() {

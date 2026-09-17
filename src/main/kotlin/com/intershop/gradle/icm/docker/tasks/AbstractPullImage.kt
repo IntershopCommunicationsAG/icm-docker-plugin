@@ -28,9 +28,12 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
+import org.gradle.work.DisableCachingByDefault
 import java.util.Locale
 import javax.inject.Inject
 
+@DisableCachingByDefault(because = "Pulls an image from a remote Docker registry into the local daemon - " +
+        "the effect is external to the build and must never be taken from the build cache")
 abstract class AbstractPullImage
     @Inject constructor(objectFactory: ObjectFactory) : AbstractDockerRemoteApiTask(), RegistryCredentialsAware {
 

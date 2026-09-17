@@ -38,11 +38,16 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 
-open class BuildImage
+@DisableCachingByDefault(because = "Builds an image into the local Docker daemon - the resulting image " +
+        "lives outside the build's output directories, so a cache hit would not recreate it")
+abstract class BuildImage
         @Inject constructor(objectFactory: ObjectFactory,
                             @Internal var projectLayout: ProjectLayout,
                             @Internal var fsOps: FileSystemOperations):
@@ -69,6 +74,7 @@ open class BuildImage
      * Additional files to build the image.
      */
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     val srcFiles: ConfigurableFileCollection = objectFactory.fileCollection()
 
     /**
@@ -77,70 +83,71 @@ open class BuildImage
      */
     @get:InputFile
     @get:Optional
-    val dockerfile: RegularFileProperty = project.objects.fileProperty()
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    val dockerfile: RegularFileProperty = objectFactory.fileProperty()
 
     /**
      * The images including repository, image name and tag used e.g. {@code vieux/apache:2.0}.
      */
     @get:Input
     @get:Optional
-    val images: SetProperty<String> = project.objects.setProperty(String::class.java)
+    val images: SetProperty<String> = objectFactory.setProperty(String::class.java)
 
     /**
      * When {@code true}, do not use docker cache when building the image.
      */
     @get:Input
     @get:Optional
-    val noCache:Property<Boolean>  = project.objects.property(Boolean::class.java)
+    val noCache:Property<Boolean>  = objectFactory.property(Boolean::class.java)
 
     /**
      * When {@code true}, remove intermediate containers after a successful build.
      */
     @get:Input
     @get:Optional
-    val remove:Property<Boolean> = project.objects.property(Boolean::class.java)
+    val remove:Property<Boolean> = objectFactory.property(Boolean::class.java)
 
     /**
      * When {@code true}, suppress the build output and print image ID on success.
      */
     @get:Input
     @get:Optional
-    val quiet:Property<Boolean> = project.objects.property(Boolean::class.java)
+    val quiet:Property<Boolean> = objectFactory.property(Boolean::class.java)
 
     /**
      * When {@code true}, always attempt to pull a newer version of the image.
      */
     @get:Input
     @get:Optional
-    val pull:Property<Boolean>  = project.objects.property(Boolean::class.java)
+    val pull:Property<Boolean>  = objectFactory.property(Boolean::class.java)
 
     /**
      * Labels to attach as metadata for to the image.
      */
     @get:Input
     @get:Optional
-    val labels: MapProperty<String, String> = project.objects.mapProperty(String::class.java, String::class.java)
+    val labels: MapProperty<String, String> = objectFactory.mapProperty(String::class.java, String::class.java)
 
     /**
      * Networking mode for the RUN instructions during build.
      */
     @get:Input
     @get:Optional
-    val network:Property<String> = project.objects.property(String::class.java)
+    val network:Property<String> = objectFactory.property(String::class.java)
 
     /**
      * Build-time variables to pass to the image build.
      */
     @get:Input
     @get:Optional
-    val buildArgs:MapProperty<String, String> = project.objects.mapProperty(String::class.java, String::class.java)
+    val buildArgs:MapProperty<String, String> = objectFactory.mapProperty(String::class.java, String::class.java)
 
     /**
      * Images to consider as cache sources.
      */
     @get:Input
     @get:Optional
-    val cacheFrom:SetProperty<String> = project.objects.setProperty(String::class.java)
+    val cacheFrom:SetProperty<String> = objectFactory.setProperty(String::class.java)
 
     /**
      * Size of {@code /dev/shm} in bytes.
@@ -149,7 +156,7 @@ open class BuildImage
      */
     @get:Input
     @get:Optional
-    val shmSize:Property<Long> = project.objects.property(Long::class.java)
+    val shmSize:Property<Long> = objectFactory.property(Long::class.java)
 
     /**
      * With this parameter it is possible to build a special stage in a multi-stage Docker file.
@@ -158,14 +165,14 @@ open class BuildImage
      */
     @get:Input
     @get:Optional
-    val target:Property<String> = project.objects.property(String::class.java)
+    val target:Property<String> = objectFactory.property(String::class.java)
 
     /**
      * Build-time additional host list to pass to the image build in the format {@code host:ip}.
      */
     @get:Input
     @get:Optional
-    val extraHosts:SetProperty<String> = project.objects.setProperty(String::class.java)
+    val extraHosts:SetProperty<String> = objectFactory.setProperty(String::class.java)
     
 
     /**
@@ -174,13 +181,13 @@ open class BuildImage
      * If path contains ':' it will be replaced by '_'.
      */
     @get:OutputFile
-    val imageFile:RegularFileProperty = project.objects.fileProperty()
+    val imageFile:RegularFileProperty = objectFactory.fileProperty()
 
     /**
      * The id of the image built.
      */
     @Internal
-    val imageId:Property<String> = project.objects.property(String::class.java)
+    val imageId:Property<String> = objectFactory.property(String::class.java)
 
     @get:Input
     val dirname: Property<String> = objectFactory.property(String::class.java)
@@ -196,13 +203,13 @@ open class BuildImage
         pull.set(false)
         cacheFrom.empty()
         val safeTaskPath = this.path.replaceFirst("^:", "").replace(":", "_")
-        imageFile.set(project.layout.buildDirectory.file(".docker/${safeTaskPath}-imageId.txt"))
+        imageFile.set(projectLayout.buildDirectory.file(".docker/${safeTaskPath}-imageId.txt"))
         buildArgs.empty()
 
         onlyIf {
             val returnValue = enabled.getOrElse(false)
             if(! returnValue) {
-                project.logger.quiet("Task {} skipped, because it is not enabled.", it.name)
+                logger.quiet("Task {} skipped, because it is not enabled.", it.name)
             }
             returnValue
         }

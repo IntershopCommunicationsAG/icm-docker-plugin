@@ -21,11 +21,17 @@ import com.intershop.gradle.icm.docker.utils.PortMapping
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-abstract class StartMailServerContainer @Inject constructor(objectFactory: ObjectFactory) :
-        StartExtraContainer(objectFactory) {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class StartMailServerContainer
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : StartExtraContainer(objectFactory, providerFactory) {
     private val primaryPortMapping: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
 
     fun withPrimaryPortMapping(portMapping: Provider<PortMapping>) {

@@ -19,13 +19,15 @@ package com.intershop.gradle.icm.docker.tasks
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 /**
  * Creates or delivers the network for all containers
  * of this project.
  */
-open class PrepareNetwork @Inject constructor(objectFactory: ObjectFactory): AbstractNetworkTask(objectFactory) {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class PrepareNetwork @Inject constructor(objectFactory: ObjectFactory): AbstractNetworkTask(objectFactory) {
 
     /**
      * The id of the created network.

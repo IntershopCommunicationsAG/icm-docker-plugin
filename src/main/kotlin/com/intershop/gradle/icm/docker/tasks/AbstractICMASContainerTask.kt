@@ -20,8 +20,11 @@ import com.github.dockerjava.api.async.ResultCallback
 import com.github.dockerjava.api.async.ResultCallbackTemplate
 import com.github.dockerjava.api.command.ExecCreateCmdResponse
 import com.github.dockerjava.api.model.Frame
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.ASPortConfiguration
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DatabaseParameters
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.DevelopmentProperties
+import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.EnvironmentProperties
 import com.intershop.gradle.icm.docker.extension.DevelopmentConfiguration.WebserverConfiguration
 import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.tasks.utils.AdditionalICMParameters
@@ -39,8 +42,10 @@ import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VAL
 import com.intershop.gradle.icm.utils.JavaDebugSupport.Companion.TASK_OPTION_VALUE_YES
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
@@ -48,6 +53,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 /**
@@ -56,17 +62,61 @@ import javax.inject.Inject
  * @param <RCT> result callback template type
  * @param <ER> execution result type
  */
+@DisableCachingByDefault(because = "Executes a command inside a live ICM-AS container - the result " +
+        "depends on external container state and must never be taken from the build cache")
 abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : ResultCallbackTemplate<RC, Frame>, ER>
-@Inject constructor(project: Project) : AbstractExistingContainerTask() {
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : AbstractExistingContainerTask(objectFactory, providerFactory) {
 
     companion object {
         const val DEFAULT_COMMAND = "/intershop/bin/intershop.sh"
     }
 
-    private val debugProperty: Property<JavaDebugSupport> = project.objects.property(JavaDebugSupport::class.java)
-    private val classpathLayoutProperty: SetProperty<ClasspathLayout> = project.objects
+    private val debugProperty: Property<JavaDebugSupport> = objectFactory.property(JavaDebugSupport::class.java)
+    private val classpathLayoutProperty: SetProperty<ClasspathLayout> = objectFactory
             .setProperty(ClasspathLayout::class.java)
             .convention(ClasspathLayout.default())
+
+    /*
+     * The values below are read from the IntershopDockerExtension **at configuration time** (in the init block).
+     *
+     * The extension's DevelopmentConfiguration transitively holds a Project reference (it is constructed with
+     * `@Inject constructor(val project: Project, ...)` and resolves fall-back values via `project.findProperty(..)`).
+     * Keeping it in a task field would therefore reference the Project from the task - rejected by the configuration
+     * cache and an error in Gradle 10. Only the Project-free sub-objects and plain values are retained here.
+     */
+    private val devDatabaseConfiguration: DatabaseParameters
+    private val devWebserverConfiguration: WebserverConfiguration
+    private val devPortConfiguration: ASPortConfiguration
+    private val devCartridgeList: SetProperty<String>
+    private val devTestCartridgeList: SetProperty<String>
+    private val devDevelopmentProperties: DevelopmentProperties
+    private val devEnvironmentProperties: EnvironmentProperties
+    private val devEncryptionStrictMode: ICMEncryptionStrictMode
+    private val devFilePollingConfiguration: ICMFilePollingConfiguration
+
+    init {
+        val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+        devDatabaseConfiguration = devConfig.databaseConfiguration
+        devWebserverConfiguration = devConfig.webserverConfiguration
+        devPortConfiguration = devConfig.asPortConfiguration
+        devCartridgeList = devConfig.cartridgeList
+        devTestCartridgeList = devConfig.testCartridgeList
+        devDevelopmentProperties = devConfig.developmentProperties
+        devEnvironmentProperties = devConfig.intershopEnvironmentProperties
+
+        // resolve to plain values, so the resulting instances no longer close over the DevelopmentConfiguration
+        val strictModeEnabled =
+                ICMEncryptionStrictMode.fromDevelopmentConfiguration(devConfig).isStrictModeEnabled()
+        devEncryptionStrictMode = ICMEncryptionStrictMode { strictModeEnabled }
+
+        val filePolling = ICMFilePollingConfiguration.fromDevelopmentConfiguration(devConfig)
+        val pollingEnabled = filePolling.isEnabled()
+        val pollingInterval = filePolling.getInterval()
+        devFilePollingConfiguration = ICMFilePollingConfiguration({ pollingEnabled }, { pollingInterval })
+    }
 
     /**
      * The database configuration. It is lazily determined from
@@ -74,8 +124,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      */
     @get:Input
     val databaseConfiguration: Property<DatabaseParameters> by lazy {
-        project.objects.property(DatabaseParameters::class.java)
-                .value(project.extensions.getByType<IntershopDockerExtension>().developmentConfig.databaseConfiguration)
+        objectFactory.property(DatabaseParameters::class.java).value(devDatabaseConfiguration)
     }
 
     /**
@@ -84,8 +133,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      */
     @get:Input
     val webserverConfiguration: Property<WebserverConfiguration> by lazy {
-        project.objects.property(WebserverConfiguration::class.java)
-            .value(project.extensions.getByType<IntershopDockerExtension>().developmentConfig.webserverConfiguration)
+        objectFactory.property(WebserverConfiguration::class.java).value(devWebserverConfiguration)
     }
 
     /**
@@ -94,8 +142,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      */
     @get:Input
     val portConfiguration: Property<ASPortConfiguration> by lazy {
-        project.objects.property(ASPortConfiguration::class.java)
-                .value(project.extensions.getByType<IntershopDockerExtension>().developmentConfig.asPortConfiguration)
+        objectFactory.property(ASPortConfiguration::class.java).value(devPortConfiguration)
     }
 
     /**
@@ -103,23 +150,18 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      */
     @get: Input
     val cartridgeList: SetProperty<String> by lazy {
-        val cartListProvider = project.extensions.getByType<IntershopDockerExtension>().developmentConfig.cartridgeList
-        if (cartListProvider.get().isEmpty()) {
+        if (devCartridgeList.get().isEmpty()) {
             throw GradleException("Build property intershop_docker.developmentConfig.cartridgeList denotes an empty " +
                                   "set. Please provide a non-empty set.")
         }
-        cartListProvider
+        devCartridgeList
     }
 
     /**
      * The cartridge list to be used to start the ICM-AS server for tests
      */
     @get: Input
-    val testCartridgeList: SetProperty<String> by lazy {
-        val cartListProvider =
-                project.extensions.getByType<IntershopDockerExtension>().developmentConfig.testCartridgeList
-        cartListProvider
-    }
+    val testCartridgeList: SetProperty<String> by lazy { devTestCartridgeList }
 
     /**
      * Enable debugging for the JVM running the ICM-AS inside the container. This option defaults to the value
@@ -192,7 +234,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
         val env = createContainerEnvironment()
         execCmd.withEnv(env.toList())
 
-        project.logger.quiet("Attempting to execute command '{}' on container {} using {}", command,
+        logger.quiet("Attempting to execute command '{}' on container {} using {}", command,
             currentContainerState.getContainerId(), env)
 
         val execResponse: ExecCreateCmdResponse = execCmd.exec()
@@ -218,7 +260,7 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Subclasses may overwrite this method to do same custom stuff.
      */
     protected open fun processExecutionResult(executionResult: ER) {
-        project.logger.quiet("Command execution inside the container finished with execution result: {}",
+        logger.quiet("Command execution inside the container finished with execution result: {}",
                 executionResult)
     }
 
@@ -233,21 +275,19 @@ abstract class AbstractICMASContainerTask<RC : ResultCallback<Frame>, RCT : Resu
      * Subclasses may overwrite this method to add some extract environment variables (keep super-variables).
      */
     protected open fun createContainerEnvironment(): ContainerEnvironment {
-        val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
-
         return ICMContainerEnvironmentBuilder()
                 .withContainerName(getContainer().getContainerName())
                 .withDatabaseConfig(databaseConfiguration.get())
                 .withWebserverConfig(webserverConfiguration.get())
                 .withPortConfig(portConfiguration.get())
                 .withCartridgeList(createCartridgeList().get())
-                .withDevelopmentConfig(devConfig.developmentProperties)
-                .withEnvironmentProperties(devConfig.intershopEnvironmentProperties)
+                .withDevelopmentConfig(devDevelopmentProperties)
+                .withEnvironmentProperties(devEnvironmentProperties)
                 .withAdditionalParameters(createAdditionalParameters())
                 .withDebugOptions(debugProperty.get())
                 .withClasspathLayout(classpathLayoutProperty.get())
-                .withICMEncryptionStrictMode(project.provider { ICMEncryptionStrictMode.fromDevelopmentConfiguration(devConfig) })
-                .withICMFilePollingConfiguration(project.provider { ICMFilePollingConfiguration.fromDevelopmentConfiguration(devConfig) })
+                .withICMEncryptionStrictMode(providerFactory.provider { devEncryptionStrictMode })
+                .withICMFilePollingConfiguration(providerFactory.provider { devFilePollingConfiguration })
                 .build()
     }
 

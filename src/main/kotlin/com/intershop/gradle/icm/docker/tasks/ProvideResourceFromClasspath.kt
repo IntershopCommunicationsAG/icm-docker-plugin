@@ -22,11 +22,13 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import javax.inject.Inject
@@ -34,15 +36,19 @@ import javax.inject.Inject
 /**
  * Provides the content of a classpath resource as a file at a target location
  */
-open class ProvideResourceFromClasspath
+@DisableCachingByDefault(because = "Writes a resource from the plugin classpath to a fixed location outside the build's output tracking")
+abstract class ProvideResourceFromClasspath
     @Inject
-    constructor(@Internal val fileSystemOperations: FileSystemOperations) : DefaultTask() {
+    constructor(
+        @get:Internal val fileSystemOperations: FileSystemOperations,
+        objectFactory: ObjectFactory,
+    ) : DefaultTask() {
 
     @get:Input
-    val resourceName: Property<String> = project.objects.property(String::class.java)
+    val resourceName: Property<String> = objectFactory.property(String::class.java)
 
     @get:OutputFile
-    val targetLocation: RegularFileProperty = project.objects.fileProperty()
+    val targetLocation: RegularFileProperty = objectFactory.fileProperty()
 
     /**
      * Task action starts the java process in the background.
@@ -54,7 +60,7 @@ open class ProvideResourceFromClasspath
                                "Required '${resourceName.get()}' is missing inside the classpath")
         val content = resource.readBytes()
         Files.write(targetLocation.get().asFile.toPath(), content, StandardOpenOption.CREATE).run {
-            project.logger.quiet("Copied resource '{}' to file '{}'", resourceName.get(), this)
+            logger.quiet("Copied resource '{}' to file '{}'", resourceName.get(), this)
         }
     }
 }

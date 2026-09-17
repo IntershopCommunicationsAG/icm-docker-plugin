@@ -18,9 +18,11 @@ package com.intershop.gradle.icm.docker.tasks.readmepush
 
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import org.gradle.api.model.ObjectFactory
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class CreateToolContainer
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class CreateToolContainer
     @Inject constructor(objectFactory: ObjectFactory) : DockerCreateContainer(objectFactory) {
 
     init {

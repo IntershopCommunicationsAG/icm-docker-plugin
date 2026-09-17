@@ -23,23 +23,30 @@ import com.intershop.gradle.icm.docker.tasks.utils.DBPrepareProgressReporter
 import com.intershop.gradle.icm.docker.tasks.utils.ICMContainerEnvironmentBuilder
 import com.intershop.gradle.icm.docker.tasks.utils.RedirectToLoggerCallback
 import org.gradle.api.GradleException
-import org.gradle.api.Project
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import com.intershop.gradle.icm.docker.utils.IPFinder
 import org.gradle.internal.logging.progress.ProgressLogger
 import org.gradle.internal.logging.progress.ProgressLoggerFactory
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 /**
  * Task to run dbPrepare on a running container.
  */
-open class DBPrepareTask
-@Inject constructor(project: Project, private val progressLoggerFactory: ProgressLoggerFactory) :
-    AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(project) {
+@DisableCachingByDefault(because = "Operates against a running ICM server - the result depends on external server state and must never be taken from the build cache")
+abstract class DBPrepareTask
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+        private val progressLoggerFactory: ProgressLoggerFactory,
+) : AbstractICMASContainerTask<RedirectToLoggerCallback, RedirectToLoggerCallback, Long>(
+        objectFactory, providerFactory) {
 
     companion object {
         const val TASK_NAME = "dbPrepare"
@@ -81,7 +88,7 @@ open class DBPrepareTask
     @get:Option(option = "mode", description = "Mode in which dbPrepare runs: 'init', 'migrate' or 'auto'. " +
                                                "The default is 'auto'.")
     @get:Input
-    val mode: Property<String> = project.objects.property(String::class.java)
+    val mode: Property<String> = objectFactory.property(String::class.java)
 
     /**
      * Return the possible values for the task option [mode]
@@ -94,7 +101,7 @@ open class DBPrepareTask
                           "are cleaned up. If 'yes' the database is cleaned up before preparing other steps. " +
                           "If 'no' no database cleanup is done.")
     @get:Input
-    val clean: Property<String> = project.objects.property(String::class.java)
+    val clean: Property<String> = objectFactory.property(String::class.java)
 
     /**
      * Return the possible values for the task option [clean]
@@ -105,12 +112,12 @@ open class DBPrepareTask
     @get:Option(option = "cartridges", description = "A comma-separated cartridge list. Executes the cartridges in " +
                                                      "that list. This is an optional parameter.")
     @get:Input
-    val cartridges: Property<String> = project.objects.property(String::class.java)
+    val cartridges: Property<String> = objectFactory.property(String::class.java)
 
     @get:Option(option = "property-keys", description = "Comma-separated list of preparer property keys to execute. " +
                                                         "This is an optional parameter.")
     @get:Input
-    val propertyKeys: Property<String> = project.objects.property(String::class.java)
+    val propertyKeys: Property<String> = objectFactory.property(String::class.java)
 
     @set:Option(option = "additional-parameter", description = "Additional command line parameters to be passed to " +
                                                                "the dbPrepare tool. For more than 1 parameter use " +
@@ -167,7 +174,7 @@ open class DBPrepareTask
             portConfiguration.get().jmx.get().hostPort
         ) { progressLogger?.progress(it) }.also { it.start() }
 
-        return RedirectToLoggerCallback(project.logger)
+        return RedirectToLoggerCallback(logger)
     }
 
     override fun waitForCompletion(
