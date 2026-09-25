@@ -27,10 +27,13 @@ import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.work.DisableCachingByDefault
 import java.net.URI
 import javax.inject.Inject
 
 
+@DisableCachingByDefault(because = "Triggers a job on a running ICM server - the result depends on " +
+        "external server state and must never be taken from the build cache")
 abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
 
     @get:Input
@@ -78,7 +81,7 @@ abstract class AbstractJobRunnerTask @Inject constructor(objectFactory: ObjectFa
                 srvGroup = servergroup.get(),
                 user = user,
                 timeout = maxWait.get(),
-                logger = project.logger
+                logger = logger
         )
 
         if (sslVerification.get()) {

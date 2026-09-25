@@ -28,17 +28,23 @@ import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
+import org.gradle.work.DisableCachingByDefault
 import java.net.URI
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.thread
 
-open class StartExtraContainer
-@Inject constructor(objectFactory: ObjectFactory) : AbstractExistingContainerTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class StartExtraContainer
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : AbstractExistingContainerTask(objectFactory, providerFactory) {
 
     /**
      * Set a string for log file check. Log is displayed as long
@@ -56,7 +62,7 @@ open class StartExtraContainer
             objectFactory.property(Duration::class.java).convention(Duration.ofSeconds(900))
 
     @get:Input
-    val probes: ListProperty<Probe> = project.objects.listProperty(Probe::class.java)
+    val probes: ListProperty<Probe> = objectFactory.listProperty(Probe::class.java)
 
     fun withHttpProbe(uri: URI, retryInterval: Duration, retryTimeout: Duration) {
         withProbes(
@@ -88,7 +94,7 @@ open class StartExtraContainer
         this.onlyIf("Container not running") {
             val containerRuns = isAlreadyRunning()
             if (containerRuns) {
-                project.logger.quiet("{} still is running, skipping to start it", container.get())
+                logger.quiet("{} still is running, skipping to start it", container.get())
             }
             !containerRuns
         }
@@ -105,7 +111,7 @@ open class StartExtraContainer
         startCommand.exec()
 
         val logWatcherHandle: AutoCloseable? = if (enableLogWatcher.get()) {
-            ContainerLogWatcher(project, dockerClient).start(currentState.getContainerId())
+            ContainerLogWatcher(logger, dockerClient).start(currentState.getContainerId())
         } else {
             null
         }
@@ -118,10 +124,10 @@ open class StartExtraContainer
                         throw GradleException(
                                 "Container ${container.get()} failed to start properly: probe $probe failed")
                     }
-                    project.logger.debug("Probe '{}' was executed successfully on {}.",
+                    logger.debug("Probe '{}' was executed successfully on {}.",
                             probe, container.get())
                 }
-                project.logger.quiet("{} started properly.", container.get())
+                logger.quiet("{} started properly.", container.get())
             }
 
 
@@ -167,7 +173,7 @@ open class StartExtraContainer
                 var pollTimes = 0
 
                 progressLogger.started()
-                val containerCallback = LogContainerCallback(project.logger, finishedCheck.get())
+                val containerCallback = LogContainerCallback(logger, finishedCheck.get())
 
                 thread(start = true) {
                     try {
@@ -209,7 +215,7 @@ open class StartExtraContainer
     }
 
     protected fun onFailure(cause: Exception) {
-        project.logger.quiet("Stopping failed {}", container.get())
+        logger.quiet("Stopping failed {}", container.get())
         dockerClient.stopContainerCmd(container.get().getContainerId()).exec()
         throw cause
     }

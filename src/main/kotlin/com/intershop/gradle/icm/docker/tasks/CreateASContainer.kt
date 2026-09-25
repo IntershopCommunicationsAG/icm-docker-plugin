@@ -30,25 +30,32 @@ import org.gradle.api.internal.tasks.options.OptionValidationException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.nio.file.Paths
 
 import javax.inject.Inject
 
-abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactory) :
-        CreateExtraContainer(objectFactory) {
+@DisableCachingByDefault(because = "Creates a container in the local Docker daemon - container state is " +
+        "external and must never be taken from the build cache")
+abstract class CreateASContainer
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : CreateExtraContainer(objectFactory, providerFactory) {
     private val debugProperty: Property<JavaDebugSupport> =
             objectFactory.property(JavaDebugSupport::class.java).convention(JavaDebugSupport.defaults(project))
     private val gcLogProperty: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(false)
     private val heapDumpProperty: Property<Boolean> = objectFactory.property(Boolean::class.java).convention(false)
     private val appserverNameProperty: Property<String> = objectFactory.property(String::class.java).convention("")
-    private val classpathLayoutProperty: SetProperty<ClasspathLayout> = project.objects
+    private val classpathLayoutProperty: SetProperty<ClasspathLayout> = objectFactory
             .setProperty(ClasspathLayout::class.java)
             .convention(ClasspathLayout.default())
 
@@ -92,7 +99,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
             val debugOptions = JavaDebugSupport.parse(project, value)
             debugProperty.set(debugOptions)
             withEnvironment(
-                    project.provider { ICMContainerEnvironmentBuilder().withDebugOptions(debugOptions).build() })
+                    providerFactory.provider { ICMContainerEnvironmentBuilder().withDebugOptions(debugOptions).build() })
         }
 
     /**
@@ -119,7 +126,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         get() = gcLogProperty.get()
         set(value) {
             gcLogProperty.set(value)
-            withEnvironment(project.provider { ICMContainerEnvironmentBuilder().enableGCLog(value).build() })
+            withEnvironment(providerFactory.provider { ICMContainerEnvironmentBuilder().enableGCLog(value).build() })
         }
 
     /**
@@ -136,7 +143,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         get() = heapDumpProperty.get()
         set(value) {
             heapDumpProperty.set(value)
-            withEnvironment(project.provider { ICMContainerEnvironmentBuilder().enableHeapDump(value).build() })
+            withEnvironment(providerFactory.provider { ICMContainerEnvironmentBuilder().enableHeapDump(value).build() })
         }
 
     /**
@@ -151,7 +158,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         get() = appserverNameProperty.get()
         set(value) {
             appserverNameProperty.set(value)
-            withEnvironment(project.provider { ICMContainerEnvironmentBuilder().withServerName(value).build() })
+            withEnvironment(providerFactory.provider { ICMContainerEnvironmentBuilder().withServerName(value).build() })
         }
 
     /**
@@ -170,7 +177,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
         get() = ClasspathLayout.render(classpathLayoutProperty.get())
         set(value) {
             classpathLayoutProperty.set(ClasspathLayout.parse(value))
-            withEnvironment(project.provider {
+            withEnvironment(providerFactory.provider {
                 ICMContainerEnvironmentBuilder().withClasspathLayout(classpathLayoutProperty.get()).build()
             })
         }
@@ -209,7 +216,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
      * Provide the host list of the Zookeeper cluster for Solr Cloud Adapter. This is used to connect to Solr Cloud when using the SolrCloudAdapter.
      */
     fun withSolrCloudZookeeperHostList(solrCloudZookeeperHostList: Provider<String>) {
-        withEnvironment(project.provider {
+        withEnvironment(providerFactory.provider {
             ICMContainerEnvironmentBuilder().withSolrCloudZookeeperHostList(solrCloudZookeeperHostList).build()
         })
     }
@@ -218,7 +225,7 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
      * Provide the Solr URL for Solr Cloud Adapter. This is used to connect to Solr Cloud when using the SolrCloudAdapter.
      */
     fun withSolrCloudServerURLs(solrCloudServerURLs: Provider<String>) {
-        withEnvironment(project.provider {
+        withEnvironment(providerFactory.provider {
             ICMContainerEnvironmentBuilder().withSolrCloudServerURLs(solrCloudServerURLs).build()
         })
     }
@@ -227,30 +234,48 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
      * Provide the mail host+port
      */
     fun withMailServer(hostAndPort: Provider<HostAndPort>) {
-        withEnvironment(project.provider { ICMContainerEnvironmentBuilder().withMailServer(hostAndPort).build() })
+        withEnvironment(providerFactory.provider { ICMContainerEnvironmentBuilder().withMailServer(hostAndPort).build() })
     }
 
     init {
+        // Resolve the Project-free parts of the extension here (configuration time). The environment provider below
+        // is stored on the task and evaluated at execution time - capturing 'devConfig' itself would keep a
+        // transitive Project reference (DevelopmentConfiguration holds the Project and resolves fall-back values
+        // via project.findProperty), which the configuration cache rejects and Gradle 10 fails on.
         val devConfig = project.extensions.getByType<IntershopDockerExtension>().developmentConfig
+        val databaseConfig = devConfig.databaseConfiguration
+        val developmentProps = devConfig.developmentProperties
+        val environmentProps = devConfig.intershopEnvironmentProperties
+        val asEnvironment = devConfig.asEnvironment
+        val webserverConfig = devConfig.webserverConfiguration
+        val portConfig = devConfig.asPortConfiguration
+        val cartridges = devConfig.cartridgeList
+
+        // resolve to plain values, so the resulting instances no longer close over the DevelopmentConfiguration
+        val strictModeEnabled =
+                ICMEncryptionStrictMode.fromDevelopmentConfiguration(devConfig).isStrictModeEnabled()
+        val encryptionStrictMode = ICMEncryptionStrictMode { strictModeEnabled }
+
+        val filePolling = ICMFilePollingConfiguration.fromDevelopmentConfiguration(devConfig)
+        val pollingEnabled = filePolling.isEnabled()
+        val pollingInterval = filePolling.getInterval()
+        val filePollingConfiguration = ICMFilePollingConfiguration({ pollingEnabled }, { pollingInterval })
+
         entrypoint.set(DEFAULT_ENTRYPOINT)
         withEnvironment(
-                project.provider {
+                providerFactory.provider {
                     ICMContainerEnvironmentBuilder()
                             .withContainerName(containerName.get())
-                            .withDatabaseConfig(devConfig.databaseConfiguration)
-                            .withDevelopmentConfig(devConfig.developmentProperties)
-                            .withEnvironmentProperties(devConfig.intershopEnvironmentProperties)
-                            .withEnvironment(devConfig.asEnvironment)
-                            .withWebserverConfig(devConfig.webserverConfiguration)
-                            .withPortConfig(devConfig.asPortConfiguration)
-                            .withCartridgeList(devConfig.cartridgeList.get())
+                            .withDatabaseConfig(databaseConfig)
+                            .withDevelopmentConfig(developmentProps)
+                            .withEnvironmentProperties(environmentProps)
+                            .withEnvironment(asEnvironment)
+                            .withWebserverConfig(webserverConfig)
+                            .withPortConfig(portConfig)
+                            .withCartridgeList(cartridges.get())
                             .withClasspathLayout(classpathLayoutProperty.get())
-                            .withICMEncryptionStrictMode(project.provider {
-                                ICMEncryptionStrictMode.fromDevelopmentConfiguration(devConfig)
-                            })
-                            .withICMFilePollingConfiguration(project.provider {
-                                ICMFilePollingConfiguration.fromDevelopmentConfiguration(devConfig)
-                            })
+                            .withICMEncryptionStrictMode(providerFactory.provider { encryptionStrictMode })
+                            .withICMFilePollingConfiguration(providerFactory.provider { filePollingConfiguration })
                             .enableCACertImport(true)
                             .build()
                 }
@@ -258,17 +283,20 @@ abstract class CreateASContainer @Inject constructor(objectFactory: ObjectFactor
     }
 
     fun forCustomization(containerPrefix: String) {
+        // resolve the CopyLibraries tasks at configuration time - the volumes provider below is evaluated during
+        // execution, where accessing Task.project is deprecated in Gradle 9 and fails in Gradle 10
+        val copyLibrariesTasks = project.tasks.withType(CopyLibraries::class.java)
+
+        // ensure `CopyLibraries`-tasks get executed prior to this task
+        dependsOn(copyLibrariesTasks)
+
         // if there are customizations add some more volumes
         withVolumes(
-                // build a volumes-Provider that
-                // 1. adds a task dependency: CreateASContainer -> each CopyLibraries
-                // 2. adds a volume CopyLibraries-directory -> `<customization-name>-libs/lib`
-                project.provider {
+                // build a volumes-Provider that adds a volume CopyLibraries-directory ->
+                // `<customization-name>-libs/lib`
+                providerFactory.provider {
                     val customizationVolumes = mutableMapOf<String, String>()
-                    project.tasks.withType(CopyLibraries::class.java) { cl ->
-                        // ensure `CopyLibraries`-tasks get executed prior to this task
-                        dependsOn(cl)
-
+                    copyLibrariesTasks.forEach { cl ->
                         // "add" the volume
                         val dir = cl.librariesDirectory.get().asFile
                         customizationVolumes[dir.absolutePath] =

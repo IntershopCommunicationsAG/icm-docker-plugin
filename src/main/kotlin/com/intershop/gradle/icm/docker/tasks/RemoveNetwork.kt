@@ -17,12 +17,14 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import org.gradle.api.model.ObjectFactory
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 /**
  * Removes the network for all containers of this project.
  */
-open class RemoveNetwork @Inject constructor(objectFactory: ObjectFactory): AbstractNetworkTask(objectFactory) {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class RemoveNetwork @Inject constructor(objectFactory: ObjectFactory): AbstractNetworkTask(objectFactory) {
 
     override fun runRemoteCommand() {
         val id = networkIDData()

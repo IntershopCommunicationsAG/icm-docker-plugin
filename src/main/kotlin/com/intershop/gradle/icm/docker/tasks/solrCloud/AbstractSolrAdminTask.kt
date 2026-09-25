@@ -17,23 +17,23 @@
 
 package com.intershop.gradle.icm.docker.tasks.solrCloud
 
-import com.intershop.gradle.icm.docker.extension.IntershopDockerExtension
 import com.intershop.gradle.icm.docker.utils.Configuration
-import com.intershop.gradle.icm.docker.utils.solrcloud.SolrConnectionResolver
 import org.apache.solr.client.solrj.SolrClient
 import org.apache.solr.client.solrj.impl.CloudHttp2SolrClient
 import org.apache.solr.client.solrj.impl.Http2SolrClient
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.options.Option
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.work.DisableCachingByDefault
 import java.net.URI
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
+@DisableCachingByDefault(because = "Operates against a running Solr cloud - the result depends on external server state and must never be taken from the build cache")
 abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
 
     @get:Input
@@ -60,21 +60,19 @@ abstract class AbstractSolrAdminTask @Inject constructor(objectFactory: ObjectFa
 
     @Internal
     protected fun getSolrClient(): SolrClient {
-        return if (solrConfiguration.isPresent && solrConfiguration.get().isNotEmpty()) {
-            logger.quiet("\nUsing '${solrConfiguration.get()}' to connect to Solr.\n")
-            getClient(solrConfiguration.get())
-        } else {
-            val dockerExtension = project.extensions.getByType<IntershopDockerExtension>()
-            val devConfig = dockerExtension.developmentConfig
-            val nodeCount = devConfig.getIntProperty(
-                    Configuration.SOLR_NODES_COUNT,
-                    Configuration.SOLR_NODES_COUNT_VALUE
-            )
-            val defaultConnection = SolrConnectionResolver.resolve(devConfig, nodeCount)
-            logger.quiet("\nUse default Solr connection '${defaultConnection.value}' for the client.\n")
-            getClient(defaultConnection.value)
+        // 'solrConfiguration' is a mandatory @Input, resolved and set at configuration time by
+        // ICMSolrCloudPlugin (SolrConnectionResolver.resolve(..)). Resolving it here instead would require
+        // holding the IntershopDockerExtension, which transitively references the Project - that is rejected
+        // by the configuration cache and fails in Gradle 10.
+        val connection = solrConfiguration.get()
+        if (connection.isEmpty()) {
+            throw GradleException(
+                    "No Solr connection configured. Set '${Configuration.SOLR_CLOUD_SERVER_URLS}' " +
+                    "(or '${Configuration.SOLR_CLOUD_HOSTLIST}') in the ICM configuration, " +
+                    "or set the 'solrConfiguration' property of task '$name'.")
         }
-
+        logger.quiet("\nUsing '$connection' to connect to Solr.\n")
+        return getClient(connection)
     }
 
     private fun getClient(connectStr: String): SolrClient {

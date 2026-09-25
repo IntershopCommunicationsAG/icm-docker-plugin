@@ -20,9 +20,11 @@ package com.intershop.gradle.icm.docker.tasks.solrCloud
 import com.intershop.gradle.icm.docker.tasks.AbstractJobRunnerTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class RebuildSolrSearchIndex
+@DisableCachingByDefault(because = "Operates against a running Solr cloud - the result depends on external server state and must never be taken from the build cache")
+abstract class RebuildSolrSearchIndex
         @Inject constructor(objectFactory: ObjectFactory) :
         AbstractJobRunnerTask(objectFactory) {
 
@@ -32,7 +34,7 @@ open class RebuildSolrSearchIndex
 
     @TaskAction
     fun runRebuild() {
-        project.logger.info("Start Complete Rebuild Search Indexes")
+        logger.info("Start Complete Rebuild Search Indexes")
         triggerJob("Rebuild Search Indexes")
         triggerJob("Update Product Assignments")
         triggerJob("Rebuild Search Indexes")

@@ -18,12 +18,22 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.exception.ConflictException
 import com.github.dockerjava.api.exception.NotFoundException
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
+import org.gradle.work.DisableCachingByDefault
 import java.time.Duration
+import javax.inject.Inject
 
 /**
  * Task to remove a container by name.
  */
-abstract class RemoveContainerByName : AbstractExistingContainerTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and " +
+        "volume state is external to the build and must never be taken from the build cache")
+abstract class RemoveContainerByName
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : AbstractExistingContainerTask(objectFactory, providerFactory) {
 
     /*
         this.onlyIf("Container exists ")...
@@ -34,7 +44,7 @@ abstract class RemoveContainerByName : AbstractExistingContainerTask() {
     override fun runRemoteCommand() {
         val currentContainerState = currentContainerState().get()
         if (!currentContainerState.exists()){
-            project.logger.quiet("{} does not exist, no need to remove", getContainer())
+            logger.quiet("{} does not exist, no need to remove", getContainer())
             return
         }
 

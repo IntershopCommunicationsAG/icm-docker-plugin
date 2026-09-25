@@ -1,13 +1,16 @@
 = Intershop Commerce Management - Docker Plugins
-:latestRevision: 7.0.0
+:latestRevision: 8.0.0
 :toc:
 :icons: font
+
+CAUTION:
+Version {latestRevision} requires Gradle 8.5!
 
 == Summary
 This plugin collection contains plugins for building container images and
 starting container of and for Intershop Commerce Management. It is necessary
 that the link:https://github.com/IntershopCommunicationsAG/icm-gradle-plugin['ICM Gradle plugin'] was
-applied to the project. Version 6.0.0 of this plugin is the minimum version.
+applied to the project. Version {latestRevision} of this plugin is the minimum version.
 
 This plugin is based on link:https://github.com/bmuschko/gradle-docker-plugin['Gradle Docker plugin'] and
 the link:https://github.com/docker-java/docker-java['Docker-Java Framework'].
@@ -283,30 +286,11 @@ For all properties configurations methods with a closure or an action are availa
 | **WA* | These tasks pull, start, stop and remove the ICM Web Adapter image. This image contains an Apache webserver with the ICM WA module.
 | **WebServer* | These tasks orchestrate all web server related tasks.
 | *containerClean* | This task starts the remove tasks for all available objects.
-| *generateICMProps* | Generates an icm.properties file for local development.
 | *showICMASConfig*  | Shows a special part of icm.properties for local application server development.
 | *startEnv*         | Starts a docker based environment based on "intershop.environment.container" in the icm properties file.
 | *stopEnv*          | Stops the docker based environment based on "intershop.environment.container" in the icm properties file.
 | **NGINX* | These tasks pull, start, stop and remove the ICM NGINX image. This image contains a NGINX configured to terminate TLS and reverse proxy directly to the Application Server.
 | **Redis* | These tasks pull, start, stop and remove the redis image. Redis is always started on Port 6379.
-|===
-
-==== *generateICMProps* Parameters
-
-The task can be called with the following parameters:
-
-[cols="18%,82%", width="99%, options="header"]
-|===
-| Parameter          |Description
-
-| --db     | Option for the used database. The following values are possible: +
-            _mssql-container_ - MSSQL configuration for database provided by a container +
-            _mssql_ - MSSQL configuration for an external database
-| --icmas  | If this parameter specified, the properties file will be generated for app server development.
-| --icmenvops  | A comma-separated list of options for the icm.properties files. +
-            _dev_ - General development properties for the application server +
-            _mail_ - MailHog container is used as test mail server +
-            _solr_ - Solr cluster with containers is used
 |===
 
 [[TaskClasses]]

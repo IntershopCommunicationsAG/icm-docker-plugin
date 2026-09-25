@@ -17,21 +17,27 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.withGroovyBuilder
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 /**
  * Generates a HTML report from JUnit xml report files.
  */
-open class ISHUnitHTMLTestReport @Inject constructor(
+@DisableCachingByDefault(because = "Aggregates ISHUnit results produced by a task that itself is not cacheable, so a cache hit would report stale results")
+abstract class ISHUnitHTMLTestReport @Inject constructor(
         projectLayout: ProjectLayout,
         objectFactory: ObjectFactory,
 ) : DefaultTask() {
@@ -41,18 +47,20 @@ open class ISHUnitHTMLTestReport @Inject constructor(
     }
 
     @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     val testResultDirectory: DirectoryProperty = objectFactory.directoryProperty()
 
     @get:OutputDirectory
     val outputDirectory: DirectoryProperty = objectFactory.directoryProperty()
 
-    @get:InputFiles
-    val taskClassPath: FileCollection by lazy {
-        val returnFiles = project.files()
-        // find files of original JASPER and Eclipse compiler
-        returnFiles.from(project.configurations.findByName(HTML_ANT_TESTREPORT_CONFIG))
-        returnFiles
-    }
+    // @Classpath is the correct normalization for a classpath: order matters, but file paths and
+    // irrelevant jar-entry metadata do not.
+    // NOTE: this used to be a 'by lazy' FileCollection built from project.files()/project.configurations.
+    // That is resolved while Gradle snapshots the task inputs, i.e. at execution time, where accessing
+    // Task.project is deprecated in Gradle 9 and fails in Gradle 10. It is now wired by the plugin at
+    // configuration time instead.
+    @get:Classpath
+    val taskClassPath: ConfigurableFileCollection = objectFactory.fileCollection()
 
     init {
         outputDirectory.set(projectLayout.buildDirectory.dir("ishunitrunner/report"))

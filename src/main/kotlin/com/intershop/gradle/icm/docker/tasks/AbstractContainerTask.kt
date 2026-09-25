@@ -17,15 +17,25 @@
 package com.intershop.gradle.icm.docker.tasks
 
 import com.bmuschko.gradle.docker.tasks.AbstractDockerRemoteApiTask
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
+import org.gradle.work.DisableCachingByDefault
 import java.time.Duration
+import javax.inject.Inject
 
-abstract class AbstractContainerTask :  AbstractDockerRemoteApiTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container state is external " +
+        "and must never be taken from the build cache")
+abstract class AbstractContainerTask
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        @get:Internal protected val providerFactory: ProviderFactory,
+) : AbstractDockerRemoteApiTask() {
 
     @get:Internal
-    val container : Property<ContainerHandle> = project.objects.property(ContainerHandle::class.java)
+    val container : Property<ContainerHandle> = objectFactory.property(ContainerHandle::class.java)
 
     init {
         // never cache anything
@@ -36,7 +46,7 @@ abstract class AbstractContainerTask :  AbstractDockerRemoteApiTask() {
      * Returns a [Provider] that requests the current state of the [container].
      */
     fun currentContainerState() : Provider<ContainerHandle> {
-        return project.provider { getContainer().currentState(dockerClient) }
+        return providerFactory.provider { getContainer().currentState(dockerClient) }
     }
 
     fun getContainer() : ContainerHandle = container.get()
@@ -52,7 +62,7 @@ abstract class AbstractContainerTask :  AbstractDockerRemoteApiTask() {
         var currHandle = what.currentState(dockerClient)
         var retryCnt = 0
         while (callback.checkCondition(currHandle, retryCnt++)) {
-            project.logger.warn("Waiting for: {} ({})", callback.describeCondition(), retryCnt)
+            logger.warn("Waiting for: {} ({})", callback.describeCondition(), retryCnt)
             Thread.sleep(callback.getRetryDelay().toMillis())
             currHandle = what.currentState(dockerClient)
         }

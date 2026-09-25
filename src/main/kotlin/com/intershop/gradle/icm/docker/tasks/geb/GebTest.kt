@@ -18,14 +18,28 @@
 package com.intershop.gradle.icm.docker.tasks.geb
 
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
+import org.gradle.work.DisableCachingByDefault
+import javax.inject.Inject
 
-abstract class GebTest : Test() {
+@DisableCachingByDefault(because = "Runs UI tests against a running server - the outcome depends on external state and must never be taken from the build cache")
+abstract class GebTest @Inject constructor(
+    @get:Internal
+    val projectLayout: ProjectLayout
+) : Test () {
+
+    // injected instead of using project.layout: accessing Task.project from a task action is
+    // deprecated in Gradle 9 and fails in Gradle 10 (configuration cache incompatible)
+
 
     @get:Input
     val containerNetwork: Property<String> = objectFactory.property(String::class.java)
@@ -37,8 +51,11 @@ abstract class GebTest : Test() {
     @get:Optional
     val browserExecutableName: Property<String> = objectFactory.property(String::class.java)
 
+    // the *absolute* location of the browser installation is what gets passed to the driver as a
+    // system property, so a relocated directory really is a different input
     @get:InputDirectory
     @get:Optional
+    @get:PathSensitive(PathSensitivity.ABSOLUTE)
     val browserExecutableDir: DirectoryProperty = objectFactory.directoryProperty()
 
     @get:Input
@@ -62,7 +79,7 @@ abstract class GebTest : Test() {
         }
 
         systemProperty("geb.env", gebEnvironment.get())
-        systemProperty("geb.build.reportsDir", project.layout.buildDirectory.dir("geb-reports/${gebEnvironment.get()}").get().asFile.absolutePath)
+        systemProperty("geb.build.reportsDir", projectLayout.buildDirectory.dir("geb-reports/${gebEnvironment.get()}").get().asFile.absolutePath)
 
         useJUnitPlatform()
 

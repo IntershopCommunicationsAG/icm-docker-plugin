@@ -24,7 +24,7 @@ plugins {
     `java-gradle-plugin`
     groovy
 
-    kotlin("jvm") version "2.2.20"
+    kotlin("jvm") version "2.4.20"
 
     // test coverage
     jacoco
@@ -39,13 +39,19 @@ plugins {
     signing
 
     // plugin for documentation
+    // NOTE: 4.0.5 (Aug 2025) is the latest release; its internal 'grolifant' library still calls the
+    // deprecated StartParameter.isConfigurationCacheRequested, which will be removed in Gradle 10.
+    // There is no alternative plugin (the xbib fork is broken on Gradle 9, all other asciidoc
+    // plugins are generators, not renderers). An org.asciidoctor 5.0.0-alpha.1 line exists since
+    // Sep 2025, so a final 5.x is expected to be available by the time Gradle 10 is released -
+    // upgrade to it then.
     id("org.asciidoctor.jvm.convert") version "4.0.5"
 
     // documentation
-    id("org.jetbrains.dokka-javadoc") version "2.0.0"
+    id("org.jetbrains.dokka-javadoc") version "2.2.0"
 
     // plugin for publishing to Gradle Portal
-    id("com.gradle.plugin-publish") version "2.0.0"
+    id("com.gradle.plugin-publish") version "2.2.1"
 
     id("io.gitee.pkmer.pkmerboot-central-publisher") version "1.1.1"
 }
@@ -53,11 +59,11 @@ plugins {
 group = "com.intershop.gradle.icm.docker"
 description = "Intershop Commerce Management Plugins for Docker Integration"
 // apply gradle property 'projectVersion' to project.version, default to 'LOCAL'
-val projectVersion : String? by project
+val projectVersion = project.findProperty("projectVersion") as String?
 version = projectVersion ?: "LOCAL"
 
-val sonatypeUsername: String? by project
-val sonatypePassword: String? by project
+val sonatypeUsername = project.findProperty("sonatypeUsername") as String?
+val sonatypePassword = project.findProperty("sonatypePassword") as String?
 
 repositories {
     mavenLocal()
@@ -129,11 +135,30 @@ if (project.version.toString().endsWith("-SNAPSHOT")) {
     status = "snapshot"
 }
 
+/*
+ * Gradle 9.7.1 bundles Groovy 4.0.32 and 'gradleTestKit()' puts the whole Gradle distribution -
+ * including that bundled groovy jar - on the compile classpath. The Groovy plugin's automatic
+ * groovyClasspath inference therefore picks up Groovy 4, which makes Spock's global AST transform
+ * (spock-bom 2.4-groovy-5.0, pulled in via test-gradle-plugin) abort with
+ * IncompatibleGroovyVersionException.
+ *
+ * Fix: use a dedicated, isolated configuration that contains *only* Groovy 5 as the compiler
+ * classpath, so the Groovy compiler and Spock's AST transform both see Groovy 5.
+ */
+val groovyCompiler: Configuration = configurations.create("groovyCompiler") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+tasks.withType<GroovyCompile>().configureEach {
+    groovyClasspath = groovyCompiler
+}
+
 testing {
     suites.withType<JvmTestSuite> {
         useSpock()
         dependencies {
-            implementation("com.intershop.gradle.test:test-gradle-plugin:6.0.0")
+            implementation("com.intershop.gradle.test:test-gradle-plugin:7.0.0")
             implementation(gradleTestKit())
         }
 
@@ -143,7 +168,7 @@ testing {
                     systemProperty(
                         "intershop.gradle.versions",
                         providers.systemProperty("intershop.gradle.versions")
-                            .getOrElse("8.5,8.10.2,9.1.0")
+                            .getOrElse("8.5,8.10.2,9.1.0,9.7.1")
                     )
                     testLogging {
                         showStandardStreams = true
@@ -315,13 +340,41 @@ signing {
     sign(publishing.publications["intershopMvn"])
 }
 
-dependencies {
-    implementation(gradleApi())
-    implementation(gradleKotlinDsl())
+// dependency versions
+val groovyVersion = "5.1.2"
 
+dependencies {
+    // NOTE: neither gradleApi() nor gradleKotlinDsl() may be an 'implementation' dependency here.
+    // The 'java-gradle-plugin' plugin already provides the Gradle API for compilation - but NOT the
+    // Gradle Kotlin DSL. As 'implementation' they additionally put the *current* Gradle distribution
+    // jars (gradle-api-<version>.jar, <dist>/lib/*) on the runtime classpath, from which
+    // 'pluginUnderTestMetadata' derives the classpath TestKit injects into every test build via
+    // withPluginClasspath(). Older Gradle versions under test (8.5, 8.10.2) cannot instrument those
+    // 9.x jars and fail with "Failed to create Jar file ... gradle-api-9.7.1.jar".
+    //
+    // gradleKotlinDsl() is therefore split into the two scopes that actually need it:
+    // - compileOnly: main sources import org.gradle.kotlin.dsl.getByType / withGroovyBuilder.
+    // - testImplementation: in-JVM ProjectBuilder specs need those classes at runtime. The test
+    //   classpath does not feed pluginUnderTestMetadata, so this is leak-free. Real TestKit builds
+    //   get the Kotlin DSL from their own Gradle distribution.
+    compileOnly(gradleKotlinDsl())
+    testImplementation(gradleKotlinDsl())
+
+    // NOTE: solr-solrj stays on the 9.x line. 10.0.0 removes/relocates Http2SolrClient, which
+    // AbstractSolrAdminTask uses (verified: "Unresolved reference 'Http2SolrClient'"), so moving to
+    // solrj 10 is a client API rewrite and out of scope for the Gradle migration.
     implementation("org.apache.solr:solr-solrj:9.10.1")
-    implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:9.4.0")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:7.2.0")
-    implementation("com.intershop.gradle.jobrunner:icmjobrunner:7.0.0")
+    implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:10.0.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:8.0.0")
+    implementation("com.intershop.gradle.jobrunner:icmjobrunner:8.0.0")
+
+    // isolated Groovy compiler classpath - see the groovyCompiler configuration above
+    groovyCompiler(platform("org.apache.groovy:groovy-bom:$groovyVersion"))
+    groovyCompiler("org.apache.groovy:groovy")
+    groovyCompiler("org.apache.groovy:groovy-ant")
+    groovyCompiler("org.apache.groovy:groovy-json")
+    groovyCompiler("org.apache.groovy:groovy-xml")
+    groovyCompiler("org.apache.groovy:groovy-templates")
 }
+
 

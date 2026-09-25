@@ -20,9 +20,11 @@ package com.intershop.gradle.icm.docker.extension.geb
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
-open class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
+@DisableCachingByDefault(because = "Downloads a browser driver from a remote location into a local directory - the download is environment specific and not worth caching")
+abstract class GebDriverDownload @Inject constructor(objectFactory: ObjectFactory,
                                                  @Internal val name: String) {
 
     val url: Property<String> = objectFactory.property(String::class.java)

@@ -19,15 +19,25 @@ package com.intershop.gradle.icm.docker.tasks
 
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.exception.NotModifiedException
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
+import org.gradle.work.DisableCachingByDefault
+import javax.inject.Inject
 
-abstract class StopExtraContainer : AbstractExistingContainerTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and " +
+        "volume state is external to the build and must never be taken from the build cache")
+abstract class StopExtraContainer
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : AbstractExistingContainerTask(objectFactory, providerFactory) {
 
     init {
         this.onlyIf("Container is running") {
             val currentContainerState = currentContainerState().get()
             val isRunning = currentContainerState.isRunning()
             if (!isRunning) {
-                project.logger.quiet("{} is not running, no need to stop", currentContainerState)
+                logger.quiet("{} is not running, no need to stop", currentContainerState)
                 return@onlyIf false
             }
             return@onlyIf true

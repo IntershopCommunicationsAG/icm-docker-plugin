@@ -21,16 +21,26 @@ import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.github.dockerjava.api.command.InspectExecResponse
 import org.gradle.api.GradleException
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.work.DisableCachingByDefault
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-abstract class AbstractExistingContainerTask : AbstractContainerTask() {
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container state is external " +
+        "and must never be taken from the build cache")
+abstract class AbstractExistingContainerTask
+@Inject constructor(
+        objectFactory: ObjectFactory,
+        providerFactory: ProviderFactory,
+) : AbstractContainerTask(objectFactory, providerFactory) {
 
     init {
         this.onlyIf("Container exists") {
             val currentContainerState = currentContainerState().get()
             if (!currentContainerState.exists()) {
-                project.logger.quiet("{} does not exist", currentContainerState)
+                logger.quiet("{} does not exist", currentContainerState)
                 return@onlyIf false
             }
             return@onlyIf true
@@ -38,7 +48,7 @@ abstract class AbstractExistingContainerTask : AbstractContainerTask() {
     }
 
     fun executeUsing(startContainerTaskProvider: TaskProvider<StartExtraContainer>) {
-        container.value(project.provider { startContainerTaskProvider.get().container.get() })
+        container.value(providerFactory.provider { startContainerTaskProvider.get().container.get() })
         dependsOn(startContainerTaskProvider)
     }
 

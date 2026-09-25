@@ -20,12 +20,14 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 /**
  * Task to pull an image.
  */
-open class PullImage
+@DisableCachingByDefault(because = "Interacts with a live Docker daemon - container, image, network and volume state is external to the build and must never be taken from the build cache")
+abstract class PullImage
     @Inject constructor(objectFactory: ObjectFactory) : AbstractPullImage(objectFactory) {
 
     @get:Option(option= "altImage", description = "Use an other image independent from the build configuration")
