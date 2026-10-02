@@ -74,8 +74,8 @@ class ICMSolrCloudPlugin : Plugin<Project> {
                 with(extension.developmentConfig) {
 
                     val wfsTask = project.tasks.register("waitForServer", WaitForServer::class.java) { wfs ->
-                        wfs.probes.addAll(provider { startWAProvider.get().probes.get() })
-                        wfs.probes.addAll(provider { startASProvider.get().probes.get() })
+                        wfs.probeSpecs.addAll(provider { startWAProvider.get().probeSpecs.get() })
+                        wfs.probeSpecs.addAll(provider { startASProvider.get().probeSpecs.get() })
 
                         wfs.mustRunAfter(startWAProvider, startASProvider)
                     }

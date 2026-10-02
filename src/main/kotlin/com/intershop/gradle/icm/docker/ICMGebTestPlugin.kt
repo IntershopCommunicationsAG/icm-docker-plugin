@@ -137,7 +137,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                     StartExtraContainer::class.java
                 )
                 wfs.configure {
-                    it.probes.addAll(provider { startWebSrv.get().probes.get() })
+                    it.probeSpecs.addAll(provider { startWebSrv.get().probeSpecs.get() })
                     it.mustRunAfter(startWebSrv)
                 }
             } catch (ex: UnknownTaskException) {
@@ -173,7 +173,7 @@ class ICMGebTestPlugin : Plugin<Project> {
                     }
                     val startASServer = rootProject.tasks.named(serverTaskName, StartServerContainer::class.java)
                     wfs.configure {
-                        it.probes.addAll(provider { startASServer.get().probes.get() })
+                        it.probeSpecs.addAll(provider { startASServer.get().probeSpecs.get() })
                         it.mustRunAfter(startASServer)
                     }
                 }

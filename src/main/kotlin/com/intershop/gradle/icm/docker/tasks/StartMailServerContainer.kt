@@ -23,6 +23,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
+import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
@@ -31,7 +32,8 @@ abstract class StartMailServerContainer
 @Inject constructor(
         objectFactory: ObjectFactory,
         providerFactory: ProviderFactory,
-) : StartExtraContainer(objectFactory, providerFactory) {
+        progressLoggerFactory: ProgressLoggerFactory,
+) : StartExtraContainer(objectFactory, providerFactory, progressLoggerFactory) {
     private val primaryPortMapping: Property<PortMapping> = objectFactory.property(PortMapping::class.java)
 
     fun withPrimaryPortMapping(portMapping: Provider<PortMapping>) {
