@@ -21,9 +21,9 @@ import com.bmuschko.gradle.docker.domain.ExecProbe
 import com.bmuschko.gradle.docker.internal.IOUtils
 import com.intershop.gradle.icm.docker.tasks.utils.ContainerLogWatcher
 import com.intershop.gradle.icm.docker.tasks.utils.LogContainerCallback
-import com.intershop.gradle.icm.utils.HttpProbe
-import com.intershop.gradle.icm.utils.Probe
-import com.intershop.gradle.icm.utils.SocketProbe
+import com.intershop.gradle.icm.utils.HttpProbeSpec
+import com.intershop.gradle.icm.utils.ProbeSpec
+import com.intershop.gradle.icm.utils.SocketProbeSpec
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
@@ -32,6 +32,7 @@ import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
+import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import org.gradle.work.DisableCachingByDefault
 import java.net.URI
 import java.time.Duration
@@ -44,6 +45,7 @@ abstract class StartExtraContainer
 @Inject constructor(
         objectFactory: ObjectFactory,
         providerFactory: ProviderFactory,
+        private val progressLoggerFactory: ProgressLoggerFactory,
 ) : AbstractExistingContainerTask(objectFactory, providerFactory) {
 
     /**
@@ -61,30 +63,29 @@ abstract class StartExtraContainer
     val startupTimeout: Property<Duration> =
             objectFactory.property(Duration::class.java).convention(Duration.ofSeconds(900))
 
+    /**
+     * Descriptions of the probes verifying that the container started properly.
+     *
+     * Holds the *descriptions* rather than the [com.intershop.gradle.icm.utils.Probe]s themselves: a probe carries a
+     * logger and an HTTP client, which Gradle can neither snapshot as a task input nor store in the configuration
+     * cache. The probes are created from these descriptions while the task executes.
+     */
     @get:Input
-    val probes: ListProperty<Probe> = objectFactory.listProperty(Probe::class.java)
+    val probeSpecs: ListProperty<ProbeSpec> = objectFactory.listProperty(ProbeSpec::class.java)
 
     fun withHttpProbe(uri: URI, retryInterval: Duration, retryTimeout: Duration) {
-        withProbes(
-                HttpProbe(project, { services }, uri).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout)
-        )
+        withProbeSpecs(HttpProbeSpec(uri, retryInterval, retryTimeout))
     }
 
     fun withSocketProbe(port: Int, retryInterval: Duration, retryTimeout: Duration) {
-        withProbes(
-                SocketProbe.toLocalhost(
-                        project,
-                        { services },
-                        port
-                ).withRetryInterval(retryInterval).withRetryTimeout(retryTimeout)
-        )
+        withProbeSpecs(SocketProbeSpec.toLocalhost(port, retryInterval, retryTimeout))
     }
 
     /**
-     * Configures this task to (additionally) use the given `probes`
+     * Configures this task to (additionally) use the probes described by `probeSpecs`
      */
-    fun withProbes(vararg probes: Probe) {
-        this.probes.addAll(probes.toList())
+    fun withProbeSpecs(vararg probeSpecs: ProbeSpec) {
+        this.probeSpecs.addAll(probeSpecs.toList())
     }
 
     @get:Input
@@ -117,7 +118,7 @@ abstract class StartExtraContainer
         }
 
         try {
-            with(probes.get()) {
+            with(probeSpecs.get().map { spec -> spec.createProbe(logger, progressLoggerFactory) }) {
                 forEach { probe ->
                     val success = probe.execute()
                     if (!success) {

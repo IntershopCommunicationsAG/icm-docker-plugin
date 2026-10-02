@@ -365,7 +365,7 @@ dependencies {
     // solrj 10 is a client API rewrite and out of scope for the Gradle migration.
     implementation("org.apache.solr:solr-solrj:9.10.1")
     implementation("com.bmuschko.docker-remote-api:com.bmuschko.docker-remote-api.gradle.plugin:10.0.0")
-    implementation("com.intershop.gradle.icm:icm-gradle-plugin:8.0.0")
+    implementation("com.intershop.gradle.icm:icm-gradle-plugin:9.0.0")
     implementation("com.intershop.gradle.jobrunner:icmjobrunner:8.0.0")
 
     // isolated Groovy compiler classpath - see the groovyCompiler configuration above

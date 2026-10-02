@@ -16,26 +16,36 @@
  */
 package com.intershop.gradle.icm.docker.tasks
 
-import com.intershop.gradle.icm.utils.Probe
+import com.intershop.gradle.icm.utils.ProbeSpec
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
+import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
 @DisableCachingByDefault(because = "Operates against a running ICM server - the result depends on external server state and must never be taken from the build cache")
-abstract class WaitForServer @Inject constructor(objectFactory: ObjectFactory) : DefaultTask() {
+abstract class WaitForServer @Inject constructor(
+        objectFactory: ObjectFactory,
+        private val progressLoggerFactory: ProgressLoggerFactory,
+) : DefaultTask() {
 
-    @get:Internal
-    val probes: ListProperty<Probe> = objectFactory.listProperty(Probe::class.java)
+    /**
+     * Descriptions of the probes that have to succeed before the server counts as ready.
+     *
+     * Holds the *descriptions* rather than the [com.intershop.gradle.icm.utils.Probe]s themselves - see
+     * [StartExtraContainer.probeSpecs].
+     */
+    @get:Input
+    val probeSpecs: ListProperty<ProbeSpec> = objectFactory.listProperty(ProbeSpec::class.java)
 
     @TaskAction
     fun waiting() {
 
-        with(probes.get()) {
+        with(probeSpecs.get().map { spec -> spec.createProbe(logger, progressLoggerFactory) }) {
             forEach { probe ->
                 val success = probe.execute()
                 if (!success) {

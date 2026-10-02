@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.tasks
 
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
@@ -27,7 +28,8 @@ abstract class StartServerContainer
 @Inject constructor(
         objectFactory: ObjectFactory,
         providerFactory: ProviderFactory,
-) : StartExtraContainer(objectFactory, providerFactory) {
+        progressLoggerFactory: ProgressLoggerFactory,
+) : StartExtraContainer(objectFactory, providerFactory, progressLoggerFactory) {
 
     init {
         enableLogWatcher.convention(true)
