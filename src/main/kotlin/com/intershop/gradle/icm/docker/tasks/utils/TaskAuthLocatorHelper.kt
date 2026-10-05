@@ -19,6 +19,7 @@ package com.intershop.gradle.icm.docker.tasks.utils
 import com.bmuschko.gradle.docker.internal.RegistryAuthLocator
 import org.gradle.api.Project
 
+@Deprecated("Obsolete, use com.bmuschko.gradle.docker.internal.RegistryAuthLocator directly")
 object TaskAuthLocatorHelper {
 
     fun getLocator(project: Project, registryAuthLocator: RegistryAuthLocator) : RegistryAuthLocator {

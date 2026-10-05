@@ -86,8 +86,7 @@ abstract class PushImages
         imageIDs.forEach { name, id ->
             logger.quiet("Pushing image '{}' with ID '{}'.", name, id)
             val pushImageCmd = dockerClient.pushImageCmd(name)
-            val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
-            val authConfig = regAuthLocator.lookupAuthConfig(name, registryCredentials)
+            val authConfig = registryAuthLocator.lookupAuthConfig(name, registryCredentials)
             pushImageCmd.withAuthConfig(authConfig)
             val callback = createCallback(nextHandler)
             pushImageCmd.exec(callback).awaitCompletion()

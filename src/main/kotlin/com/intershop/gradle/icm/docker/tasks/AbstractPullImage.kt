@@ -77,37 +77,34 @@ abstract class AbstractPullImage
      * Executes the remote Docker command.
      */
     override fun runRemoteCommand() {
-        with(project) {
-            logger.quiet("Check for image '${image.get()}'")
+        logger.quiet("Check for image '${image.get()}'")
 
-            val imageString = image.get().lowercase(Locale.getDefault())
+        val imageString = image.get().lowercase(Locale.getDefault())
 
-            if(imageString.contains("SNAPSHOT")) {
-                logger.quiet("Please not the local available image is used. " +
-                        "If you want update the existing please use the 'forcePull' flag.")
-            }
-            var pull = true
+        if(imageString.contains("SNAPSHOT")) {
+            logger.quiet("Please not the local available image is used. " +
+                    "If you want update the existing please use the 'forcePull' flag.")
+        }
+        var pull = true
 
-            if(! force.get()) {
-                val listImagesCmd = dockerClient.listImagesCmd()
-                listImagesCmd.filters?.set("reference", listOf(image.get()))
-                val images = listImagesCmd.exec()
-                pull = images.size < 1
-            }
+        if(! force.get()) {
+            val listImagesCmd = dockerClient.listImagesCmd()
+            listImagesCmd.filters?.set("reference", listOf(image.get()))
+            val images = listImagesCmd.exec()
+            pull = images.size < 1
+        }
 
-            if(pull) {
-                logger.quiet("Pulling image '${image.get()}' - the image is locally not available")
+        if(pull) {
+            logger.quiet("Pulling image '${image.get()}' - the image is locally not available")
 
-                val pullImageCmd = dockerClient.pullImageCmd(image.get())
-                val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
+            val pullImageCmd = dockerClient.pullImageCmd(image.get())
 
-                val authConfig = regAuthLocator.lookupAuthConfig(image.get(), registryCredentials)
-                pullImageCmd.withAuthConfig(authConfig)
-                val callback = createCallback(nextHandler)
-                pullImageCmd.exec(callback).awaitCompletion()
-            } else {
-                logger.quiet("Image '${image.get()}' will be not pulled, because it is available.")
-            }
+            val authConfig = registryAuthLocator.lookupAuthConfig(image.get(), registryCredentials)
+            pullImageCmd.withAuthConfig(authConfig)
+            val callback = createCallback(nextHandler)
+            pullImageCmd.exec(callback).awaitCompletion()
+        } else {
+            logger.quiet("Image '${image.get()}' will be not pulled, because it is available.")
         }
     }
 
