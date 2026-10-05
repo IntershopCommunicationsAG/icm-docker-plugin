@@ -261,8 +261,7 @@ abstract class BuildImage
             buildImageCmd.withTarget(target.get())
         }
 
-        val regAuthLocator = TaskAuthLocatorHelper.getLocator(project, registryAuthLocator)
-        val authConfigurations = regAuthLocator.lookupAllAuthConfigs(registryCredentials)
+        val authConfigurations = registryAuthLocator.lookupAllAuthConfigs(registryCredentials)
         buildImageCmd.withBuildAuthConfigs(authConfigurations)
 
         if (buildArgs.get().isNotEmpty()) {
