@@ -47,23 +47,31 @@ class WATaskPreparer(
         @JvmStatic
         fun needsNetBindCapability(vararg containerPorts: Int): Boolean = containerPorts.any { it < PRIVILEGED_PORT_LIMIT }
 
-        // The WebAdapter advertises its container (listen) port in generated URLs (links, redirects, server name)
-        // If it differs from the published host port, those URLs point at a port the browser cannot reach (e.g. secure
-        // links ending up on :8443 instead of :443)
+        // Default ports of the schemes the WebAdapter serves - clients omit these in the 'Host' header
+        const val HTTP_DEFAULT_PORT: Int = 80
+        const val HTTPS_DEFAULT_PORT: Int = 443
+
+        // The WebAdapter's httpd runs with 'UseCanonicalName Off', so self-referential URLs (redirects, SERVER_PORT
+        // passed to the application server) use the port of the 'Host' header. Clients only omit that port when they
+        // connect on the scheme's default port - then httpd falls back to the virtual host/ServerName port, which is
+        // the container port. Only in that case a mismatch produces unreachable URLs (e.g. :8443 instead of :443).
         @JvmStatic
         fun portMismatchWarning(
             portMapping: PortMapping,
             hostPortProperty: String,
             containerPortProperty: String,
+            schemeDefaultPort: Int,
         ): String? {
-            if (portMapping.hostPort == portMapping.containerPort) {
+            if (portMapping.hostPort == portMapping.containerPort || portMapping.hostPort != schemeDefaultPort) {
                 return null
             }
             return "WebAdapter '${portMapping.name}' host port ($hostPortProperty=${portMapping.hostPort}) differs " +
-                "from container port ($containerPortProperty=${portMapping.containerPort}). The WebAdapter " +
-                "advertises its container port ${portMapping.containerPort} in generated URLs (links, redirects, " +
-                "server name), which may not be reachable via the published host port ${portMapping.hostPort}. " +
-                "Set '$containerPortProperty' equal to '$hostPortProperty' to avoid broken URLs."
+                "from container port ($containerPortProperty=${portMapping.containerPort}). Because " +
+                "${portMapping.hostPort} is the default port of the '${portMapping.name}' scheme, clients omit it " +
+                "in the 'Host' header and the WebAdapter falls back to its container port " +
+                "${portMapping.containerPort} for generated URLs (links, redirects, server name), which is not " +
+                "reachable via the published host port ${portMapping.hostPort}. Set '$containerPortProperty' equal " +
+                "to '$hostPortProperty' to avoid broken URLs."
         }
     }
 
@@ -152,8 +160,8 @@ class WATaskPreparer(
 
         registerStartContainerTask(createTask).configure { task ->
             // Warn on mismatching host/container ports
-            warnOnPortMismatch(httpPortMapping, WS_HTTP_PORT, WS_CONTAINER_HTTP_PORT)
-            warnOnPortMismatch(httpsPortMapping, WS_HTTPS_PORT, WS_CONTAINER_HTTPS_PORT)
+            warnOnPortMismatch(httpPortMapping, WS_HTTP_PORT, WS_CONTAINER_HTTP_PORT, HTTP_DEFAULT_PORT)
+            warnOnPortMismatch(httpsPortMapping, WS_HTTPS_PORT, WS_CONTAINER_HTTPS_PORT, HTTPS_DEFAULT_PORT)
 
             // add socketProbes to http and https ports
             with(dockerExtension.developmentConfig) {
@@ -175,8 +183,14 @@ class WATaskPreparer(
         }
     }
 
-    private fun warnOnPortMismatch(portMapping: PortMapping, hostPortProperty: String, containerPortProperty: String) {
-        portMismatchWarning(portMapping, hostPortProperty, containerPortProperty)?.let { portMismatchMessage ->
+    private fun warnOnPortMismatch(
+        portMapping: PortMapping,
+        hostPortProperty: String,
+        containerPortProperty: String,
+        schemeDefaultPort: Int,
+    ) {
+        portMismatchWarning(portMapping, hostPortProperty, containerPortProperty, schemeDefaultPort)?.let {
+                portMismatchMessage ->
             project.logger.warn(portMismatchMessage)
         }
     }
