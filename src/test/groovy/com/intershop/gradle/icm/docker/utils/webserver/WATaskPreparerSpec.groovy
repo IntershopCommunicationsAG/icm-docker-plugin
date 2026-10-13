@@ -41,15 +41,35 @@ class WATaskPreparerSpec extends Specification {
         def mapping = new PortMapping('https', 8443, 8443, true)
 
         expect:
-        WATaskPreparer.portMismatchWarning(mapping, 'webserver.https.port', 'webserver.container.https.port') == null
+        WATaskPreparer.portMismatchWarning(mapping, 'webserver.https.port', 'webserver.container.https.port', 443) == null
     }
 
-    def 'portMismatchWarning describes the mismatch when host and container port differ'() {
+    def 'portMismatchWarning returns null for a non-default host port because clients send it in the Host header'() {
+        given:
+        def mapping = new PortMapping('https', hostPort, 8443, true)
+
+        expect:
+        WATaskPreparer.portMismatchWarning(mapping, 'webserver.https.port', 'webserver.container.https.port', 443) == null
+
+        where:
+        hostPort << [1463, 8080, 9443]
+    }
+
+    def 'portMismatchWarning ignores the http default port 80 on the https scheme'() {
+        given:
+        def mapping = new PortMapping('https', 80, 8443, true)
+
+        expect:
+        // https clients only omit 443 in the Host header, so port 80 is still sent and used for generated URLs
+        WATaskPreparer.portMismatchWarning(mapping, 'webserver.https.port', 'webserver.container.https.port', 443) == null
+    }
+
+    def 'portMismatchWarning describes the mismatch when the host port is the scheme default port'() {
         given:
         def mapping = new PortMapping('https', 443, 8443, true)
 
         when:
-        def message = WATaskPreparer.portMismatchWarning(mapping, 'webserver.https.port', 'webserver.container.https.port')
+        def message = WATaskPreparer.portMismatchWarning(mapping, 'webserver.https.port', 'webserver.container.https.port', 443)
 
         then:
         message != null
@@ -57,5 +77,13 @@ class WATaskPreparerSpec extends Specification {
         message.contains('webserver.container.https.port=8443')
         // recommends aligning to the host port property
         message.contains("Set 'webserver.container.https.port' equal to 'webserver.https.port'")
+    }
+
+    def 'portMismatchWarning warns for http on the default port 80'() {
+        given:
+        def mapping = new PortMapping('http', 80, 8080, false)
+
+        expect:
+        WATaskPreparer.portMismatchWarning(mapping, 'webserver.http.port', 'webserver.container.http.port', 80) != null
     }
 }
